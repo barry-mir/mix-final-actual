@@ -1,7 +1,7 @@
-// Bouncer: a local mixing console in the browser. The engine plays the tracks to the sound card in real time; the web
+// mix_final_ACTUAL.wav: a local mixing console in the browser. The engine plays the tracks to the sound card in real time; the web
 // page (served on 127.0.0.1) moves its parameters, so every change is heard at once.
 //
-// usage: bouncer TRACKS_DIR [--port N] [--no-open]
+// usage: mix-final-actual TRACKS_DIR [--port N] [--no-open]
 #include "PluginProcessor.h"
 #include "WebServer.h"
 #include <juce_audio_utils/juce_audio_utils.h>
@@ -39,7 +39,7 @@ int main (int argc, char** argv)
     }
     if (! dir.isDirectory())
     {
-        std::cerr << "usage: bouncer TRACKS_DIR [--port N] [--no-open]\n";
+        std::cerr << "usage: mix-final-actual TRACKS_DIR [--port N] [--no-open]\n";
         return 2;
     }
 
@@ -62,7 +62,7 @@ int main (int argc, char** argv)
     }
 
     const auto token = randomToken();
-    bc::WebServer web (*proc, token);
+    mfa::WebServer web (*proc, token);
     const int bound = web.start (port);
     if (bound < 0)
     {
@@ -71,7 +71,7 @@ int main (int argc, char** argv)
     }
     const juce::String url = "http://127.0.0.1:" + juce::String (bound) + "/?t=" + juce::String (token);
     std::cout << proc->player.numLoadedTracks() << " tracks from " << dir.getFullPathName() << "\n"
-              << "Bouncer: " << url << std::endl;
+              << "mix_final_ACTUAL.wav: " << url << std::endl;
     if (open) juce::URL (url).launchInDefaultBrowser();
 
     std::signal (SIGINT, onSignal);

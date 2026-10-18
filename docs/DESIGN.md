@@ -1,6 +1,6 @@
-# Bouncer: design
+# mix_final_ACTUAL.wav: design
 
-Bouncer mixes a folder of named tracks. The user's coding agent (Claude Code or Codex) makes the mix through a
+mix_final_ACTUAL.wav mixes a folder of named tracks. The user's coding agent (Claude Code or Codex) makes the mix through a
 measured, multi-turn dialog with a real DSP console, and the user then keeps working on it in a mixer page in the
 browser, hearing every change at once. Free and open source.
 
@@ -9,7 +9,7 @@ browser, hearing every change at once. Free and open source.
 | Topic | Decision |
 |---|---|
 | Who answers prompts | The coding agent the user already runs (Claude Code / Codex), through the plugin's MCP tools. No API keys anywhere, no built-in model. |
-| Output | Audio (full-song WAV/FLAC, stems) and a Bouncer project file (settings + change history) that reopens in the app. No REAPER project. |
+| Output | Audio (full-song WAV/FLAC, stems) and a project file (settings + change history) that reopens in the app. No REAPER project. |
 | UI | A web page served by the engine on 127.0.0.1, with a random session token on every API call and a loopback Host check. |
 | Python | None in the user's path: everything ships in the native binary. |
 | First mix | Made before the page opens: excerpt chosen by the same rule as now, then the 5-turn dialog. The user can pick another window later in the page. |
@@ -19,13 +19,14 @@ browser, hearing every change at once. Free and open source.
 | Input | A folder, or files dropped on the page; names from the file names, renamable; groups guessed from names, correctable. |
 | No agent connected | The page still works as a manual mixer and says how to connect one. |
 | Platforms | macOS (arm64, x64), Windows, Linux. No Apple developer account: the plugin downloads the binary with curl, so it carries no quarantine flag. |
-| Licence | JUCE 8 is used under its free licence, AGPLv3, so Bouncer is AGPLv3. |
+| Name | Display name `mix_final_ACTUAL.wav`; id `mix-final-actual` (skill, plugin, binary, repo: ids allow only lowercase, digits and hyphens). |
+| Licence | JUCE 8 is used under its free licence, AGPLv3, so the project is AGPLv3. |
 | Data credits | The mix statistics are described only as statistics over professional mixes. |
 
 ## Architecture
 
 ```
-bouncer  (one native binary)
+mix-final-actual  (one native binary)
   ├─ engine      MixEngine + MultitrackPlayer, real time to the sound card
   ├─ analysis    Analyzer: the features the agent reads every turn
   ├─ agent loop  Agent / PromptBuilder / Tools: builds each turn's request, validates and applies the tool calls
@@ -40,7 +41,7 @@ answers with all of the turn's tool calls in one submit, and the turn continues 
 matters: turn 1 makes about 95 tool calls, and 95 separate MCP calls would mean 95 model steps.
 
 Process lifetime: an MCP server over stdio dies with the agent session, but the page should stay open. So
-`bouncer mcp` is a thin stdio front that starts (or finds) a long-lived `bouncer` process and forwards to it.
+`mix-final-actual mcp` is a thin stdio front that starts (or finds) a long-lived `mix-final-actual` process and forwards to it.
 
 ## Milestones
 

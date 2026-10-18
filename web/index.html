@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Bouncer</title>
+<title>mix_final_ACTUAL.wav</title>
 <style>
 :root {
   --bg: #16181c; --panel: #1f2227; --panel2: #262a30; --line: #343941; --fg: #e6e8eb; --dim: #8b929c;
@@ -51,7 +51,7 @@ legend { color: var(--accent); font-size: 11px; text-transform: uppercase; lette
 </head>
 <body>
 <header>
-  <h1>BOUNCER</h1>
+  <h1>mix_final_ACTUAL.wav</h1>
   <button id="play">Play</button>
   <button id="loop">Loop</button>
   <span id="time">0:00.0 / 0:00.0</span>
@@ -225,7 +225,7 @@ async function pollValues() {
   } catch (e) { showErr(e); return; }
   setTimeout(pollValues, 500);
 }
-function showErr(e) { document.getElementById("strips").innerHTML = `<div id="err">Lost the mixer (${e.message}). Is bouncer still running?</div>`; }
+function showErr(e) { document.getElementById("strips").innerHTML = `<div id="err">Lost the mixer (${e.message}). Is mix-final-actual still running?</div>`; }
 
 async function init() {
   S = await api("session");

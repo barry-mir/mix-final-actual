@@ -4,7 +4,7 @@
 #include <httplib.h>
 #include <nlohmann/json.hpp>
 
-namespace bc
+namespace mfa
 {
 using json = nlohmann::json;
 using im::InteractiveMixerProcessor;
@@ -139,4 +139,4 @@ void WebServer::stop()
     impl->http.stop();
     if (thread.joinable()) thread.join();
 }
-} // namespace bc
+} // namespace mfa

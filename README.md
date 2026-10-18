@@ -1,4 +1,4 @@
-# Bouncer
+# mix_final_ACTUAL.wav
 
 A mixing console in your browser, mixed by your coding agent. Give it a folder of tracks with proper names
 ("Lead Vocal.wav", "Kick.wav", ...); your agent (Claude Code or Codex) makes the mix by reading the console's
@@ -11,7 +11,7 @@ Early work in progress: the playable mixer page works; the agent bridge is next 
 ```sh
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 cmake --build build
-./build/bouncer_artefacts/Release/bouncer path/to/tracks      # opens the page in your browser
+./build/mix-final-actual_artefacts/Release/mix-final-actual path/to/tracks      # opens the page in your browser
 ```
 Options: `--port N` (default: any free port), `--no-open` (print the URL only).
 

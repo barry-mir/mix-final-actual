@@ -11,7 +11,7 @@ namespace im
 class InteractiveMixerProcessor;
 }
 
-namespace bc
+namespace mfa
 {
 class WebServer
 {
@@ -28,4 +28,4 @@ private:
     std::unique_ptr<Impl> impl;
     std::thread thread;
 };
-} // namespace bc
+} // namespace mfa
