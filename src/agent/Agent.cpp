@@ -8,7 +8,7 @@ namespace im
 {
 namespace
 {
-int priority (const std::string& k) { return k == "user" ? 3 : k == "stage" ? 2 : 1; }
+int triggerPriority (const std::string& k) { return k == "user" ? 3 : k == "stage" ? 2 : 1; }
 double nowMs() { return juce::Time::getMillisecondCounterHiRes(); }
 } // namespace
 
@@ -59,7 +59,7 @@ void Agent::trigger (Trigger t)
         if (! pending) pending = t;
         else if (t.kind == "user" && pending->kind == "user")
             pending->msg += "\n" + t.msg; // never lose a user message
-        else if (priority (t.kind) >= priority (pending->kind))
+        else if (triggerPriority (t.kind) >= triggerPriority (pending->kind))
             pending = t;
     }
     wake.signal();
