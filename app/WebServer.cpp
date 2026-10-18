@@ -5,6 +5,7 @@
 #include "agent/MixPriors.h"
 #include <httplib.h>
 #include <nlohmann/json.hpp>
+#include <limits>
 
 namespace mfa
 {
@@ -101,7 +102,8 @@ struct WebServer::Impl
     json exportJson() const
     {
         auto& e = app.exporter;
-        return { { "running", e.running() }, { "progress", e.progress() }, { "folder", e.folder() }, { "error", e.error() } };
+        return { { "running", e.running() }, { "progress", e.progress() }, { "folder", e.folder() }, { "error", e.error() },
+                 { "lufs", e.running() ? 0.0 : e.resultLufs() } };
     }
 
     static json chatJson (const InteractiveMixerProcessor& p)
@@ -215,8 +217,10 @@ struct WebServer::Impl
         http.Post ("/api/export", live ([this] (InteractiveMixerProcessor& p, const httplib::Request& req, httplib::Response& res) {
             auto j = parseBody (req);
             const bool stems = ! j.is_discarded() && j.value ("stems", false);
+            const double lufs = ! j.is_discarded() && j.contains ("loudness") && j["loudness"].is_number() ? j["loudness"].get<double>()
+                                                                                                        : std::numeric_limits<double>::quiet_NaN();
             if (app.exporter.running()) return reply (res, { { "error", "an export is already running" } }, 409);
-            juce::MessageManager::callAsync ([this, &p, stems] { app.exporter.start (p, stems); });
+            juce::MessageManager::callAsync ([this, &p, stems, lufs] { app.exporter.start (p, stems, lufs); });
             reply (res, { { "ok", true } });
         }));
         http.Get ("/api/export", [this] (const httplib::Request&, httplib::Response& res) { reply (res, exportJson()); });

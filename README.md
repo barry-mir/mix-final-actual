@@ -20,7 +20,8 @@ or from a shell: `claude plugin marketplace add barry-mir/mix-final-actual` then
 `mix-final-actual` from the plugin list.
 
 Then ask your agent: "mix the tracks in ~/Music/my-song". It makes the first mix (5 turns), the mixer page opens in your
-browser, and prompts you type there go to your agent. Export renders the whole song (and stems) next to your tracks.
+browser, and prompts you type there go to your agent. Export renders the whole song (and stems) next to your tracks, at a delivery loudness of your choice
+(-14 LUFS for streaming by default, limiter at the console's ceiling).
 
 The plugin ships native binaries for macOS (universal), Linux (x64, arm64) and Windows (x64), built by CI on the
 `dist` branch. Nothing to install besides the plugin; no API keys; everything runs locally.

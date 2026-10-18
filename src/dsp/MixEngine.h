@@ -39,6 +39,9 @@ public:
     MixEngine() { for (auto& g : trackGroup) g.store (-1); }
     MasterMeters masterMeters;
 
+    // Extra gain before the limiter, outside the mix settings: export to a delivery loudness (0 = as mixed).
+    std::atomic<float> deliveryGainDb { 0.0f };
+
     void prepare (double sampleRate, int maxBlockSize);
     int maxBlock() const noexcept { return maxBlockSize; }
     int latencySamples() const noexcept { return limiter.latencySamples(); }

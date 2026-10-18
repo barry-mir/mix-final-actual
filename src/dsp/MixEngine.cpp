@@ -404,10 +404,11 @@ void MixEngine::process (const float* const* inL, const float* const* inR, float
 
     // ---- Master fader + limiter -------------------------------------------
     fillRamp (tmp.data(), dbToGain (mpv (MasterFader)), dbToGain (mv (MasterFader)), n);
+    const float delivery = dbToGain (deliveryGainDb.load (std::memory_order_relaxed));
     for (int i = 0; i < n; ++i)
     {
-        sumL[(size_t) i] *= tmp[(size_t) i];
-        sumR[(size_t) i] *= tmp[(size_t) i];
+        sumL[(size_t) i] *= tmp[(size_t) i] * delivery;
+        sumR[(size_t) i] *= tmp[(size_t) i] * delivery;
     }
     {
         const bool on = params.boolValue (masterParam (LimOn));

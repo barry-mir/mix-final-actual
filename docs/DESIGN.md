@@ -61,7 +61,8 @@ Process lifetime: an MCP server over stdio dies with the agent session, but the 
    (it was ~9.5 GB), real time at 38% of the block budget; the 105-track turn is 35k characters.
 5. **Page, full**: done so far: chat with per-turn changes and undo, prompts, "Mix it", export (whole song, 24-bit WAV at
    the source rate, optional stems; checked: nulls against the raw sum to -113 dB with default settings, stems sum to the
-   mix within -88 dB). Also done: A/B against the agent's last turn, loop region by dragging on the timeline, rename
+   mix within -88 dB). Delivery loudness: a gain before the limiter, outside the mix settings, set by two
+   corrections (checked: -14.08 LUFS by pyloudnorm, peaks at -1.0 dBFS). Also done: A/B against the agent's last turn, loop region by dragging on the timeline, rename
    (double-click) and regroup tracks (the group follows the name and is used by the engine and the prompt), the project
    file `mix_final_ACTUAL project.json` (autosaved every 10 s; reopened instead of a new first mix). Input is the folder
    the agent opens (no drag-and-drop: the agent picks the folder).

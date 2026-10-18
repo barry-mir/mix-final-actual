@@ -19,18 +19,21 @@ class Exporter
 public:
     ~Exporter();
     // Message thread. False if an export is already running.
-    bool start (im::InteractiveMixerProcessor& live, bool stems);
+    // loudnessLufs: mastered to this integrated loudness (gain before the limiter, limiter on), e.g. -14; NaN = as mixed.
+    bool start (im::InteractiveMixerProcessor& live, bool stems, double loudnessLufs);
 
     bool running() const { return busy.load(); }
     double progress() const { return prog.load(); } // 0..1
     std::string folder() const;                    // last export's folder
     std::string error() const;
+    double resultLufs() const { return lufsOut.load(); } // the mix file's integrated loudness
 
 private:
     void join();
     std::thread worker;
     std::atomic<bool> busy { false };
     std::atomic<double> prog { 0.0 };
+    std::atomic<double> lufsOut { 0.0 };
     mutable std::mutex m;
     std::string outDir, err;
 };

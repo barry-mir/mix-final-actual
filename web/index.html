@@ -84,6 +84,9 @@ legend { color: var(--accent); font-size: 11px; text-transform: uppercase; lette
   <div id="timeline" title="Click to jump; drag to set the loop region (what plays, and what the agent listens to); double-click for the excerpt"><div class="exc"></div><div class="loop"></div><div class="head"></div><span class="hint">drag = loop region</span></div>
   <button id="ab" title="Compare with the mix before the agent's last turn">A/B</button>
   <span id="folder"></span>
+  <select id="loud" title="Loudness of the exported mix" style="font:inherit;font-size:12px;background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:4px">
+    <option value="">as mixed</option><option value="-14" selected>-14 LUFS (streaming)</option><option value="-16">-16 LUFS</option><option value="-9">-9 LUFS (loud)</option>
+  </select>
   <label style="color:var(--dim);font-size:12px"><input type="checkbox" id="stems"> stems</label>
   <button id="export" title="Render the whole song with these settings (24-bit WAV, next to your tracks)">Export</button>
   <span id="exportState" style="color:var(--dim);font-size:12px"></span>
@@ -433,7 +436,7 @@ async function pollExport() {
   const el = document.getElementById("exportState");
   document.getElementById("export").disabled = e.running;
   if (e.running) { el.textContent = `exporting ${Math.round(100 * e.progress)}%`; setTimeout(pollExport, 500); }
-  else el.textContent = e.error ? `export failed: ${e.error}` : e.folder ? `saved to ${e.folder}` : "";
+  else el.textContent = e.error ? `export failed: ${e.error}` : e.folder ? `saved (${e.lufs.toFixed(1)} LUFS) to ${e.folder}` : "";
   el.title = el.textContent;
 }
 
@@ -474,7 +477,10 @@ async function init() {
   document.getElementById("send").onclick = sendPrompt;
   document.getElementById("prompt").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendPrompt(); } });
   document.getElementById("export").onclick = async () => {
-    try { await api("export", { stems: document.getElementById("stems").checked }); pollExport(); } catch (e) { showErr(e); }
+    const l = document.getElementById("loud").value;
+    const body = { stems: document.getElementById("stems").checked };
+    if (l) body.loudness = +l;
+    try { await api("export", body); pollExport(); } catch (e) { showErr(e); }
   };
   document.getElementById("mixit").onclick = () => api("mix", { turns: 5 }).catch(showErr);
   poll();

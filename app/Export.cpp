@@ -1,5 +1,6 @@
 #include "Export.h"
 #include "PluginProcessor.h"
+#include "analysis/Loudness.h"
 
 namespace mfa
 {
@@ -46,7 +47,7 @@ std::string Exporter::error() const
     return err;
 }
 
-bool Exporter::start (InteractiveMixerProcessor& live, bool stems)
+bool Exporter::start (InteractiveMixerProcessor& live, bool stems, double loudnessLufs)
 {
     if (busy.exchange (true)) return false;
     join();
@@ -85,12 +86,13 @@ bool Exporter::start (InteractiveMixerProcessor& live, bool stems)
     const auto stamp = juce::Time::getCurrentTime().formatted ("%Y-%m-%d %H%M%S");
     const auto dir = tracksDir.getChildFile ("mix_final_ACTUAL exports").getChildFile (stamp);
 
-    worker = std::thread ([this, proc, dir, names, nTracks, sr, bs, stems] {
+    worker = std::thread ([this, proc, dir, names, nTracks, sr, bs, stems, loudnessLufs] {
         auto& p = *proc;
         dir.createDirectory();
         const int latency = p.engine.latencySamples();
         const auto total = (int64_t) ((p.player.lengthSec() + kTailSec) * sr) + latency;
-        const int passes = 1 + (stems ? nTracks : 0);
+        const bool master = std::isfinite (loudnessLufs);
+        const int passes = (master ? 3 : 1) + (stems ? nTracks : 0);
         juce::AudioBuffer<float> io (2, bs);
         juce::MidiBuffer midi;
 
@@ -119,7 +121,28 @@ bool Exporter::start (InteractiveMixerProcessor& live, bool stems)
             return out;
         };
 
-        bool ok = writeWav (dir.getChildFile ("mix.wav"), render (0), sr);
+        auto lufsOf = [&] (const juce::AudioBuffer<float>& b) {
+            return im::integratedLoudness (b.getReadPointer (0), b.getReadPointer (1), b.getNumSamples(), sr);
+        };
+        juce::AudioBuffer<float> mix;
+        if (master)
+        {
+            // Delivery loudness: gain before the limiter, two corrections (the limiter makes it nonlinear).
+            p.setParamValue (im::masterParam (im::LimOn), 1.0f);
+            p.engine.deliveryGainDb = 0.0f;
+            for (int k = 0; k < 3; ++k)
+            {
+                mix = render (k);
+                const double l = lufsOf (mix);
+                if (! std::isfinite (l) || std::abs (l - loudnessLufs) < 0.2 || k == 2) break;
+                p.engine.deliveryGainDb = (float) std::clamp ((double) p.engine.deliveryGainDb.load() + (loudnessLufs - l), -30.0, 40.0);
+            }
+        }
+        else
+            mix = render (0);
+        lufsOut = lufsOf (mix);
+        bool ok = writeWav (dir.getChildFile ("mix.wav"), mix, sr);
+        p.engine.deliveryGainDb = 0.0f; // stems as mixed
         if (ok && stems)
         {
             auto stemDir = dir.getChildFile ("stems");
@@ -130,7 +153,7 @@ bool Exporter::start (InteractiveMixerProcessor& live, bool stems)
             {
                 for (int u = 0; u < nTracks; ++u) p.setParamValue (im::trackParam (u, im::Solo), u == t ? 1.0f : 0.0f);
                 auto nm = juce::String (t + 1).paddedLeft ('0', 2) + " " + safeName (names[(size_t) t]) + ".wav";
-                ok = writeWav (stemDir.getChildFile (nm), render (1 + t), sr);
+                ok = writeWav (stemDir.getChildFile (nm), render ((master ? 3 : 1) + t), sr);
             }
         }
         {
