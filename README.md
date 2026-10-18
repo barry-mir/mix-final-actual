@@ -24,10 +24,12 @@ then install `mix-final-actual` from the plugin list (`/plugins` in the CLI).
 
 Then ask your agent: "mix the tracks in ~/Music/my-song". It makes the first mix (5 turns), the mixer page opens in your
 browser, and requests you type there go to your agent. The page plays at the loudness you export at (-14 LUFS for
-streaming by default), so what you hear is what Export writes. Export asks where to save (default
+streaming by default), so what you hear is what Export writes. The page works like a DAW: a Tracks view with waveforms
+(move, trim, fade, split and clip gain), a Mixer view, an inspector with an EQ editor, and the usual shortcuts (press `?`
+in the page for the list). Export asks where to save (default
 `Music/mix_final_ACTUAL/<song>/`), as 24-bit WAV or FLAC, optionally with stems.
 
-The plugin ships native binaries for macOS (universal), Linux (x64, arm64) and Windows (x64), built by CI on the
+The plugin ships native binaries for macOS (universal), Linux (x64) and Windows (x64), built by CI on the
 `dist` branch. Nothing to install besides the plugin; no API keys; everything runs locally.
 
 ## What it writes, and where

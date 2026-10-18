@@ -147,10 +147,12 @@ int serve (int argc, char** argv, int first)
         return 1;
     }
     if (state.getSize() > 0) proc->setStateInformation (state.getData(), (int) state.getSize());
+    double loudnessGain = 0.0;
     std::optional<double> loudness = -14.0; // playback and export at streaming loudness unless the project says otherwise
     if (reopen)
-        if (auto err = mfa::loadProject (*proc, project, loudness); ! err.empty()) std::cerr << "project: " << err << "\n";
+        if (auto err = mfa::loadProject (*proc, project, loudness, loudnessGain); ! err.empty()) std::cerr << "project: " << err << "\n";
     app.loudness.setTarget (loudness, proc.get());
+    if (reopen && loudnessGain != 0.0) app.loudness.seedGain (loudnessGain, *proc);
     proc->player.setLooping (true);
     app.live = proc.get();
     std::cout << proc->player.numLoadedTracks() << " tracks live; page: " << url << std::endl;
@@ -158,7 +160,7 @@ int serve (int argc, char** argv, int first)
 
     // runDispatchLoop() returns at once in a console app on macOS, so pump the message thread in slices.
     // The project autosaves every 10 s when anything changed.
-    std::string saved = reopen ? mfa::projectJson (*proc, app.loudness.target()) : std::string();
+    std::string saved = reopen ? mfa::projectJson (*proc, app.loudness.target(), app.loudness.gain()) : std::string();
     double nextSave = juce::Time::getMillisecondCounterHiRes() + 10000.0, nextLoud = 0.0;
     while (! quit)
     {
@@ -171,10 +173,10 @@ int serve (int argc, char** argv, int first)
         }
         if (now < nextSave) continue;
         nextSave += 10000.0;
-        if (auto j = mfa::projectJson (*proc, app.loudness.target()); j != saved && mfa::saveProject (*proc, app.loudness.target(), project))
+        if (auto j = mfa::projectJson (*proc, app.loudness.target(), app.loudness.gain()); j != saved && mfa::saveProject (*proc, app.loudness.target(), app.loudness.gain(), project))
             saved = std::move (j);
     }
-    if (auto j = mfa::projectJson (*proc, app.loudness.target()); j != saved) mfa::saveProject (*proc, app.loudness.target(), project);
+    if (auto j = mfa::projectJson (*proc, app.loudness.target(), app.loudness.gain()); j != saved) mfa::saveProject (*proc, app.loudness.target(), app.loudness.gain(), project);
 
     app.loudness.stop();
     app.live = nullptr;

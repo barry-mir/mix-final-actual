@@ -88,6 +88,16 @@ public:
     // How long a turn waits for the coding agent before it is skipped.
     void setTurnTimeout (double seconds) { turnTimeoutS = seconds; }
 
+    // The user pressed Stop: drop queued turns (a remix's remaining turns, a waiting request). The caller also
+    // aborts the turn waiting in the bridge, if any.
+    void cancelQueued()
+    {
+        std::lock_guard<std::mutex> lk (m);
+        pending.reset();
+        queued = 0;
+        stopRequested = true; // ends the turn in progress if it is still listening
+    }
+
 private:
     void run() override;
     std::optional<Trigger> takePending();
@@ -100,6 +110,7 @@ private:
     mutable std::mutex m;
     std::optional<Trigger> pending;
     int queued = 0;            // turns still to run from queueTurns (guarded by m)
+    std::atomic<bool> stopRequested { false };
     std::string queuedLabel, queuedGoal;
     void setStage (Stage s, int changes = 0);
     std::atomic<int> stageTick { -1 }, stageNow { 0 }, stageChanges { 0 };

@@ -57,6 +57,20 @@ uint64_t LiveLoudness::settingsKey (InteractiveMixerProcessor& live)
     return h;
 }
 
+double LiveLoudness::gain() const
+{
+    std::lock_guard<std::mutex> lk (m);
+    return tgt ? gainDb : 0.0;
+}
+
+void LiveLoudness::seedGain (double g, InteractiveMixerProcessor& live)
+{
+    std::lock_guard<std::mutex> lk (m);
+    if (! tgt) return;
+    gainDb = std::clamp (g, -30.0, 40.0);
+    apply (live);
+}
+
 void LiveLoudness::apply (InteractiveMixerProcessor& live)
 {
     // (m held)

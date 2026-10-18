@@ -176,10 +176,11 @@ bool Agent::runTick (const Trigger& trig)
     const int tick = store.nextTickNumber();
     lat.tick = tick;
     stageTick = tick;
+    stopRequested = false;
 
     // 1. listen: the measurements must describe the mix as it is now (live: wait for fresh audio after any change)
     setStage (Stage::Listening);
-    host.waitForFreshAudio (listenSec.load(), [this] { return threadShouldExit(); });
+    host.waitForFreshAudio (listenSec.load(), [this] { return threadShouldExit() || stopRequested.load(); });
     if (bridge.secondsSinceAgentSeen() > 60.0)
     {
         ChatEntry s;
@@ -226,6 +227,11 @@ bool Agent::runTick (const Trigger& trig)
     double prefill = 0, decode = 0;
     for (int attempt = 0; attempt < 2; ++attempt)
     {
+        if (stopRequested.exchange (false)) // the user pressed Stop while the console was listening
+        {
+            failure = "cancelled";
+            break;
+        }
         const json request = { { "messages", messages }, { "tools", toolSchemas() } };
         const auto label = attempt > 0 ? std::string ("retry") : trig.label.empty() ? trig.kind : trig.label;
         setStage (Stage::Waiting);

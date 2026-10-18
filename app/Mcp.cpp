@@ -90,7 +90,9 @@ struct Result
 
 Result err (const std::string& s) { return { s, true }; }
 
-// The instance for args.folder, or the only open one.
+std::string lastOpened; // the folder this MCP process last opened: the default when a call names none
+
+// The instance for args.folder, else the one this process opened last, else the only open one.
 std::optional<Instance> resolve (const json& args, std::string& why)
 {
     if (args.contains ("folder") && args["folder"].is_string() && ! args["folder"].get<std::string>().empty())
@@ -99,6 +101,8 @@ std::optional<Instance> resolve (const json& args, std::string& why)
         if (! i) why = "no open session for " + args["folder"].get<std::string>() + "; call open_session first";
         return i;
     }
+    if (! lastOpened.empty())
+        if (auto i = instanceFor (lastOpened)) return i;
     auto all = liveInstances();
     if (all.size() == 1) return all[0];
     why = all.empty() ? "no open session; call open_session(folder) first" : "several sessions are open; pass folder";
@@ -154,6 +158,7 @@ Result openSession (const json& args, const std::string& exe)
     }
     auto r = call (*inst, "GET", "/api/state");
     if (! r || r->status != 200) return err ("the console does not answer");
+    lastOpened = folder;
     return { "Session open for " + folder + ". " + describeState (json::parse (r->body), *inst) };
 }
 

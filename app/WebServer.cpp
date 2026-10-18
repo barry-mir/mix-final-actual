@@ -214,6 +214,13 @@ struct WebServer::Impl
             reply (res, { { "ok", true } });
         });
 
+        // Stop the agent's work: the turn waiting for (or with) the coding agent ends with nothing changed, and turns
+        // still queued (the rest of a remix) are dropped.
+        http.Post ("/api/stop_turns", live ([] (InteractiveMixerProcessor& p, const httplib::Request&, httplib::Response& res) {
+            p.agent.cancelQueued();
+            im::Bridge::shared().abortPending();
+            reply (res, { { "ok", true } });
+        }));
         http.Get ("/api/session", live ([] (InteractiveMixerProcessor& p, const httplib::Request&, httplib::Response& res) { reply (res, sessionJson (p)); }));
         http.Get ("/api/values", live ([] (InteractiveMixerProcessor& p, const httplib::Request&, httplib::Response& res) { reply (res, valuesJson (p)); }));
         http.Get ("/api/status", live ([this] (InteractiveMixerProcessor& p, const httplib::Request&, httplib::Response& res) { reply (res, statusJson (p)); }));

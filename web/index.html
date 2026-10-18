@@ -4,516 +4,83 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>mix_final_ACTUAL.wav</title>
-<style>
-:root {
-  --bg: #16181c; --panel: #1f2227; --panel2: #262a30; --line: #343941; --fg: #e6e8eb; --dim: #8b929c;
-  --accent: #f0a640; --meter: #5fcf7a; --hot: #e5534b; --solo: #e8c547; --mute: #d0703c;
-  color-scheme: dark; /* dark scrollbars and form controls */
-  font: 13px/1.35 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-}
-* { box-sizing: border-box; }
-[hidden] { display: none !important; }
-body { margin: 0; background: var(--bg); color: var(--fg); height: 100vh; display: flex; flex-direction: column; }
-button { font: inherit; color: var(--fg); background: var(--panel2); border: 1px solid var(--line); border-radius: 4px; padding: 4px 10px; cursor: pointer; }
-button.on { background: var(--accent); color: #111; border-color: var(--accent); }
-header { display: flex; align-items: center; gap: 12px; padding: 8px 14px; background: var(--panel); border-bottom: 1px solid var(--line); }
-header h1 { font-size: 15px; margin: 0 8px 0 0; letter-spacing: .04em; }
-#time { font-variant-numeric: tabular-nums; min-width: 110px; color: var(--dim); }
-#timeline { flex: 1; height: 22px; position: relative; background: var(--panel2); border: 1px solid var(--line); border-radius: 4px; cursor: text; user-select: none; }
-#timeline .loop { position: absolute; top: 0; bottom: 0; background: color-mix(in srgb, var(--accent) 22%, transparent); border-left: 2px solid var(--accent); border-right: 2px solid var(--accent); pointer-events: none; }
-#timeline .exc { position: absolute; bottom: 0; height: 3px; background: var(--dim); opacity: .6; pointer-events: none; }
-#timeline .head { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--fg); pointer-events: none; }
-#timeline .hint { position: absolute; right: 6px; top: 3px; font-size: 10px; color: var(--dim); pointer-events: none; }
-.gbar { width: 100%; height: 3px; border-radius: 2px; }
-.name input { width: 100%; font: inherit; font-size: 11px; color: var(--fg); background: var(--bg); border: 1px solid var(--accent); }
-#folder { color: var(--dim); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 30vw; }
-main { flex: 1; display: flex; min-height: 0; }
-#strips { flex: 1; display: flex; gap: 4px; padding: 10px; overflow-x: auto; align-items: stretch; }
-.strip { width: 76px; flex: none; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 6px 4px;
-  display: flex; flex-direction: column; align-items: center; gap: 6px; cursor: default; }
-.strip.sel { border-color: var(--accent); }
-.strip.master { width: 96px; background: var(--panel2); }
-.name { width: 100%; min-height: 1.35em; text-align: center; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
-.btns { display: flex; gap: 3px; }
-.btns button { padding: 1px 6px; font-size: 11px; }
-.btns button.m.on { background: var(--mute); border-color: var(--mute); }
-.btns button.s.on { background: var(--solo); border-color: var(--solo); }
-.pan { width: 64px; accent-color: var(--dim); }
-.fz { flex: 1; display: flex; gap: 5px; min-height: 140px; width: 100%; justify-content: center; }
-.fader { writing-mode: vertical-lr; direction: rtl; width: 22px; accent-color: var(--accent); }
-.meter { width: 8px; background: #0c0d0f; border-radius: 2px; position: relative; overflow: hidden; }
-.meter i { position: absolute; left: 0; right: 0; bottom: 0; background: var(--meter); }
-.meter i.hot { background: var(--hot); }
-.db { font-size: 11px; font-variant-numeric: tabular-nums; color: var(--dim); }
-aside { width: 340px; flex: none; background: var(--panel); border-left: 1px solid var(--line); overflow-y: auto; padding: 10px 14px; }
-aside h2 { font-size: 14px; margin: 2px 0 10px; }
-fieldset { min-width: 0; border: 1px solid var(--line); border-radius: 6px; margin: 0 0 10px; padding: 6px 10px 8px; }
-legend { color: var(--accent); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; padding: 0 4px; }
-.row { display: grid; grid-template-columns: 92px minmax(0, 1fr) 70px; align-items: center; gap: 6px; margin: 3px 0; }
-.row label { color: var(--dim); font-size: 12px; }
-.row input[type=range] { width: 100%; accent-color: var(--accent); }
-.row output { font-size: 12px; text-align: right; font-variant-numeric: tabular-nums; }
-.row select { font: inherit; background: var(--panel2); color: var(--fg); border: 1px solid var(--line); border-radius: 4px; }
-#err { color: var(--hot); padding: 20px; }
-#chatbar { flex: none; height: 210px; display: flex; border-top: 1px solid var(--line); background: var(--panel); }
-#log { flex: 1; overflow-y: auto; padding: 8px 14px; display: flex; flex-direction: column; gap: 6px; }
-.msg { max-width: 80ch; }
-.msg .who { font-size: 11px; color: var(--dim); text-transform: uppercase; letter-spacing: .06em; margin-right: 6px; }
-.msg.user .who { color: var(--accent); }
-.msg.system { color: var(--dim); font-size: 12px; }
-.msg .txt { white-space: pre-wrap; }
-.msg details { margin-top: 2px; font-size: 12px; color: var(--dim); }
-.msg details li { font-variant-numeric: tabular-nums; }
-.msg .undo { margin-left: 8px; padding: 0 6px; font-size: 11px; }
-#ask { width: 340px; flex: none; border-left: 1px solid var(--line); padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; }
-#ask textarea { flex: 1; resize: none; font: inherit; color: var(--fg); background: var(--panel2); border: 1px solid var(--line); border-radius: 4px; padding: 6px 8px; }
-#ask .rowb { display: flex; gap: 8px; align-items: center; }
-#agentState { font-size: 12px; color: var(--dim); }
-#toast { position: fixed; left: 50%; bottom: 230px; transform: translateX(-50%); background: var(--panel2); border: 1px solid var(--hot); color: var(--fg); padding: 6px 12px; border-radius: 4px; z-index: 6; }
-#wait { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 10px; z-index: 5; }
-#wait h2 { margin: 0; font-size: 18px; }
-#wait p { color: var(--dim); margin: 0; max-width: 60ch; text-align: center; }
-#wait .bar { width: 320px; height: 6px; background: var(--panel2); border-radius: 3px; overflow: hidden; }
-#wait .bar i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .4s; }
-</style>
+<link rel="stylesheet" href="/app.css">
 </head>
 <body>
-<header>
-  <h1>mix_final_ACTUAL.wav</h1>
-  <button id="play">Play</button>
-  <button id="loop">Loop</button>
-  <span id="time">0:00.0 / 0:00.0</span>
-  <div id="timeline" title="Click to jump; drag to set the loop region (what plays, and what the agent listens to); double-click for the excerpt"><div class="exc"></div><div class="loop"></div><div class="head"></div><span class="hint">drag = loop region</span></div>
-  <button id="ab" title="Compare with the mix before the agent's last turn">A/B</button>
-  <span id="folder"></span>
-  <select id="loud" title="Loudness of the exported mix" style="font:inherit;font-size:12px;background:var(--panel2);color:var(--fg);border:1px solid var(--line);border-radius:4px">
-    <option value="">as mixed</option><option value="-14" selected>-14 LUFS (streaming)</option><option value="-16">-16 LUFS</option><option value="-9">-9 LUFS (loud)</option>
-  </select>
-  <label style="color:var(--dim);font-size:12px"><input type="checkbox" id="stems"> stems</label>
-  <button id="export" title="Render the whole song with these settings (24-bit WAV, next to your tracks)">Export</button>
-  <span id="exportState" style="color:var(--dim);font-size:12px"></span>
-</header>
-<main>
-  <div id="strips"></div>
-  <aside id="detail"><h2>Select a track</h2><p style="color:var(--dim)">Click a track name to see all of its controls.</p></aside>
-</main>
-<section id="chatbar">
-  <div id="log"></div>
-  <div id="ask">
-    <textarea id="prompt" placeholder="Ask for a change, e.g. 'vocals more upfront, less reverb on the drums' (Enter to send)"></textarea>
-    <div class="rowb">
-      <button id="send">Send</button>
-      <button id="mixit" title="Run the full five-turn mix again on what is playing">Mix it</button>
-      <span id="agentState"></span>
-    </div>
+<header id="transport">
+  <h1 id="title">mix_final_ACTUAL.wav</h1>
+  <div class="grp">
+    <button class="tbtn" id="toStart" title="Go to start of cycle (Return)"><svg viewBox="0 0 16 16"><path d="M3 2h2v12H3zM14 2v12L6 8z"/></svg></button>
+    <button class="tbtn" id="play" title="Play / stop (Space)"><svg viewBox="0 0 16 16"><path d="M4 2l10 6-10 6z"/></svg></button>
+    <button class="tbtn" id="cycle" title="Cycle: loop the region (C)"><svg viewBox="0 0 16 16"><path d="M4 5h7V3l4 3.5L11 10V8H4v3H2V7a2 2 0 0 1 2-2zm8 6H5v2l-4-3.5L5 6v2h7V5h2v4a2 2 0 0 1-2 2z"/></svg></button>
   </div>
-</section>
+  <div id="clock">0:00.0 <small>/ 0:00.0</small></div>
+  <div class="sep"></div>
+  <div id="loudBox" title="Loudness of playback and of the export: both use the same master gain, so you hear what you export">
+    Loudness
+    <select id="loud"><option value="">as mixed</option><option value="-16">-16 LUFS</option><option value="-14">-14 LUFS (streaming)</option><option value="-9">-9 LUFS (loud)</option></select>
+    <span id="loudGain"></span>
+  </div>
+  <button id="ab" title="Compare with the mix before the agent's last turn (A)">A/B</button>
+  <div class="sep"></div>
+  <div id="viewSwitch"><button id="vTracks" class="on" title="Tracks (X)">Tracks</button><button id="vMixer" title="Mixer (X)">Mixer</button></div>
+  <button id="exportBtn" title="Export the mix (Cmd/Ctrl+B)">Export…</button>
+  <span class="spacer"></span>
+  <span id="agentPill" title="Your coding agent"><i></i><span>no agent</span></span>
+  <button id="helpBtn" class="tbtn" title="Keyboard shortcuts (?)">?</button>
+</header>
+<div id="main">
+  <aside id="inspector"><div class="empty">Select a track to see its controls.</div></aside>
+  <section id="center">
+    <div id="arrange">
+      <div id="corner"><span>Tracks</span><span class="spacer"></span><button id="hMinus" title="Smaller tracks">▾</button><button id="hPlus" title="Taller tracks">▴</button></div>
+      <div id="rulerWrap" title="Click: move the playhead. Drag: set the cycle (what loops, and what the agent listens to)."><canvas id="ruler"></canvas></div>
+      <div id="headers"><div id="headersIn"></div></div>
+      <div id="lanesWrap"><canvas id="lanes"></canvas><canvas id="overlay"></canvas></div>
+      <div id="hcorner"></div>
+      <div id="hbar"><i></i></div>
+    </div>
+    <div id="mixer" hidden></div>
+  </section>
+  <aside id="assistant">
+    <div class="hd">Assistant <span class="spacer"></span><span id="agentState" style="font-weight:400;color:var(--dim);font-size:11px"></span></div>
+    <div id="log"></div>
+    <div id="ask">
+      <textarea id="prompt" placeholder="Ask for a change: 'vocals more upfront, less reverb on the drums'"></textarea>
+      <div class="rowb">
+        <button id="askBtn" class="primary" title="One turn: the agent changes what you asked for (Enter)">Ask</button>
+        <button id="remixBtn" title="Five turns from the current mix, like the first mix; the text, if any, is the goal (Cmd/Ctrl+Enter)">Remix ×5</button>
+        <span class="spacer"></span>
+      </div>
+      <div class="hint"><b>Ask</b>: one turn on your request. <b>Remix ×5</b>: the agent re-mixes from where you are over five turns (your text, if any, is the goal).</div>
+    </div>
+  </aside>
+</div>
+
+<div id="exportDlg" class="modal" hidden>
+  <div class="dlg">
+    <h2>Export the mix</h2>
+    <div class="f"><label>Save as</label><div class="path"><input type="text" id="exPath" spellcheck="false"><button id="exChoose">Choose…</button></div></div>
+    <div class="f"><label>Format</label><select id="exFormat"><option value="wav">WAV, 24-bit</option><option value="flac">FLAC, 24-bit</option></select></div>
+    <div class="f"><label>Loudness</label><select id="exLoud"><option value="">as mixed</option><option value="-16">-16 LUFS</option><option value="-14">-14 LUFS (streaming)</option><option value="-9">-9 LUFS (loud)</option></select></div>
+    <div class="f"><label>Stems</label><label style="color:var(--fg)"><input type="checkbox" id="exStems"> also one file per track, in a folder next to the mix</label></div>
+    <div class="bar" id="exBarWrap" hidden><i id="exBar"></i></div>
+    <div class="acts"><span class="st" id="exState"></span><button id="exReveal" hidden>Show in folder</button><button id="exCancel">Close</button><button id="exGo" class="on">Export</button></div>
+  </div>
+</div>
+
+<div id="keysDlg" class="modal" hidden>
+  <div class="dlg"><h2>Keyboard shortcuts</h2><div class="keys" id="keysList"></div><div class="acts"><button id="keysClose">Close</button></div></div>
+</div>
+
 <div id="toast" hidden></div>
+<div id="valTip" hidden></div>
 <div id="wait" hidden>
   <h2>Making the first mix</h2>
   <div class="bar"><i id="waitBar"></i></div>
   <p id="waitText">Starting...</p>
   <button id="skip" title="Open the mixer now and mix by hand (your agent can still help later)">Mix by hand instead</button>
 </div>
-<script>
-"use strict";
-const T = new URLSearchParams(location.search).get("t") || "";
-const api = (p, body) => fetch(`/api/${p}?t=${T}`, body === undefined ? {} : { method: "POST", body: JSON.stringify(body) })
-  .then(r => { if (!r.ok) throw new Error(`${p}: ${r.status}`); return r.json(); });
-
-let S = null;            // session: tracks, params
-let V = {};              // current values by param index
-const byKey = {};        // "track|module.name" -> spec
-const controls = {};     // param index -> [update fns]
-let selected = null;     // track index, or -1 = master
-let dragging = new Set();
-const GROUPS = ["Vocals", "Drums", "Bass", "Guitars", "Keys & Other"];
-const GCOL = ["#e8c547", "#e5534b", "#6cb6ff", "#5fcf7a", "#c597f5"];
-
-const key = (t, k) => `${t}|${k}`;
-const P = (t, k) => byKey[key(t, k)];
-const fmtTime = s => `${Math.floor(s / 60)}:${(s % 60).toFixed(1).padStart(4, "0")}`;
-function fmt(s, v) {
-  if (s.kind === "bool") return v > 0.5 ? "on" : "off";
-  if (s.kind === "choice") return s.choices[Math.round(v)] + (s.unit ? " " + s.unit : "");
-  if (s.minusInf && v <= s.min + 1e-3) return "-inf";
-  const d = s.step >= 1 ? 0 : s.step >= 0.1 ? 1 : 2;
-  return v.toFixed(d) + (s.unit && s.unit !== ":1" ? " " + s.unit : s.unit);
-}
-// Fader taper: slider 0..1000 <-> dB, more travel near 0 dB (as on a console).
-const faderToDb = (x, s) => x <= 0 ? s.min : Math.min(s.max, s.max - (1 - x / 1000) ** 2 * (s.max + 60) * 1.0);
-const dbToFader = (db, s) => db <= s.min + 1e-3 ? 0 : 1000 * (1 - Math.sqrt(Math.max(0, (s.max - db) / (s.max + 60))));
-// Generic slider mapping: log for Hz, linear otherwise.
-const isLog = s => s.unit === "Hz" && s.min > 0;
-const toSlider = (s, v) => isLog(s) ? 1000 * Math.log(v / s.min) / Math.log(s.max / s.min) : 1000 * (v - s.min) / (s.max - s.min);
-const fromSlider = (s, x) => isLog(s) ? s.min * (s.max / s.min) ** (x / 1000) : s.min + (s.max - s.min) * x / 1000;
-
-function setParam(i, v) {
-  V[i] = v;
-  refresh(i);
-  api("param", { i, v }).catch(showErr);
-}
-function bind(i, fn) { (controls[i] ||= []).push(fn); fn(V[i]); }
-function refresh(i) { (controls[i] || []).forEach(f => f(V[i])); }
-
-function strip(t) {
-  const master = t < 0;
-  const el = document.createElement("div");
-  el.className = "strip" + (master ? " master" : "");
-  const name = document.createElement("div");
-  name.className = "name";
-  name.textContent = master ? "MASTER" : S.tracks[t].name;
-  name.title = name.textContent;
-  name.onclick = () => select(t);
-  if (!master) {
-    name.title += " (double-click to rename)";
-    name.ondblclick = () => rename(t, name);
-    const g = S.tracks[t].group, bar = document.createElement("div");
-    bar.className = "gbar"; bar.style.background = g >= 0 ? GCOL[g] : "var(--line)";
-    bar.title = g >= 0 ? GROUPS[g] : "no group";
-    el.append(bar);
-  }
-  el.append(name);
-  if (!master) {
-    const btns = document.createElement("div");
-    btns.className = "btns";
-    for (const [cls, k, label] of [["m", "mute.on", "M"], ["s", "solo.on", "S"]]) {
-      const s = P(t, k), b = document.createElement("button");
-      b.className = cls; b.textContent = label;
-      b.onclick = () => setParam(s.i, V[s.i] > 0.5 ? 0 : 1);
-      bind(s.i, v => b.classList.toggle("on", v > 0.5));
-      btns.append(b);
-    }
-    el.append(btns);
-    const ps = P(t, "balance.value"), pan = document.createElement("input");
-    pan.type = "range"; pan.className = "pan"; pan.min = -100; pan.max = 100; pan.title = "pan";
-    pan.oninput = () => setParam(ps.i, pan.value / 100);
-    pan.ondblclick = () => setParam(ps.i, 0);
-    bind(ps.i, v => { if (!dragging.has(pan)) pan.value = Math.round(v * 100); });
-    el.append(pan);
-  }
-  const fs = P(t, "fader.gain");
-  const fz = document.createElement("div"); fz.className = "fz";
-  const fader = document.createElement("input");
-  fader.type = "range"; fader.className = "fader"; fader.min = 0; fader.max = 1000;
-  fader.onpointerdown = () => dragging.add(fader);
-  fader.onpointerup = () => dragging.delete(fader);
-  fader.oninput = () => setParam(fs.i, Math.round(faderToDb(+fader.value, fs) * 10) / 10);
-  fader.ondblclick = () => setParam(fs.i, 0);
-  const meters = [];
-  for (let k = 0; k < (master ? 2 : 1); ++k) {
-    const m = document.createElement("div"); m.className = "meter";
-    const bar = document.createElement("i"); m.append(bar); meters.push(bar);
-  }
-  fz.append(fader, ...meters.map(b => b.parentElement));
-  const db = document.createElement("div"); db.className = "db";
-  bind(fs.i, v => { if (!dragging.has(fader)) fader.value = dbToFader(v, fs); db.textContent = fmt(fs, v); });
-  el.append(fz, db);
-  el.meters = meters;
-  return el;
-}
-
-function rename(t, el) {
-  const inp = document.createElement("input");
-  inp.value = S.tracks[t].name;
-  el.textContent = ""; el.append(inp); inp.focus(); inp.select();
-  let finished = false; // Escape removes the input, which also fires blur: act on the first only
-  const done = async ok => {
-    if (finished) return;
-    finished = true;
-    const v = inp.value.trim();
-    el.textContent = S.tracks[t].name;
-    if (!ok || !v || v === S.tracks[t].name) return;
-    const r = await fetch(`/api/track?t=${T}`, { method: "POST", body: JSON.stringify({ index: t, name: v }) });
-    if (r.ok) setTimeout(reload, 150);
-    else note((await r.json().catch(() => ({}))).error || `rename failed (${r.status})`);
-  };
-  inp.onkeydown = e => { if (e.key === "Enter") done(true); if (e.key === "Escape") done(false); };
-  inp.onblur = () => done(true);
-}
-async function reload() {
-  S = await api("session");
-  for (const s of S.params) byKey[key(s.track, s.module + "." + s.name)] = s;
-  for (const k of Object.keys(controls)) delete controls[k];
-  const box = document.getElementById("strips");
-  box.innerHTML = "";
-  S.tracks.forEach((_, t) => box.append(strip(t)));
-  box.append(strip(-1));
-  if (selected !== null) select(selected);
-}
-
-function select(t) {
-  selected = t;
-  document.querySelectorAll(".strip").forEach((el, k) => el.classList.toggle("sel", k === (t < 0 ? S.tracks.length : t)));
-  const d = document.getElementById("detail");
-  d.innerHTML = "";
-  const h = document.createElement("h2");
-  h.textContent = t < 0 ? "Master" : S.tracks[t].name;
-  d.append(h);
-  if (t >= 0) {
-    const f = document.createElement("fieldset");
-    const lg = document.createElement("legend"); lg.textContent = "group";
-    const r = document.createElement("div"); r.className = "row";
-    const lb = document.createElement("label"); lb.textContent = "instrument";
-    const sel = document.createElement("select");
-    sel.add(new Option(`by name (${S.tracks[t].group >= 0 && !S.tracks[t].group_set ? GROUPS[S.tracks[t].group] : "auto"})`, "auto"));
-    GROUPS.forEach((g, k) => sel.add(new Option(g, k)));
-    sel.add(new Option("none", -1));
-    sel.value = S.tracks[t].group_set ? S.tracks[t].group : "auto";
-    sel.onchange = async () => { await api("track", { index: t, group: sel.value === "auto" ? null : +sel.value }); setTimeout(reload, 150); };
-    r.append(lb, sel, document.createElement("span"));
-    f.append(lg, r);
-    d.append(f);
-  }
-  const mods = {};
-  for (const s of S.params) if (s.track === t) (mods[s.module] ||= []).push(s);
-  for (const [mod, specs] of Object.entries(mods)) {
-    const f = document.createElement("fieldset");
-    const lg = document.createElement("legend"); lg.textContent = mod.replace(/_/g, " ");
-    f.append(lg);
-    for (const s of specs) f.append(row(s));
-    d.append(f);
-  }
-}
-
-function row(s) {
-  const r = document.createElement("div"); r.className = "row";
-  const lb = document.createElement("label"); lb.textContent = s.name.replace(/_/g, " ");
-  const out = document.createElement("output");
-  let input;
-  if (s.kind === "choice") {
-    input = document.createElement("select");
-    s.choices.forEach((c, k) => input.add(new Option(c + (s.unit ? " " + s.unit : ""), k)));
-    input.onchange = () => setParam(s.i, +input.value);
-    bind(s.i, v => { input.value = Math.round(v); out.textContent = ""; });
-  } else if (s.kind === "bool") {
-    input = document.createElement("button");
-    input.onclick = () => setParam(s.i, V[s.i] > 0.5 ? 0 : 1);
-    bind(s.i, v => { input.textContent = v > 0.5 ? "on" : "off"; input.classList.toggle("on", v > 0.5); });
-  } else {
-    input = document.createElement("input");
-    input.type = "range"; input.min = 0; input.max = 1000;
-    input.onpointerdown = () => dragging.add(input);
-    input.onpointerup = () => dragging.delete(input);
-    input.oninput = () => setParam(s.i, fromSlider(s, +input.value));
-    input.ondblclick = () => setParam(s.i, s.def);
-    bind(s.i, v => { if (!dragging.has(input)) input.value = toSlider(s, v); out.textContent = fmt(s, v); });
-  }
-  r.append(lb, input, out);
-  return r;
-}
-
-const peakDb = x => 20 * Math.log10(Math.max(x, 1e-6));
-const meterH = x => Math.max(0, Math.min(100, (peakDb(x) + 60) / 60 * 100));
-function paintMeter(bar, x) { bar.style.height = meterH(x) + "%"; bar.classList.toggle("hot", x >= 0.99); }
-
-async function poll() {
-  try {
-    const st = await api("status");
-    document.getElementById("play").textContent = st.playing ? "Stop" : "Play";
-    document.getElementById("play").classList.toggle("on", st.playing);
-    document.getElementById("loop").classList.toggle("on", st.looping);
-    document.getElementById("time").textContent = `${fmtTime(st.pos)} / ${fmtTime(st.len)}`;
-    paintTimeline(st);
-    const strips = document.querySelectorAll(".strip");
-    st.tracks.forEach((x, t) => strips[t] && paintMeter(strips[t].meters[0], x));
-    const m = strips[S.tracks.length];
-    if (m) { paintMeter(m.meters[0], st.master[0]); paintMeter(m.meters[1], st.master[1]); }
-    poll.len = st.len;
-    showAgent(st);
-    pollChat(st.chat_version).catch(() => {});
-  } catch (e) { showErr(e); return; }
-  setTimeout(poll, 50);
-}
-// Values change from outside too (the agent's moves), so re-read them twice a second.
-async function pollValues() {
-  try {
-    const nv = await api("values");
-    for (const [i, v] of Object.entries(nv)) if (Math.abs((V[i] ?? NaN) - v) > 1e-6 || V[i] === undefined) { V[i] = v; refresh(i); }
-  } catch (e) { showErr(e); return; }
-  setTimeout(pollValues, 500);
-}
-// ---- timeline: playhead, loop region (drag), excerpt ------------------------------------------------------------
-let TL = { len: 0, excerpt: [0, 0], region: [0, 0] };
-function pct(x) { return TL.len > 0 ? `${100 * Math.max(0, Math.min(1, x / TL.len))}%` : "0%"; }
-function paintTimeline(st) {
-  TL.len = st.len; TL.excerpt = st.excerpt;
-  const tl = document.getElementById("timeline");
-  if (!tl.dragging) TL.region = st.loop_region;
-  const [a, b] = TL.region, loop = tl.querySelector(".loop");
-  loop.hidden = !(b > a) || !st.looping;
-  loop.style.left = pct(a); loop.style.width = `calc(${pct(b - a)})`;
-  const exc = tl.querySelector(".exc");
-  exc.style.left = pct(TL.excerpt[0]); exc.style.width = pct(TL.excerpt[1] - TL.excerpt[0]);
-  tl.querySelector(".head").style.left = pct(st.pos);
-}
-function initTimeline() {
-  const tl = document.getElementById("timeline");
-  const at = e => { const r = tl.getBoundingClientRect(); return TL.len * Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)); };
-  tl.onpointerdown = e => {
-    tl.setPointerCapture(e.pointerId);
-    const x0 = at(e);
-    tl.dragging = { x0, moved: false };
-    tl.onpointermove = m => {
-      const x = at(m);
-      if (Math.abs(x - x0) > 0.5) { tl.dragging.moved = true; TL.region = [Math.min(x0, x), Math.max(x0, x)]; paintTimeline({ len: TL.len, excerpt: TL.excerpt, loop_region: TL.region, looping: true, pos: x }); }
-    };
-    tl.onpointerup = async u => {
-      tl.onpointermove = null;
-      const d = tl.dragging; tl.dragging = null;
-      if (d.moved && TL.region[1] - TL.region[0] >= 2) await api("transport", { region: TL.region, loop: true, seek: TL.region[0] });
-      else await api("transport", { seek: at(u) });
-    };
-  };
-  tl.ondblclick = () => api("transport", { region: TL.excerpt, loop: true, seek: TL.excerpt[0] });
-}
-
-// ---- A/B: the mix before / after the agent's last turn ------------------------------------------------------------
-let lastTurn = null, abState = "B";
-function setAB(which) {
-  if (!lastTurn) return;
-  for (const d of lastTurn.diff) {
-    const s = S.params.find(p => p.id === d.param);
-    if (s) setParam(s.i, which === "A" ? +d.from : +d.to);
-  }
-  abState = which;
-  const b = document.getElementById("ab");
-  b.classList.toggle("on", which === "A");
-  b.textContent = which === "A" ? "A (before)" : "A/B";
-}
-
-// ---- assistant: chat log, prompts, agent state -----------------------------------------------------------------
-let chatVersion = -1;
-// "t3.eq.lf_gain" -> "Bass DI · eq lf gain"
-function paramLabel(id) {
-  const m = /^t(\d+)\.(.*)$/.exec(id || "");
-  const rest = (m ? m[2] : (id || "").replace(/^master\./, "master · ")).replace(/[._]/g, " ");
-  return m && S && S.tracks[+m[1] - 1] ? `${S.tracks[+m[1] - 1].name} · ${rest}` : rest;
-}
-async function pollChat(version) {
-  if (version === chatVersion) return;
-  const c = await api("chat");
-  chatVersion = c.version;
-  const log = document.getElementById("log");
-  const atBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 30;
-  const turns = c.entries.filter(e => e.role === "agent" && !e.undone && (e.diff || []).some(d => d.status !== "rejected" && d.status !== "superseded" && d.status !== "unchanged"));
-  const lt = turns.length ? turns[turns.length - 1] : null;
-  if (!lt && lastTurn) { // the turn was undone: nothing left to compare (and nothing to re-apply)
-    lastTurn = null; abState = "B";
-    document.getElementById("ab").classList.remove("on"); document.getElementById("ab").textContent = "A/B";
-  }
-  if (lt && (!lastTurn || lt.tick !== lastTurn.tick)) { lastTurn = { tick: lt.tick, diff: lt.diff.filter(d => d.status !== "rejected") }; abState = "B"; document.getElementById("ab").classList.remove("on"); document.getElementById("ab").textContent = "A/B"; }
-  document.getElementById("ab").disabled = !lastTurn;
-  log.innerHTML = "";
-  for (const e of c.entries) {
-    const m = document.createElement("div");
-    m.className = "msg " + e.role;
-    const who = document.createElement("span"); who.className = "who";
-    who.textContent = e.role === "agent" ? `agent · turn ${e.tick}` : e.role;
-    const txt = document.createElement("span"); txt.className = "txt"; txt.textContent = e.text;
-    m.append(who, txt);
-    const diff = (e.diff || []).filter(d => d.status !== "rejected");
-    if (e.role === "agent" && diff.length) {
-      const det = document.createElement("details");
-      const sum = document.createElement("summary");
-      sum.textContent = `${diff.length} change${diff.length === 1 ? "" : "s"}` + (e.undone ? " (undone)" : "");
-      det.append(sum);
-      const ul = document.createElement("ul");
-      for (const d of diff) { const li = document.createElement("li"); li.textContent = `${paramLabel(d.param)}: ${(+d.from).toFixed(1)} → ${(+d.to).toFixed(1)}${d.status !== "applied" ? " (" + d.status + ")" : ""}`; ul.append(li); }
-      det.append(ul);
-      m.append(det);
-      if (!e.undone) {
-        const u = document.createElement("button"); u.className = "undo"; u.textContent = "Undo turn";
-        u.onclick = () => api("undo_turn", { tick: e.tick }).catch(showErr);
-        sum.append(u);
-      }
-    }
-    log.append(m);
-  }
-  if (atBottom) log.scrollTop = log.scrollHeight;
-}
-function showAgent(st) {
-  const el = document.getElementById("agentState");
-  const seen = st.agent_seen_s < 60; // the agent polls at least every 50 s while it is connected
-  el.textContent = st.agent === "thinking"
-    ? (seen ? `agent working… ${Math.round(st.thinking_s)} s` : "waiting for your coding agent (ask it to use the mix tools)")
-    : seen ? "agent connected" : "no agent connected";
-}
-function sendPrompt() {
-  const ta = document.getElementById("prompt");
-  const text = ta.value.trim();
-  if (!text) return;
-  ta.value = "";
-  api("prompt", { text }).catch(showErr);
-}
-
-async function pollExport() {
-  const e = await api("export");
-  const el = document.getElementById("exportState");
-  document.getElementById("export").disabled = e.running;
-  if (e.running) { el.textContent = `exporting ${Math.round(100 * e.progress)}%`; setTimeout(pollExport, 500); }
-  else el.textContent = e.error ? `export failed: ${e.error}` : e.folder ? `saved (${e.lufs.toFixed(1)} LUFS) to ${e.folder}` : "";
-  el.title = el.textContent;
-}
-
-// ---- first mix: wait until the live engine is up ---------------------------------------------------------------
-async function waitForLive() {
-  const w = document.getElementById("wait");
-  document.getElementById("skip").onclick = e => { e.target.disabled = true; e.target.textContent = "Opening the mixer..."; api("skip_first_mix", {}).catch(showErr); };
-  for (;;) {
-    const st = await api("state");
-    if (st.phase === "live") { w.hidden = true; return; }
-    w.hidden = false;
-    const f = st.first_mix;
-    document.getElementById("waitBar").style.width = `${100 * Math.max(0, f.turn - 1) / f.turns}%`;
-    document.getElementById("waitText").textContent = f.turn === 0 ? "Preparing the session..."
-      : `Turn ${f.turn} of ${f.turns}` + (st.turn_waiting ? (st.agent_seen_s < 120 ? ": your coding agent is answering." : ": waiting for your coding agent to connect (ask it to use the mix tools).") : ": the console is listening.");
-    await new Promise(r => setTimeout(r, 1000));
-  }
-}
-
-function note(text) {
-  const el = document.getElementById("toast");
-  el.textContent = text; el.hidden = false;
-  clearTimeout(note.timer); note.timer = setTimeout(() => { el.hidden = true; }, 4000);
-}
-function showErr(e) {
-  const el = document.createElement("div"); el.id = "err";
-  el.textContent = / 40[13]$/.test(e.message)
-    ? "This link is out of date: the mixer was restarted, and each start makes a new link. Use the link your coding agent (or the terminal) gave for this session."
-    : `Lost the mixer (${e.message}). Is mix-final-actual still running?`;
-  document.getElementById("strips").replaceChildren(el);
-}
-
-async function init() {
-  await waitForLive();
-  S = await api("session");
-  V = await api("values");
-  for (const s of S.params) byKey[key(s.track, s.module + "." + s.name)] = s;
-  document.getElementById("folder").textContent = S.folder.split(/[\\/]/).filter(Boolean).pop() || S.folder;
-  document.getElementById("folder").title = S.folder;
-  const box = document.getElementById("strips");
-  S.tracks.forEach((_, t) => box.append(strip(t)));
-  box.append(strip(-1));
-  document.getElementById("play").onclick = () => api("transport", { play: document.getElementById("play").textContent === "Play" });
-  document.getElementById("loop").onclick = e => api("transport", { loop: !e.target.classList.contains("on") });
-  initTimeline();
-  document.getElementById("ab").disabled = true;
-  document.getElementById("ab").onclick = () => setAB(abState === "B" ? "A" : "B");
-  document.addEventListener("keydown", e => { if (e.code === "Space" && !["INPUT", "TEXTAREA"].includes(e.target.tagName)) { e.preventDefault(); document.getElementById("play").click(); } });
-  document.getElementById("send").onclick = sendPrompt;
-  document.getElementById("prompt").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendPrompt(); } });
-  document.getElementById("export").onclick = async () => {
-    const l = document.getElementById("loud").value;
-    const body = { stems: document.getElementById("stems").checked };
-    if (l) body.loudness = +l;
-    try { await api("export", body); pollExport(); } catch (e) { showErr(e); }
-  };
-  document.getElementById("mixit").onclick = () => api("mix", { turns: 5 }).catch(showErr);
-  poll();
-  pollValues();
-}
-init().catch(showErr);
-</script>
+<script src="/app.js"></script>
 </body>
 </html>

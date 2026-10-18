@@ -27,6 +27,9 @@ public:
     // Message thread.
     void setTarget (std::optional<double> lufs, im::InteractiveMixerProcessor* live);
     std::optional<double> target() const;
+    double gain() const; // the delivery gain in effect (saved in the project)
+    // On reopening a project: start playback at the gain it had, before the first measurement corrects it.
+    void seedGain (double gainDb, im::InteractiveMixerProcessor& live);
     void tick (im::InteractiveMixerProcessor& live); // ~4 Hz from the main loop
     // The live gain, if it was measured for exactly the current settings and this target (export reuses it).
     std::optional<double> currentGain (im::InteractiveMixerProcessor& live, double targetLufs) const;
