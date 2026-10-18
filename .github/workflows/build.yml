@@ -1,7 +1,8 @@
 name: build
 
 # Builds the binary on every platform; on main, assembles the installable plugin (plugin files + binaries) on the
-# `dist` branch, which the marketplace entry points to. Binaries never go on main.
+# `dist` branch, which the marketplace entry points to. Binaries never go on main. Every run also pushes its build logs
+# and job results to the `ci-logs` branch, readable with plain git (no GitHub login needed to see why a build failed).
 on:
   push:
     branches: [main]
@@ -35,15 +36,22 @@ jobs:
         env:
           ARCHS: ${{ matrix.archs }}
         run: |
+          set -o pipefail
+          mkdir -p logs
           args=(-DCMAKE_BUILD_TYPE=Release)
           if [ "$RUNNER_OS" = "Linux" ]; then args+=(-G Ninja); fi
           if [ -n "$ARCHS" ]; then args+=("-DCMAKE_OSX_ARCHITECTURES=$ARCHS"); fi   # quoted: ';' would split the command
-          cmake -S . -B build "${args[@]}"
+          cmake -S . -B build "${args[@]}" 2>&1 | tee logs/configure.log
       - name: Build
-        run: cmake --build build --config Release --parallel
+        shell: bash
+        run: |
+          set -o pipefail
+          cmake --build build --config Release --parallel 2>&1 | tee logs/build.log
       - name: Smoke test
         shell: bash
         run: |
+          set -o pipefail
+          exec > >(tee logs/smoke.log) 2>&1
           b=$(find build -type f -name '${{ matrix.exe }}' -path '*_artefacts*' | head -1)
           echo "binary: $b"
           printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18"}}' \
@@ -54,6 +62,12 @@ jobs:
         with:
           name: ${{ matrix.name }}
           path: out/
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-${{ matrix.name }}
+          path: logs/
 
   dist:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -88,3 +102,33 @@ jobs:
           git add -A
           git commit -q -m "Plugin build of ${GITHUB_SHA}"
           git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" dist
+
+  report:
+    if: always() && github.event_name == 'push'
+    needs: [build, dist]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          pattern: logs-*
+          path: ci
+      - name: Push logs to the ci-logs branch
+        run: |
+          mkdir -p ci && cd ci
+          {
+            echo "commit: ${GITHUB_SHA}"
+            echo "build: ${{ needs.build.result }}"
+            echo "dist: ${{ needs.dist.result }}"
+            echo "run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            for f in */*.log; do
+              [ -f "$f" ] || continue
+              echo; echo "== $f (errors)"; grep -iE "error|fatal|undefined reference|failed" "$f" | head -40
+            done
+          } > SUMMARY.txt
+          git init -q -b ci-logs
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "CI logs of ${GITHUB_SHA}"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" ci-logs
