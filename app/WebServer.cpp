@@ -84,6 +84,8 @@ struct WebServer::Impl
         const auto& m = p.engine.masterMeters;
         return { { "playing", p.player.isPlaying() }, { "looping", p.player.isLooping() },
                  { "pos", p.player.positionSec() }, { "len", p.player.lengthSec() },
+                 { "loop_region", { p.player.loopStartSec(), p.player.loopEndSec() } },
+                 { "excerpt", { p.player.excerptStartSec(), p.player.excerptEndSec() } }, { "input_gain_db", p.player.inputGainDb() },
                  { "master", { m.peakL.load(), m.peakR.load() } }, { "tracks", peaks },
                  { "limGr", m.limGr.load() }, { "busGr", m.busGr.load() }, { "cpu", p.cpuLoad.load() },
                  { "agent", im::Agent::stateName (p.agent.state()) }, { "thinking_s", p.agent.thinkingElapsedSec() },
@@ -163,13 +165,15 @@ struct WebServer::Impl
             juce::MessageManager::callAsync ([&p, i, v] { p.setParamValue (i, v); });
             reply (res, { { "i", i }, { "v", v } });
         }));
-        // {"play": bool, "loop": bool, "seek": seconds} (any subset)
+        // {"play": bool, "loop": bool, "seek": seconds, "region": [start, end] seconds} (any subset)
         http.Post ("/api/transport", live ([] (InteractiveMixerProcessor& p, const httplib::Request& req, httplib::Response& res) {
             auto j = parseBody (req);
             if (j.is_discarded()) return reply (res, { { "error", "bad json" } }, 400);
             if (j.contains ("play")) p.player.setPlaying (j["play"].get<bool>());
             if (j.contains ("loop")) p.player.setLooping (j["loop"].get<bool>());
             if (j.contains ("seek")) p.player.seek (j["seek"].get<double>());
+            if (j.contains ("region") && j["region"].is_array() && j["region"].size() == 2)
+                p.player.setLoopRegion (j["region"][0].get<double>(), j["region"][1].get<double>());
             reply (res, statusJson (p));
         }));
         // A prompt from the page: one turn, answered by the coding agent. {"text": "..."}

@@ -50,8 +50,10 @@ Process lifetime: an MCP server over stdio dies with the agent session, but the 
 2. **Agent bridge** (done): `LlmClient` / `ServerManager` replaced by the bridge; MCP tools `open_session`, `next_turn`,
    `submit_turn`, `session_status`, `close_session`; the first mix runs offline before the page opens; prompts and
    "Mix it" from the page become turns; per-turn undo in the page.
-3. **Session maker in C++**: excerpt choice, loudness gain, silent-track removal, group guess from names (now
-   Python in the research repo).
+3. **Session maker in C++** (done, in the player's load): track names from file names (unique), the 30 s excerpt
+   where the quietest instrument group is loudest, one gain putting the excerpt's unity sum at -23 LUFS, the excerpt
+   as the default loop region. Checked against the Python maker on a 21-track song: excerpt 1 s later (frame
+   alignment), gain within 0.1 dB. Silent tracks are kept (they may play outside the excerpt).
 4. **No track limit**: replace the 64-bit `TrackMask` and fixed arrays with sizes set when a session loads.
 5. **Page, full**: chat and change history with undo, A/B of a turn, loop region as the analysis window, rename and
    regroup tracks, export, project save/open, drag-and-drop input.
