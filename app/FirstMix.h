@@ -19,5 +19,5 @@ struct FirstMixProgress
 
 // Returns "" and fills stateOut (InteractiveMixerProcessor state) on success, else the error.
 std::string runFirstMix (const juce::File& tracksDir, int turns, double listenSec, FirstMixProgress& progress,
-                         juce::MemoryBlock& stateOut, const std::atomic<bool>& quit);
+                         juce::MemoryBlock& stateOut, const std::atomic<bool>& quit, const std::atomic<bool>& skip);
 } // namespace mfa

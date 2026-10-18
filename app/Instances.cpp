@@ -2,6 +2,9 @@
 #include "core/Paths.h"
 #include <nlohmann/json.hpp>
 #if JUCE_WINDOWS
+ #ifndef NOMINMAX
+  #define NOMINMAX
+ #endif
  #include <windows.h>
 #else
  #include <csignal>
@@ -110,8 +113,9 @@ std::optional<Instance> instanceFor (const std::string& folder)
 bool spawnDetached (const std::string& exe, const std::vector<std::string>& args, const std::string& logFile)
 {
 #if JUCE_WINDOWS
-    std::wstring cmd = L"\"" + juce::String (exe).toWideCharPointer() + std::wstring (L"\"");
-    for (auto& a : args) cmd += L" \"" + std::wstring (juce::String (a).toWideCharPointer()) + L"\"";
+    auto quoted = [] (const std::string& v) { return std::wstring (L"\"") + juce::String (v).toWideCharPointer() + L"\""; };
+    std::wstring cmd = quoted (exe);
+    for (auto& a : args) cmd += L" " + quoted (a);
     SECURITY_ATTRIBUTES sa { sizeof (sa), nullptr, TRUE };
     HANDLE log = CreateFileW (juce::String (logFile).toWideCharPointer(), FILE_APPEND_DATA, FILE_SHARE_READ | FILE_SHARE_WRITE, &sa,
                               OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);

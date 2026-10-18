@@ -37,7 +37,8 @@ public:
 
     // Agent-loop side (worker thread). Blocks until the turn is answered, cancel() is called, or timeoutSec passes.
     Result ask (const nlohmann::json& request, const std::string& trigger, const std::string& userMsg, double timeoutSec);
-    void cancel(); // aborts a waiting ask() (app shutdown)
+    void cancel();       // aborts a waiting ask() and every later one (app shutdown)
+    void abortPending(); // aborts only the ask() waiting now (e.g. the user skipped the first mix)
 
     // Coding-agent side (MCP / HTTP threads).
     // The pending turn, waiting up to waitSec for one. The same turn is offered again until it is answered, so an
@@ -60,6 +61,7 @@ private:
     std::optional<nlohmann::json> reply;
     int nextId = 1;
     bool cancelled = false;
+    bool aborted = false;
     std::atomic<double> lastSeenMs { -1.0 };
 };
 } // namespace im

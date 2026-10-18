@@ -21,6 +21,7 @@ struct AppState
     std::mutex errMutex;
     std::string error;                                         // first-mix failure, if any
     Exporter exporter;                                         // offline renders of the whole song
+    std::atomic<bool> skipFirstMix { false };                  // the user chose to mix by hand
 
     std::string phase() const { return live.load() != nullptr ? "live" : first.done ? "starting" : "first_mix"; }
 };

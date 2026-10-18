@@ -17,10 +17,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { name: macos, os: macos-14, exe: mix-final-actual, cmake: '-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64' }
-          - { name: linux-x64, os: ubuntu-22.04, exe: mix-final-actual, cmake: '' }
-          - { name: linux-arm64, os: ubuntu-22.04-arm, exe: mix-final-actual, cmake: '' }
-          - { name: windows-x64, os: windows-2022, exe: mix-final-actual.exe, cmake: '' }
+          - { name: macos, os: macos-14, exe: mix-final-actual, archs: 'arm64;x86_64' }
+          - { name: linux-x64, os: ubuntu-22.04, exe: mix-final-actual, archs: '' }
+          - { name: windows-x64, os: windows-2022, exe: mix-final-actual.exe, archs: '' }
+          # linux-arm64 (ubuntu-22.04-arm) needs a public repo or larger runners; add it back when the repo is public
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -32,9 +32,13 @@ jobs:
             libxrandr-dev libxinerama-dev libxcursor-dev libxext-dev libxcomposite-dev libgl1-mesa-dev
       - name: Configure
         shell: bash
+        env:
+          ARCHS: ${{ matrix.archs }}
         run: |
-          if [ "$RUNNER_OS" = "Linux" ]; then gen=(-G Ninja); else gen=(); fi
-          cmake -S . -B build "${gen[@]}" -DCMAKE_BUILD_TYPE=Release ${{ matrix.cmake }}
+          args=(-DCMAKE_BUILD_TYPE=Release)
+          if [ "$RUNNER_OS" = "Linux" ]; then args+=(-G Ninja); fi
+          if [ -n "$ARCHS" ]; then args+=("-DCMAKE_OSX_ARCHITECTURES=$ARCHS"); fi   # quoted: ';' would split the command
+          cmake -S . -B build "${args[@]}"
       - name: Build
         run: cmake --build build --config Release --parallel
       - name: Smoke test
@@ -64,13 +68,13 @@ jobs:
         run: |
           set -e
           d=dist-tree
-          mkdir -p $d/bin/macos $d/bin/linux-x64 $d/bin/linux-arm64
+          mkdir -p $d/bin/macos $d/bin/linux-x64
           cp -r .claude-plugin plugin.json mcp.json skills README.md LICENSE $d/
           rm -f $d/.claude-plugin/marketplace.json
           cp bin/mix-final-actual $d/bin/
           cp artifacts/macos/mix-final-actual $d/bin/macos/
           cp artifacts/linux-x64/mix-final-actual $d/bin/linux-x64/
-          cp artifacts/linux-arm64/mix-final-actual $d/bin/linux-arm64/
+          if [ -f artifacts/linux-arm64/mix-final-actual ]; then mkdir -p $d/bin/linux-arm64 && cp artifacts/linux-arm64/mix-final-actual $d/bin/linux-arm64/; fi
           cp artifacts/windows-x64/mix-final-actual.exe $d/bin/
           chmod +x $d/bin/mix-final-actual $d/bin/*/mix-final-actual
           echo "${GITHUB_SHA}" > $d/BUILD_COMMIT

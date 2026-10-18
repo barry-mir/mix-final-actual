@@ -6,7 +6,7 @@ namespace mfa
 using im::InteractiveMixerProcessor;
 
 std::string runFirstMix (const juce::File& tracksDir, int turns, double listenSec, FirstMixProgress& progress,
-                         juce::MemoryBlock& stateOut, const std::atomic<bool>& quit)
+                         juce::MemoryBlock& stateOut, const std::atomic<bool>& quit, const std::atomic<bool>& skip)
 {
     // No analysis or agent threads: this engine is driven block by block, and its turns run synchronously here.
     const bool before = im::gDisableBackgroundServices;
@@ -33,7 +33,7 @@ std::string runFirstMix (const juce::File& tracksDir, int turns, double listenSe
     juce::MidiBuffer midi;
     auto runAudio = [&] (double sec) {
         const int blocks = (int) std::ceil (sec * sr / bs);
-        for (int b = 0; b < blocks && ! quit; ++b)
+        for (int b = 0; b < blocks && ! quit && ! skip; ++b)
         {
             buf.clear();
             p.processBlock (buf, midi);
@@ -44,7 +44,7 @@ std::string runFirstMix (const juce::File& tracksDir, int turns, double listenSe
 
     progress.turns = turns; // (also set by the caller, so the page knows the count before the session loads)
     runAudio (0.2);
-    for (int k = 1; k <= turns && ! quit; ++k)
+    for (int k = 1; k <= turns && ! quit && ! skip; ++k)
     {
         runAudio (listenSec); // what the agent "hears" before this turn (>= 4 s fills the 3 s analysis window)
         progress.turn = k;
@@ -53,6 +53,7 @@ std::string runFirstMix (const juce::File& tracksDir, int turns, double listenSe
         runAudio (1.0);                                                  // let the ramp finish
     }
     if (quit) return "stopped";
+    if (skip && progress.turn.load() <= 1) return "skipped: mixing by hand"; // nothing worth keeping
     p.player.setPlaying (false);
     p.getStateInformation (stateOut);
     progress.done = true;

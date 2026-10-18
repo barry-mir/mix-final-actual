@@ -94,7 +94,7 @@ int serve (int argc, char** argv, int first)
     if (firstMix && ! reopen)
     {
         std::cout << "first mix: " << turns << " turns; waiting for the coding agent (mix tools: next_turn / submit)" << std::endl;
-        if (auto err = mfa::runFirstMix (dir, turns, listen, app.first, state, quit); ! err.empty())
+        if (auto err = mfa::runFirstMix (dir, turns, listen, app.first, state, quit, app.skipFirstMix); ! err.empty())
         {
             {
                 std::lock_guard<std::mutex> lk (app.errMutex);

@@ -1,5 +1,6 @@
 #include "agent/Bridge.h"
 #include <juce_core/juce_core.h>
+#include <cctype>
 #include <chrono>
 #include <set>
 
@@ -41,7 +42,8 @@ Bridge::Result Bridge::ask (const json& request, const std::string& trigger, con
     const int id = pending->id;
     cv.notify_all();
     const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds ((long long) (timeoutSec * 1000));
-    cv.wait_until (lk, deadline, [&] { return reply.has_value() || cancelled; });
+    aborted = false;
+    cv.wait_until (lk, deadline, [&] { return reply.has_value() || cancelled || aborted; });
     Result r;
     if (reply)
     {
@@ -58,7 +60,8 @@ Bridge::Result Bridge::ask (const json& request, const std::string& trigger, con
                        { "usage", { { "prompt_tokens", 0 }, { "completion_tokens", 0 } } } };
     }
     else
-        r.error = cancelled ? "cancelled" : "no answer from the coding agent within " + std::to_string ((int) timeoutSec) + " s";
+        r.error = cancelled || aborted ? "cancelled" : "no answer from the coding agent within " + std::to_string ((int) timeoutSec) + " s";
+    aborted = false;
     pending.reset();
     reply.reset();
     cv.notify_all();
@@ -69,6 +72,13 @@ void Bridge::cancel()
 {
     std::lock_guard<std::mutex> lk (m);
     cancelled = true;
+    cv.notify_all();
+}
+
+void Bridge::abortPending()
+{
+    std::lock_guard<std::mutex> lk (m);
+    if (pending && ! reply) aborted = true;
     cv.notify_all();
 }
 

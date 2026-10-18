@@ -107,6 +107,7 @@ legend { color: var(--accent); font-size: 11px; text-transform: uppercase; lette
   <h2>Making the first mix</h2>
   <div class="bar"><i id="waitBar"></i></div>
   <p id="waitText">Starting...</p>
+  <button id="skip" title="Open the mixer now and mix by hand (your agent can still help later)">Mix by hand instead</button>
 </div>
 <script>
 "use strict";
@@ -439,6 +440,7 @@ async function pollExport() {
 // ---- first mix: wait until the live engine is up ---------------------------------------------------------------
 async function waitForLive() {
   const w = document.getElementById("wait");
+  document.getElementById("skip").onclick = e => { e.target.disabled = true; e.target.textContent = "Opening the mixer..."; api("skip_first_mix", {}).catch(showErr); };
   for (;;) {
     const st = await api("state");
     if (st.phase === "live") { w.hidden = true; return; }

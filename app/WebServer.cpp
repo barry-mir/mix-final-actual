@@ -161,6 +161,12 @@ struct WebServer::Impl
             res.set_content (std::string (BinaryData::index_html, (size_t) BinaryData::index_htmlSize), "text/html; charset=utf-8");
         });
         http.Get ("/api/state", [this] (const httplib::Request&, httplib::Response& res) { reply (res, stateJson()); });
+        // Skip (the rest of) the first mix and open the mixer as it is: for mixing by hand, or when no agent is around.
+        http.Post ("/api/skip_first_mix", [this] (const httplib::Request&, httplib::Response& res) {
+            app.skipFirstMix = true;
+            im::Bridge::shared().abortPending();
+            reply (res, { { "ok", true } });
+        });
 
         http.Get ("/api/session", live ([] (InteractiveMixerProcessor& p, const httplib::Request&, httplib::Response& res) { reply (res, sessionJson (p)); }));
         http.Get ("/api/values", live ([] (InteractiveMixerProcessor& p, const httplib::Request&, httplib::Response& res) { reply (res, valuesJson (p)); }));
