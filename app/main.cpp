@@ -19,6 +19,7 @@
 #include <csignal>
 #include <iostream>
 #include <random>
+#include <thread>
 
 namespace
 {
@@ -85,6 +86,13 @@ int serve (int argc, char** argv, int first)
     std::cout << "mix_final_ACTUAL.wav: " << url << std::endl;
     std::signal (SIGINT, onSignal);
     std::signal (SIGTERM, onSignal);
+    // A signal handler cannot take locks, so this thread turns `quit` into a bridge cancel: a turn waiting for the
+    // coding agent (up to an hour in the first mix) then returns at once and the app exits.
+    std::thread quitWatch ([] {
+        while (! quit) std::this_thread::sleep_for (std::chrono::milliseconds (100));
+        im::Bridge::shared().cancel();
+    });
+    quitWatch.detach();
 
     // 1. first mix, offline, before the page opens (unless a saved project is reopened)
     const auto project = mfa::projectFile (dir);
