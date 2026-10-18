@@ -66,7 +66,9 @@ Process lifetime: an MCP server over stdio dies with the agent session, but the 
    (double-click) and regroup tracks (the group follows the name and is used by the engine and the prompt), the project
    file `mix_final_ACTUAL project.json` (autosaved every 10 s; reopened instead of a new first mix). Input is the folder
    the agent opens (no drag-and-drop: the agent picks the folder).
-6. **Plugin packaging** (done, CI to be confirmed): skill `skills/mix/SKILL.md`; Claude Code manifest
+6. **Plugin packaging** (done; CI green on macOS universal, Linux x64, Windows x64: build, native tests, MCP smoke
+   test; `dist` branch built by CI and checked: it loads in Claude Code and mixes with its own bundled binary; CI logs
+   and job results are pushed to the `ci-logs` branch): skill `skills/mix/SKILL.md`; Claude Code manifest
    `.claude-plugin/plugin.json` (MCP server inline); Codex portable `plugin.json` + `mcp.json` (stdio, `./bin/...`);
    one marketplace file `.claude-plugin/marketplace.json` read by both (source: `url` + `ref: dist`, the source type both
    accept); `bin/mix-final-actual` picks the platform binary (Windows resolves `bin/mix-final-actual.exe`). CI builds
