@@ -353,7 +353,11 @@ TrackMask MultitrackPlayer::fill (float* const* L, float* const* R, int n) noexc
         std::fill (L[t], L[t] + n, 0.0f);
         std::fill (R[t], R[t] + n, 0.0f);
     }
-    if (! playing.load()) return mask;
+    if (! playing.load())
+    {
+        posSec.store ((double) pos / current->sampleRate, std::memory_order_relaxed); // a seek while stopped shows at once
+        return mask;
+    }
 
     // Loop region (frames); end <= start means the whole file.
     int64_t la = (int64_t) (loopA.load (std::memory_order_relaxed) * current->sampleRate);

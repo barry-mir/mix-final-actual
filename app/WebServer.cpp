@@ -96,6 +96,7 @@ struct WebServer::Impl
                  { "master", { m.peakL.load(), m.peakR.load() } }, { "tracks", peaks },
                  { "limGr", m.limGr.load() }, { "busGr", m.busGr.load() }, { "cpu", p.cpuLoad.load() },
                  { "agent", im::Agent::stateName (p.agent.state()) }, { "thinking_s", p.agent.thinkingElapsedSec() },
+                 { "agent_seen_s", std::min (im::Bridge::shared().secondsSinceAgentSeen(), 1e6) },
                  { "chat_version", p.store.chatVersion() } };
     }
 
@@ -230,7 +231,17 @@ struct WebServer::Impl
             if (j.is_discarded() || ! j.contains ("index")) return reply (res, { { "error", "need index" } }, 400);
             const int t = j["index"].get<int>();
             if (t < 0 || t >= p.player.numLoadedTracks()) return reply (res, { { "error", "bad index" } }, 400);
-            std::string name = j.contains ("name") && j["name"].is_string() ? j["name"].get<std::string>() : std::string();
+            std::string name;
+            if (j.contains ("name") && j["name"].is_string())
+            {
+                // Tools address tracks by name, so a name must be non-empty and unique (ignoring case).
+                name = juce::String (j["name"].get<std::string>()).trim().toStdString();
+                if (name.empty()) return reply (res, { { "error", "a track name cannot be empty" } }, 400);
+                const auto names = p.store.trackNames();
+                for (int k = 0; k < p.player.numLoadedTracks() && k < (int) names.size(); ++k)
+                    if (k != t && juce::String (names[(size_t) k]).equalsIgnoreCase (juce::String (name)))
+                        return reply (res, { { "error", "another track is already called \"" + names[(size_t) k] + "\"" } }, 409);
+            }
             const bool setGroup = j.contains ("group");
             const int group = setGroup && j["group"].is_number_integer() ? j["group"].get<int>() : im::priors::kNoOverride;
             juce::MessageManager::callAsync ([&p, t, name, setGroup, group] {

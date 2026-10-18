@@ -200,9 +200,10 @@ std::string StateStore::trackName (int t) const
 
 void StateStore::setTrackName (int t, const std::string& n, NameSource src)
 {
+    const bool blank = n.find_first_not_of (" \t\r\n") == std::string::npos;
     std::lock_guard<std::mutex> lk (m);
-    names[(size_t) t] = n.empty() ? "Track " + std::to_string (t + 1) : n;
-    nameSrc[(size_t) t] = n.empty() ? NameSource::Default : src;
+    names[(size_t) t] = blank ? "Track " + std::to_string (t + 1) : n;
+    nameSrc[(size_t) t] = blank ? NameSource::Default : src;
     ++nameVer;
 }
 
@@ -366,6 +367,7 @@ void StateStore::fromJson (const json& j)
             for (size_t t = 0; t < (size_t) maxTracks() && t < j["track_names"].size(); ++t)
             {
                 names[t] = j["track_names"][t].get<std::string>();
+                if (names[t].find_first_not_of (" \t\r\n") == std::string::npos) names[t] = "Track " + std::to_string (t + 1);
                 nameSrc[t] = j.contains ("name_sources") && t < j["name_sources"].size() ? (NameSource) j["name_sources"][t].get<int>()
                              : (names[t] == "Track " + std::to_string (t + 1) ? NameSource::Default : NameSource::User);
             }

@@ -241,7 +241,8 @@ bool Agent::runTick (const Trigger& trig)
         ChatEntry s;
         s.role = "system";
         s.tick = tick;
-        s.text = "Tick " + std::to_string (tick) + " skipped: " + failure.substr (0, 200);
+        s.text = failure == "cancelled" ? "Turn " + std::to_string (tick) + " stopped; nothing changed."
+                                        : "Turn " + std::to_string (tick) + " skipped: " + failure.substr (0, 200);
         s.time = rec.time;
         store.addChat (s);
         st = State::Idle;

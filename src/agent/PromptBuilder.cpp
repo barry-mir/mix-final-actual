@@ -482,10 +482,11 @@ int roleForName (const std::string& name)
         return false;
     };
     if (has ({ "vocal", "vox", "voice", "sing", "lead v", "bv", "choir", "rap" })) return 0;
-    if (has ({ "drum", "kick", "snare", "hat", "tom", "overhead", "oh ", "cymbal", "perc", "beat" })) return 1;
+    if (has ({ "drum", "kick", "snare", "hat", "tom", "overhead", "oh ", "cymbal", "perc", "beat", "tamb", "shaker", "conga", "bongo", "clap", "cajon" })) return 1;
     if (has ({ "bass", "sub" })) return 2;
-    if (has ({ "guitar", "gtr", "git" })) return 3;
-    if (has ({ "key", "piano", "synth", "organ", "pad", "string", "brass", "horn", "other", "wind", "fx" })) return 4;
+    if (has ({ "guitar", "gtr", "git", "banjo", "mandolin", "uke", "ukulele" })) return 3;
+    if (has ({ "key", "piano", "synth", "organ", "pad", "string", "brass", "horn", "other", "wind", "fx", "harmonica", "harp", "sax", "trumpet", "trombone",
+                "violin", "viola", "cello", "fiddle", "flute", "clarinet", "accordion", "rhodes", "wurli", "mellotron" })) return 4;
     return -1;
 }
 } // namespace priors

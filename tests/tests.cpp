@@ -85,6 +85,9 @@ void roleTests()
     check (roleForName ("Lead Vocal") == 0 && roleForName ("Kick In") == 1 && roleForName ("Bass DI") == 2 && roleForName ("Gtr L") == 3
                && roleForName ("Piano") == 4,
            "groups: guessed from track names");
+    check (roleForName ("Harmonica-Amp-CU29") == 4 && roleForName ("Tenor Sax") == 4 && roleForName ("Banjo") == 3
+               && roleForName ("Tambourine") == 1 && roleForName ("Cello") == 4,
+           "groups: common instruments outside the basic names");
     im::priors::setRoleOverride ("Piano", 0);
     check (roleForName ("Piano") == 0, "groups: a group set by the user wins");
     im::priors::setRoleOverride ("Piano", im::priors::kNoOverride);
