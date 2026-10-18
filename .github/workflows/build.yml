@@ -47,6 +47,12 @@ jobs:
         run: |
           set -o pipefail
           cmake --build build --config Release --parallel 2>&1 | tee logs/build.log
+      - name: Tests
+        shell: bash
+        run: |
+          set -o pipefail
+          t=$(find build -type f \( -name mfa-tests -o -name mfa-tests.exe \) -path '*_artefacts*' | head -1)
+          "$t" 2>&1 | tee logs/tests.log
       - name: Smoke test
         shell: bash
         run: |
