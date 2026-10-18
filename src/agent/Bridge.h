@@ -6,6 +6,7 @@
 #include <nlohmann/json.hpp>
 #include <atomic>
 #include <condition_variable>
+#include <functional>
 #include <mutex>
 #include <optional>
 #include <string>
@@ -36,7 +37,10 @@ public:
     };
 
     // Agent-loop side (worker thread). Blocks until the turn is answered, cancel() is called, or timeoutSec passes.
-    Result ask (const nlohmann::json& request, const std::string& trigger, const std::string& userMsg, double timeoutSec);
+    // onNote receives the notes the coding agent posts while it works on this turn (called on the poster's thread).
+    using NoteFn = std::function<void (const std::string&)>;
+    Result ask (const nlohmann::json& request, const std::string& trigger, const std::string& userMsg, double timeoutSec,
+                NoteFn onNote = {});
     void cancel();       // aborts a waiting ask() and every later one (app shutdown)
     void abortPending(); // aborts only the ask() waiting now (e.g. the user skipped the first mix)
 
@@ -47,6 +51,13 @@ public:
     // reply: {"content": "...", "tool_calls": [{"name": "...", "arguments": {...}}]}. Returns "" if accepted, else
     // what is wrong with it (the turn stays pending, so the agent can fix and resubmit).
     std::string answer (int turnId, const nlohmann::json& reply);
+    // A short note on the waiting turn (what the agent reads, what it plans), shown to the user while it works.
+    // Returns "" or the error.
+    std::string note (int turnId, const std::string& text);
+    // The waiting turn has been fetched by a coding agent (it is working on it).
+    bool pendingFetched() const;
+    static constexpr int kMaxNotesPerTurn = 20;
+    static constexpr size_t kMaxNoteChars = 2000;
 
     // Seconds since a coding agent last asked for a turn (large if never).
     double secondsSinceAgentSeen() const;
@@ -59,6 +70,9 @@ private:
     std::condition_variable cv;
     std::optional<Turn> pending;
     std::optional<nlohmann::json> reply;
+    NoteFn noteSink;
+    int notesThisTurn = 0;
+    int fetchedId = 0;
     int nextId = 1;
     bool cancelled = false;
     bool aborted = false;

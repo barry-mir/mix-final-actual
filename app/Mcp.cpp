@@ -28,9 +28,11 @@ const char* kInstructions =
     "Mixes a folder of audio tracks on a real mixing console. You never hear audio: each turn the console measures the "
     "mix and sends you a text report and its console tools; you answer with tool calls. Workflow: open_session(folder) "
     "starts the console and its first mix; then loop: next_turn -> read the turn (follow its SYSTEM part, use only its "
-    "TOOLS) -> submit_turn with ALL of the turn's tool calls in one call. The first mix is 5 turns; then the mixer page "
-    "opens in the user's browser. After that, keep calling next_turn: prompts the user types in the page arrive as new "
-    "turns. Stop when the user says they are done (close_session ends the console).";
+    "TOOLS) -> post_note 2-4 short notes while you work (what you read in the measurements, then your plan; the user "
+    "watches them live in the mixer page) -> submit_turn with ALL of the turn's tool calls in one call. The first mix is "
+    "5 turns; then the mixer page opens in the user's browser. After that, keep calling next_turn: requests the user "
+    "types in the page (Ask = one turn, Remix = five turns toward a goal) arrive as new turns. Stop when the user says "
+    "they are done (close_session ends the console).";
 
 json tool (const char* name, const char* desc, json props, json required)
 {
@@ -67,6 +69,14 @@ json toolList()
                                                { "properties", { { "name", { { "type", "string" } } }, { "arguments", { { "type", "object" } } } } },
                                                { "required", json::array ({ "name" }) } } } } } },
               json::array ({ "turn", "content", "tool_calls" })),
+        tool ("post_note",
+              "Post a short note on the turn you are working on (one or two sentences: what you read in the measurements, "
+              "what you plan to change and why). The user sees it at once in the mixer page while you work, like watching "
+              "you think. Post 2-4 per turn, before submit_turn; it does not change the mix.",
+              { { "folder", folder },
+                { "turn", { { "type", "integer" }, { "description", "The turn id from next_turn." } } },
+                { "text", { { "type", "string" }, { "description", "The note (plain text, up to 2000 characters)." } } } },
+              json::array ({ "turn", "text" })),
         tool ("session_status", "Where the session is: first mix (turn k of n), or live with the page URL.", { { "folder", folder } }, json::array()),
         tool ("close_session", "Stop the console for a folder (the page stops working).", { { "folder", folder } }, json::array()),
     });
@@ -163,7 +173,8 @@ Result nextTurn (const json& args)
     std::string head = "TURN " + std::to_string (id) + " (" + t.value ("trigger", std::string());
     if (j.value ("phase", std::string()) == "first_mix")
         head += ", first mix " + std::to_string (j["first_mix"].value ("turn", 0)) + "/" + std::to_string (j["first_mix"].value ("turns", 5));
-    if (! t.value ("user_msg", std::string()).empty()) head += ", the user asked: \"" + t["user_msg"].get<std::string>() + "\"";
+    if (! t.value ("user_msg", std::string()).empty())
+        head += (t.value ("trigger", std::string()) == "mix" ? ", the user's goal for this remix: \"" : ", the user asked: \"") + t["user_msg"].get<std::string>() + "\"";
     head += "). Answer with submit_turn(turn=" + std::to_string (id) + ", content, tool_calls).\n\n";
     const auto text = t.value ("text", std::string());
     // Also on disk, for agents that hand turns to a helper that reads files.
@@ -189,6 +200,20 @@ Result submitTurn (const json& args)
     if (r->status != 200) return err (j.is_discarded() ? r->body : j.value ("error", r->body));
     return { "Turn " + std::to_string (args["turn"].get<int>()) + " accepted (" + std::to_string (body["tool_calls"].size())
              + " tool calls). The console applies it and measures again; call next_turn for the next turn." };
+}
+
+Result postNote (const json& args)
+{
+    std::string why;
+    auto inst = resolve (args, why);
+    if (! inst) return err (why);
+    if (! args.contains ("turn") || ! args["turn"].is_number_integer() || ! args.contains ("text") || ! args["text"].is_string())
+        return err ("turn (integer) and text (string) are required");
+    auto r = call (*inst, "POST", "/api/agent/note", { { "turn", args["turn"] }, { "text", args["text"] } });
+    if (! r) return err ("the console does not answer (closed?)");
+    auto j = json::parse (r->body, nullptr, false);
+    if (r->status != 200) return err (j.is_discarded() ? r->body : j.value ("error", r->body));
+    return { "Noted; the user sees it in the mixer page." };
 }
 
 Result status (const json& args)
@@ -262,6 +287,7 @@ int runMcp (const char* argv0)
                 if (name == "open_session") r = openSession (args, exe);
                 else if (name == "next_turn") r = nextTurn (args);
                 else if (name == "submit_turn") r = submitTurn (args);
+                else if (name == "post_note") r = postNote (args);
                 else if (name == "session_status") r = status (args);
                 else if (name == "close_session") r = closeSession (args);
                 else r = err ("unknown tool " + name);

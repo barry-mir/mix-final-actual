@@ -58,9 +58,16 @@ void MixEngine::prepare (double sampleRate, int maxBlock)
     }
     busComp.prepare (fs);
     limiter.prepare (fs, maxBlockSize);
+    analysisLimiter.prepare (fs, maxBlockSize);
+    anaL.assign (mb, 0.0f);
+    anaR.assign (mb, 0.0f);
+    anaW.assign (mb, 0.0f);
+    deliverySm.reset (fs, 1.0);
+    deliverySm.setCurrentAndTargetValue (dbToGain (deliveryGainDb.load()));
+    resetSmoother (anaLimOn, params.boolValue (masterParam (LimOn)) ? 1.0f : 0.0f);
     resetSmoother (busOnPower, params.boolValue (masterParam (BcOn)) ? 1.0f : 0.0f);
     resetSmoother (busMakeupDb, 0.0f);
-    resetSmoother (limOn, params.boolValue (masterParam (LimOn)) ? 1.0f : 0.0f);
+    resetSmoother (limOn, params.boolValue (masterParam (LimOn)) || forceLimiter.load() ? 1.0f : 0.0f);
 
     int dsz = 1;
     while (dsz < limiter.latencySamples() + 2) dsz <<= 1;
@@ -404,22 +411,41 @@ void MixEngine::process (const float* const* inL, const float* const* inR, float
 
     // ---- Master fader + limiter -------------------------------------------
     fillRamp (tmp.data(), dbToGain (mpv (MasterFader)), dbToGain (mv (MasterFader)), n);
-    const float delivery = dbToGain (deliveryGainDb.load (std::memory_order_relaxed));
     for (int i = 0; i < n; ++i)
     {
-        sumL[(size_t) i] *= tmp[(size_t) i] * delivery;
-        sumR[(size_t) i] *= tmp[(size_t) i] * delivery;
+        sumL[(size_t) i] *= tmp[(size_t) i];
+        sumR[(size_t) i] *= tmp[(size_t) i];
     }
+    const bool limParam = params.boolValue (masterParam (LimOn));
+    const int limRamp = params.discreteChangeRamp (masterParam (LimOn));
+    const bool separate = separateAnalysis.load (std::memory_order_relaxed);
+    if (separate)
     {
-        const bool on = params.boolValue (masterParam (LimOn));
-        int r = params.discreteChangeRamp (masterParam (LimOn));
-        if (r > 0) rampSmoother (limOn, on ? 1.0f : 0.0f, r);
+        // The mix as mixed, for the agent: no delivery gain, the limiter as its parameter says.
+        std::copy_n (sumL.data(), n, anaL.data());
+        std::copy_n (sumR.data(), n, anaR.data());
+        if (limRamp > 0) rampSmoother (anaLimOn, limParam ? 1.0f : 0.0f, limRamp);
+        for (int i = 0; i < n; ++i) anaW[(size_t) i] = anaLimOn.getNextValue();
+        analysisLimiter.process (anaL.data(), anaR.data(), n, mv (LimCeiling), anaW.data());
+        if (taps) pushInterleaved (taps->master, anaL.data(), anaR.data(), n);
+    }
+    deliverySm.setTargetValue (dbToGain (deliveryGainDb.load (std::memory_order_relaxed)));
+    if (deliverySm.isSmoothing() || std::abs (deliverySm.getTargetValue() - 1.0f) > 1e-7f)
+        for (int i = 0; i < n; ++i)
+        {
+            const float d = deliverySm.getNextValue();
+            sumL[(size_t) i] *= d;
+            sumR[(size_t) i] *= d;
+        }
+    {
+        const bool on = limParam || forceLimiter.load (std::memory_order_relaxed);
+        if (limRamp > 0 || (limOn.getTargetValue() > 0.5f) != on) rampSmoother (limOn, on ? 1.0f : 0.0f, std::max (limRamp, 64));
         for (int i = 0; i < n; ++i) limW[(size_t) i] = limOn.getNextValue();
         limiter.process (sumL.data(), sumR.data(), n, mv (LimCeiling), limW.data());
         masterMeters.limGr.store (limiter.currentGainReductionDb(), std::memory_order_relaxed);
     }
 
-    if (taps) pushInterleaved (taps->master, sumL.data(), sumR.data(), n); // processed mix -> analysis
+    if (taps && ! separate) pushInterleaved (taps->master, sumL.data(), sumR.data(), n); // processed mix -> analysis
 
     // ---- A/B bypass ---------------------------------------------------------
     bypassW.setTargetValue (bypass.load (std::memory_order_relaxed) ? 1.0f : 0.0f);

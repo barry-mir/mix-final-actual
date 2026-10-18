@@ -33,11 +33,13 @@ std::string Bridge::renderText (const json& request)
     return out;
 }
 
-Bridge::Result Bridge::ask (const json& request, const std::string& trigger, const std::string& userMsg, double timeoutSec)
+Bridge::Result Bridge::ask (const json& request, const std::string& trigger, const std::string& userMsg, double timeoutSec, NoteFn onNote)
 {
     std::unique_lock<std::mutex> lk (m);
     if (cancelled) return { false, "cancelled", {} };
     pending = Turn { nextId++, trigger, userMsg, request, renderText (request) };
+    noteSink = std::move (onNote);
+    notesThisTurn = 0;
     reply.reset();
     const int id = pending->id;
     cv.notify_all();
@@ -64,6 +66,7 @@ Bridge::Result Bridge::ask (const json& request, const std::string& trigger, con
     aborted = false;
     pending.reset();
     reply.reset();
+    noteSink = nullptr;
     cv.notify_all();
     return r;
 }
@@ -88,8 +91,37 @@ std::optional<Bridge::Turn> Bridge::waitTurn (double waitSec)
     std::unique_lock<std::mutex> lk (m);
     cv.wait_for (lk, std::chrono::milliseconds ((long long) (waitSec * 1000)), [&] { return (pending.has_value() && ! reply) || cancelled; });
     lastSeenMs = nowMs();
-    if (pending && ! reply) return pending;
+    if (pending && ! reply)
+    {
+        fetchedId = pending->id;
+        return pending;
+    }
     return std::nullopt;
+}
+
+bool Bridge::pendingFetched() const
+{
+    std::lock_guard<std::mutex> lk (m);
+    return pending && ! reply && fetchedId == pending->id;
+}
+
+std::string Bridge::note (int turnId, const std::string& text)
+{
+    lastSeenMs = nowMs();
+    NoteFn sink;
+    {
+        std::lock_guard<std::mutex> lk (m);
+        if (! pending || reply) return "no turn is waiting; notes go with the turn you are working on";
+        if (pending->id != turnId) return "turn " + std::to_string (turnId) + " is not the waiting turn (" + std::to_string (pending->id) + ")";
+        if (notesThisTurn >= kMaxNotesPerTurn) return "too many notes for this turn; submit it";
+        ++notesThisTurn;
+        fetchedId = pending->id; // posting a note means the agent has the turn
+        sink = noteSink;
+    }
+    auto t = juce::String (text).trim();
+    if (t.isEmpty()) return "the note is empty";
+    if (sink) sink (t.substring (0, (int) kMaxNoteChars).toStdString());
+    return {};
 }
 
 std::string Bridge::answer (int turnId, const json& r)

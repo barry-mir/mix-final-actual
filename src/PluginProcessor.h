@@ -6,6 +6,7 @@
 #include "standalone/MultitrackPlayer.h"
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <deque>
+#include <functional>
 
 namespace im
 {
@@ -60,6 +61,15 @@ public:
     void updateTrackGroups();
     std::shared_ptr<const Snapshot> snapshot() const override { return analyzer.latest(); }
     void applyAgentChanges (int tick, const std::vector<ParamTarget>& targets, double rampSec) override;
+    // Live: blocks until `needSec` of audio has played since the last change from anyone (parameters, groups, clip
+    // edits), starting playback if it is stopped. Offline engines (no background services) return at once.
+    void waitForFreshAudio (double needSec, const std::function<bool()>& stop) override;
+    double freshAudioSec() const { return (double) freshSamples.load() / sampleRateNow; }
+    std::atomic<double> listenHave { 0.0 }, listenNeed { 0.0 }; // progress of the wait above (status)
+
+    // ---- clips: JSON views of the player's edits (message thread) ----------
+    nlohmann::json editsJson() const;             // {"version", "tracks": [[{pos, src, len, gain, fadeIn, fadeOut}...]...]}
+    static std::string regionsFromJson (const nlohmann::json& arr, MultitrackPlayer::Regions& out); // "" or the error
 
     // ---- message thread API -------------------------------------------------
     void applyLlmBatch (int tick, const std::vector<ParamTarget>& targets, double rampSec);
@@ -110,6 +120,8 @@ private:
     std::vector<std::atomic<float>*> rawParams = std::vector<std::atomic<float>*> ((size_t) numParams());
     std::vector<juce::RangedAudioParameter*> paramPtrs = std::vector<juce::RangedAudioParameter*> ((size_t) numParams());
     double paramSig = -1.0; // weighted sum of all raw parameter values, to detect changes on the audio thread
+    int seenEditsVer = -1, seenGroupSig = -1;  // audio thread: clip edits and group routing seen last block
+    std::atomic<int64_t> freshSamples { 0 };   // samples played since the last change (audio thread writes)
     std::unordered_map<juce::AudioProcessorParameter*, int> paramIndexOf;
 
     // LLM animation bookkeeping (message thread)

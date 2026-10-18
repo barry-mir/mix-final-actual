@@ -2,6 +2,8 @@
 #include "agent/MixPriors.h"
 #include "analysis/Loudness.h"
 #include "core/Paths.h"
+#include <algorithm>
+#include <cmath>
 #include <map>
 
 namespace im
@@ -177,12 +179,24 @@ private:
                 const auto from = (int64_t) (player.posSec.load() * s->sampleRate);
                 const auto ahead = (int64_t) (3.0 * s->sampleRate);
                 const auto loopStart = (int64_t) (player.loopA.load() * s->sampleRate);
-                for (auto& t : s->tracks)
+                auto* ed = player.rtEdits.load();
+                if (ed && (ed->session != s || ed->identity)) ed = nullptr;
+                for (size_t k = 0; k < s->tracks.size(); ++k)
                 {
+                    auto& t = s->tracks[k];
                     const auto step = std::max<int64_t> (1, 4096 / t.bytesPerFrame);
+                    auto touch = [&] (int64_t a, int64_t b) {
+                        for (int64_t i = std::max<int64_t> (0, a); i < b && i < t.reader->lengthInSamples; i += step) t.reader->touchSample (i);
+                    };
                     for (auto base : { from, loopStart })
-                        for (int64_t i = std::max<int64_t> (0, base); i < base + ahead && i < t.reader->lengthInSamples; i += step)
-                            t.reader->touchSample (i);
+                    {
+                        if (! ed) { touch (base, base + ahead); continue; }
+                        for (auto& r : ed->tracks[k]) // the source spans the next seconds of the timeline play
+                        {
+                            const auto a = std::max (base, r.pos), b = std::min (base + ahead, r.pos + r.len);
+                            if (a < b) touch (r.src + (a - r.pos), r.src + (b - r.pos));
+                        }
+                    }
                 }
             }
             wait (100);
@@ -191,13 +205,210 @@ private:
     MultitrackPlayer& player;
 };
 
+// Builds the waveform overview of one session, track by track, in the background.
+class MultitrackPlayer::PeakBuilder : private juce::Thread
+{
+public:
+    PeakBuilder (MultitrackPlayer& p, const Session* s) : juce::Thread ("track peaks"), player (p), session (s) { startThread (juce::Thread::Priority::low); }
+    ~PeakBuilder() override { stopThread (4000); }
+
+private:
+    void run() override
+    {
+        const int block = player.peakBlock.load();
+        std::vector<std::vector<uint8_t>> out (session->tracks.size());
+        const int chunk = block * 256;
+        std::vector<float> L ((size_t) chunk), R ((size_t) chunk);
+        for (size_t t = 0; t < session->tracks.size(); ++t)
+        {
+            const auto& trk = session->tracks[t];
+            const int64_t len = trk.reader->lengthInSamples;
+            auto& o = out[t];
+            o.reserve ((size_t) (len / block + 1));
+            for (int64_t a = 0; a < len; a += chunk)
+            {
+                if (threadShouldExit()) return;
+                const int n = (int) std::min<int64_t> (chunk, len - a);
+                readStereo (trk, a, n, L.data(), R.data());
+                for (int b = 0; b < n; b += block)
+                {
+                    float pk = 0;
+                    for (int i = b; i < std::min (n, b + block); ++i) pk = std::max (pk, std::max (std::fabs (L[(size_t) i]), std::fabs (R[(size_t) i])));
+                    o.push_back ((uint8_t) std::clamp ((int) std::lround (255.0 * std::sqrt (std::min (1.0f, pk))), 0, 255));
+                }
+            }
+        }
+        std::lock_guard<std::mutex> lk (player.infoMutex);
+        if (player.active.load() != session) return;
+        player.peakData = std::move (out);
+        player.peaksDone = true;
+    }
+    MultitrackPlayer& player;
+    const Session* session;
+};
+
 MultitrackPlayer::MultitrackPlayer() { prefetch = std::make_unique<Prefetcher> (*this); }
 
 MultitrackPlayer::~MultitrackPlayer()
 {
+    peakBuilder.reset();
     prefetch.reset();
     std::lock_guard<std::mutex> lk (infoMutex);
+    rtOwned.clear();
     owned.clear();
+}
+
+std::string MultitrackPlayer::normaliseRegions (Regions& in, double fileLen)
+{
+    constexpr double kMin = 0.01, kEps = 0.001;
+    if ((int) in.size() > kMaxRegions) return "at most " + std::to_string (kMaxRegions) + " clips per track";
+    for (size_t k = 0; k < in.size(); ++k)
+    {
+        auto& r = in[k];
+        const auto where = "clip " + std::to_string (k + 1) + ": ";
+        for (double v : { r.pos, r.src, r.len, r.gainDb, r.fadeIn, r.fadeOut })
+            if (! std::isfinite (v)) return where + "not a number";
+        if (r.pos < 0) return where + "starts before 0";
+        if (r.src < 0) return where + "starts before the file";
+        if (r.len < kMin) return where + "shorter than 10 ms";
+        if (r.src + r.len > fileLen + kEps) return where + "runs past the end of the file";
+        if (r.gainDb < -48 || r.gainDb > 24) return where + "gain must be -48..+24 dB";
+        if (r.fadeIn < 0 || r.fadeOut < 0) return where + "fades cannot be negative";
+        r.len = std::min (r.len, fileLen - r.src);
+    }
+    // Later clips win: each one cuts what it covers out of the clips before it.
+    Regions acc;
+    for (auto r : in)
+    {
+        Regions next;
+        const double a = r.pos, b = r.pos + r.len;
+        for (auto& o : acc)
+        {
+            const double oa = o.pos, ob = o.pos + o.len;
+            if (ob <= a || oa >= b) { next.push_back (o); continue; }
+            if (oa < a && a - oa >= kMin) { auto l = o; l.len = a - oa; l.fadeOut = 0; next.push_back (l); }
+            if (ob > b && ob - b >= kMin) { auto rr = o; rr.pos = b; rr.src = o.src + (b - oa); rr.len = ob - b; rr.fadeIn = 0; next.push_back (rr); }
+        }
+        next.push_back (r);
+        acc = std::move (next);
+    }
+    for (auto& r : acc)
+    {
+        r.fadeIn = std::min (r.fadeIn, r.len / 2);
+        r.fadeOut = std::min (r.fadeOut, r.len / 2);
+    }
+    std::sort (acc.begin(), acc.end(), [] (const Region& x, const Region& y) { return x.pos < y.pos; });
+    in = std::move (acc);
+    return {};
+}
+
+double MultitrackPlayer::trackLengthSec (int t) const
+{
+    auto* s = active.load();
+    if (! s || t < 0 || t >= (int) s->tracks.size()) return 0.0;
+    return (double) s->tracks[(size_t) t].reader->lengthInSamples / s->sampleRate;
+}
+
+std::vector<MultitrackPlayer::Regions> MultitrackPlayer::edits() const
+{
+    std::vector<Regions> out;
+    auto* s = active.load();
+    if (! s) return out;
+    std::lock_guard<std::mutex> lk (infoMutex);
+    for (size_t t = 0; t < s->tracks.size(); ++t)
+    {
+        if (t < editSec.size() && ! editSec[t].empty()) out.push_back (editSec[t]);
+        else out.push_back ({ Region { 0, 0, (double) s->tracks[t].reader->lengthInSamples / s->sampleRate, 0, 0, 0 } });
+    }
+    return out;
+}
+
+bool MultitrackPlayer::editsAreIdentity() const
+{
+    auto* e = rtEdits.load();
+    return e == nullptr || e->identity;
+}
+
+std::string MultitrackPlayer::setTrackRegions (int t, Regions r)
+{
+    auto* s = active.load();
+    if (! s || t < 0 || t >= (int) s->tracks.size()) return "no such track";
+    if (auto e = normaliseRegions (r, (double) s->tracks[(size_t) t].reader->lengthInSamples / s->sampleRate); ! e.empty()) return e;
+    std::lock_guard<std::mutex> lk (infoMutex);
+    if (editSec.size() < s->tracks.size()) editSec.resize (s->tracks.size());
+    editSec[(size_t) t] = std::move (r);
+    publishEdits (s);
+    return {};
+}
+
+void MultitrackPlayer::setAllEdits (const std::vector<Regions>& all)
+{
+    std::lock_guard<std::mutex> lk (infoMutex);
+    editSec = all;
+    if (auto* s = active.load()) publishEdits (s);
+    else ++editsVer;
+}
+
+void MultitrackPlayer::publishEdits (const Session* s)
+{
+    auto e = std::make_unique<RtEdits>();
+    e->session = s;
+    e->end = s->length;
+    const double fs = s->sampleRate;
+    for (size_t t = 0; t < s->tracks.size(); ++t)
+    {
+        const auto fileLen = s->tracks[t].reader->lengthInSamples;
+        std::vector<RtRegion> rt;
+        Regions r = t < editSec.size() ? editSec[t] : Regions {};
+        if (! r.empty() && ! normaliseRegions (r, (double) fileLen / fs).empty()) r.clear(); // not valid for this session
+        if (t < editSec.size()) editSec[t] = r;
+        if (r.empty()) rt.push_back ({ 0, 0, fileLen, 0, 0, 1.0f });
+        for (auto& x : r)
+            rt.push_back ({ (int64_t) std::llround (x.pos * fs), (int64_t) std::llround (x.src * fs),
+                            std::min<int64_t> ((int64_t) std::llround (x.len * fs), fileLen - (int64_t) std::llround (x.src * fs)),
+                            (int64_t) std::llround (x.fadeIn * fs), (int64_t) std::llround (x.fadeOut * fs), (float) std::pow (10.0, x.gainDb / 20.0) });
+        const bool ident = rt.size() == 1 && rt[0].pos == 0 && rt[0].src == 0 && rt[0].len == fileLen && rt[0].fadeIn == 0 && rt[0].fadeOut == 0 && rt[0].gain == 1.0f;
+        e->identity = e->identity && ident;
+        for (auto& x : rt) e->end = std::max (e->end, x.pos + x.len);
+        e->tracks.push_back (std::move (rt));
+    }
+    lenSec = (double) e->end / fs;
+    rtEdits.store (e.get(), std::memory_order_release);
+    rtOwned.push_back (std::move (e));
+    ++editsVer;
+}
+
+std::vector<uint8_t> MultitrackPlayer::peaks (int t) const
+{
+    std::lock_guard<std::mutex> lk (infoMutex);
+    return t >= 0 && t < (int) peakData.size() ? peakData[(size_t) t] : std::vector<uint8_t> {};
+}
+
+void MultitrackPlayer::renderRegions (const Track& trk, const std::vector<RtRegion>& regs, int64_t start, int n, float* L, float* R) noexcept
+{
+    std::fill (L, L + n, 0.0f);
+    std::fill (R, R + n, 0.0f);
+    const int64_t end = start + n;
+    for (auto& r : regs)
+    {
+        if (r.pos >= end) break; // sorted by position
+        const int64_t a = std::max (start, r.pos), b = std::min (end, r.pos + r.len);
+        if (a >= b) continue;
+        const int off = (int) (a - start), k = (int) (b - a);
+        readStereo (trk, r.src + (a - r.pos), k, L + off, R + off);
+        const int64_t x0 = a - r.pos;
+        const bool fades = (r.fadeIn > 0 && x0 < r.fadeIn) || (r.fadeOut > 0 && x0 + k > r.len - r.fadeOut);
+        if (! fades && r.gain == 1.0f) continue;
+        for (int i = 0; i < k; ++i)
+        {
+            const int64_t x = x0 + i;
+            float g = r.gain;
+            if (x < r.fadeIn) g *= std::sin (1.5707963f * (float) ((double) x / (double) r.fadeIn)); // equal power
+            if (r.len - x <= r.fadeOut && r.fadeOut > 0) g *= std::sin (1.5707963f * (float) ((double) (r.len - x) / (double) r.fadeOut));
+            L[off + i] *= g;
+            R[off + i] *= g;
+        }
+    }
 }
 
 juce::Array<juce::File> MultitrackPlayer::trackFiles (const juce::File& dir)
@@ -312,6 +523,13 @@ void MultitrackPlayer::setSession (std::unique_ptr<Session> s)
     }
     numTracks = (int) raw->tracks.size();
     lenSec = (double) raw->length / raw->sampleRate;
+    {
+        std::lock_guard<std::mutex> lk (infoMutex);
+        publishEdits (raw); // the edits carry over (checked against the new files)
+        peaksDone = false;
+        peakData.clear();
+        peakBlock = 256 * std::max (1, (int) std::lround (raw->sampleRate / 48000.0));
+    }
     excA = (double) raw->excerptStart / raw->sampleRate;
     excB = (double) raw->excerptEnd / raw->sampleRate;
     gainDbNow = raw->gainDb;
@@ -319,6 +537,8 @@ void MultitrackPlayer::setSession (std::unique_ptr<Session> s)
     setLoopRegion (excA.load(), excB.load()); // the excerpt is the default loop (and what the first mix hears)
     pending.store (raw);
     active.store (raw); // the prefetcher can start on it already
+    peakBuilder.reset();
+    peakBuilder = std::make_unique<PeakBuilder> (*this, raw);
 }
 
 void MultitrackPlayer::collectGarbage() {}
@@ -343,8 +563,12 @@ TrackMask MultitrackPlayer::fill (float* const* L, float* const* R, int n) noexc
         pos = p->excerptStart; // a new session starts at its excerpt (the default loop)
     }
     if (! current) return {};
+    auto* ed = rtEdits.load (std::memory_order_acquire);
+    if (ed && ed->session != current) ed = nullptr; // edits for a session not picked up yet
+    const int64_t songLen = ed ? ed->end : current->length;
+    const bool plain = ! ed || ed->identity;
     const double sk = seekTo.exchange (-1.0);
-    if (sk >= 0) pos = std::clamp ((int64_t) (sk * current->sampleRate), (int64_t) 0, current->length);
+    if (sk >= 0) pos = std::clamp ((int64_t) (sk * current->sampleRate), (int64_t) 0, songLen);
 
     const int nt = (int) current->tracks.size();
     const TrackMask mask { nt };
@@ -363,10 +587,10 @@ TrackMask MultitrackPlayer::fill (float* const* L, float* const* R, int n) noexc
     int64_t la = (int64_t) (loopA.load (std::memory_order_relaxed) * current->sampleRate);
     int64_t lb = (int64_t) (loopB.load (std::memory_order_relaxed) * current->sampleRate);
     const bool lp = looping.load();
-    if (! lp || lb <= la || la < 0 || lb > current->length)
+    if (! lp || lb <= la || la < 0 || lb > songLen)
     {
         la = 0;
-        lb = current->length;
+        lb = songLen;
     }
     if (lp && pos >= lb) pos = la; // past the region (new region, or a seek after it): back to its start
     int done = 0;
@@ -384,7 +608,8 @@ TrackMask MultitrackPlayer::fill (float* const* L, float* const* R, int n) noexc
         const int k = (int) std::min<int64_t> (n - done, lb - pos);
         for (int t = 0; t < nt; ++t)
         {
-            readStereo (current->tracks[(size_t) t], pos, k, L[t] + done, R[t] + done);
+            if (plain) readStereo (current->tracks[(size_t) t], pos, k, L[t] + done, R[t] + done);
+            else renderRegions (current->tracks[(size_t) t], ed->tracks[(size_t) t], pos, k, L[t] + done, R[t] + done);
             if (current->gain != 1.0f)
                 for (int i = done; i < done + k; ++i)
                 {

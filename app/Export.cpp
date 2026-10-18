@@ -1,6 +1,8 @@
 #include "Export.h"
 #include "PluginProcessor.h"
-#include "analysis/Loudness.h"
+#include "Render.h"
+#include "core/Paths.h"
+#include <nlohmann/json.hpp>
 
 namespace mfa
 {
@@ -8,15 +10,15 @@ using im::InteractiveMixerProcessor;
 
 namespace
 {
-constexpr double kTailSec = 3.0; // reverb and echo ring-out after the last note
-
-bool writeWav (const juce::File& f, const juce::AudioBuffer<float>& b, double sr)
+bool writeAudio (const juce::File& f, const juce::AudioBuffer<float>& b, double sr, const std::string& format)
 {
     f.deleteFile();
-    juce::WavAudioFormat wav;
+    std::unique_ptr<juce::AudioFormat> fmt;
+    if (format == "flac") fmt = std::make_unique<juce::FlacAudioFormat>();
+    else fmt = std::make_unique<juce::WavAudioFormat>();
     auto os = f.createOutputStream();
     if (! os) return false;
-    std::unique_ptr<juce::AudioFormatWriter> w (wav.createWriterFor (os.get(), sr, 2, 24, {}, 0));
+    std::unique_ptr<juce::AudioFormatWriter> w (fmt->createWriterFor (os.get(), sr, 2, 24, {}, format == "flac" ? 5 : 0));
     if (! w) return false;
     os.release();
     return w->writeFromAudioSampleBuffer (b, 0, b.getNumSamples());
@@ -26,6 +28,8 @@ juce::String safeName (const std::string& s)
 {
     return juce::File::createLegalFileName (juce::String (s)).substring (0, 60);
 }
+
+juce::File settingsFile() { return im::appDataDir().getChildFile ("settings.json"); }
 } // namespace
 
 Exporter::~Exporter() { join(); }
@@ -41,13 +45,41 @@ std::string Exporter::folder() const
     return outDir;
 }
 
+std::string Exporter::file() const
+{
+    std::lock_guard<std::mutex> lk (m);
+    return outFile;
+}
+
 std::string Exporter::error() const
 {
     std::lock_guard<std::mutex> lk (m);
     return err;
 }
 
-bool Exporter::start (InteractiveMixerProcessor& live, bool stems, double loudnessLufs)
+juce::File Exporter::defaultFile (const juce::File& tracksDir)
+{
+    const auto name = juce::File::createLegalFileName (tracksDir.getFileName().isNotEmpty() ? tracksDir.getFileName() : juce::String ("mix"));
+    juce::File dir;
+    auto j = nlohmann::json::parse (settingsFile().loadFileAsString().toStdString(), nullptr, false);
+    if (j.is_object() && j.contains ("export_dir") && j["export_dir"].is_string())
+        dir = juce::File (juce::String (j["export_dir"].get<std::string>()));
+    if (dir == juce::File() || ! dir.isDirectory())
+        dir = juce::File::getSpecialLocation (juce::File::userMusicDirectory).getChildFile ("mix_final_ACTUAL").getChildFile (name);
+    return dir.getChildFile (name + ".wav");
+}
+
+void Exporter::rememberFolder (const juce::File& dir)
+{
+    auto f = settingsFile();
+    auto j = nlohmann::json::parse (f.loadFileAsString().toStdString(), nullptr, false);
+    if (! j.is_object()) j = nlohmann::json::object();
+    j["export_dir"] = dir.getFullPathName().toStdString();
+    f.getParentDirectory().createDirectory();
+    f.replaceWithText (j.dump (1));
+}
+
+bool Exporter::start (InteractiveMixerProcessor& live, ExportOptions opts)
 {
     if (busy.exchange (true)) return false;
     join();
@@ -56,114 +88,78 @@ bool Exporter::start (InteractiveMixerProcessor& live, bool stems, double loudne
         std::lock_guard<std::mutex> lk (m);
         err.clear();
         outDir.clear();
+        outFile.clear();
     }
-    // Snapshot of the live settings, and a fresh offline engine with them (built here, on the message thread).
-    juce::MemoryBlock state;
-    live.getStateInformation (state);
-    const auto tracksDir = live.player.loadedFolder();
-    const auto names = live.store.trackNames();
-    const int nTracks = live.player.numLoadedTracks();
-    const double sr = im::MultitrackPlayer::sessionRate (tracksDir); // export at the tracks' own rate
-    const int bs = 512;
-
-    const bool before = im::gDisableBackgroundServices;
-    im::gDisableBackgroundServices = true;
-    auto proc = std::make_shared<InteractiveMixerProcessor>();
-    im::gDisableBackgroundServices = before;
-    proc->setRateAndBufferSizeDetails (sr, bs);
-    proc->prepareToPlay (sr, bs);
-    if (auto e = proc->loadSessionFolder (tracksDir); e.isNotEmpty())
-    {
+    auto fail = [this] (std::string e) {
         std::lock_guard<std::mutex> lk (m);
-        err = e.toStdString();
+        err = std::move (e);
         busy = false;
         return true;
+    };
+    const auto names = live.store.trackNames();
+    const int nTracks = live.player.numLoadedTracks();
+    double sr = 48000.0;
+    std::string e;
+    auto proc = makeOfflineEngine (live, sr, e);
+    if (! proc) return fail (e);
+
+    const auto ext = opts.format == "flac" ? juce::String (".flac") : juce::String (".wav");
+    auto file = opts.file.withFileExtension (ext);
+    const auto dir = file.getParentDirectory();
+    if (! dir.createDirectory())
+    {
+        releaseOnMessageThread (proc);
+        return fail ("cannot create " + dir.getFullPathName().toStdString());
     }
-    proc->setStateInformation (state.getData(), (int) state.getSize());
-    proc->player.setLooping (false);
-    juce::MessageManager::getInstance()->runDispatchLoopUntil (10);
+    rememberFolder (dir);
 
-    const auto stamp = juce::Time::getCurrentTime().formatted ("%Y-%m-%d %H%M%S");
-    const auto dir = tracksDir.getChildFile ("mix_final_ACTUAL exports").getChildFile (stamp);
-
-    worker = std::thread ([this, proc, dir, names, nTracks, sr, bs, stems, loudnessLufs] {
+    worker = std::thread ([this, proc, file, dir, names, nTracks, sr, opts] {
         auto& p = *proc;
-        dir.createDirectory();
-        const int latency = p.engine.latencySamples();
-        const auto total = (int64_t) ((p.player.lengthSec() + kTailSec) * sr) + latency;
-        const bool master = std::isfinite (loudnessLufs);
-        const int passes = (master ? 3 : 1) + (stems ? nTracks : 0);
-        juce::AudioBuffer<float> io (2, bs);
-        juce::MidiBuffer midi;
-
-        // One pass: everything from the top (tail included), latency removed.
-        auto render = [&] (int pass) {
-            juce::AudioBuffer<float> out (2, (int) (total - latency));
-            p.engine.prepare (sr, bs); // clears reverb/echo/dynamics state: no tails from the previous pass
-            p.player.seek (0.0);
-            p.player.setPlaying (true);
-            int64_t pos = 0;
-            while (pos < total)
-            {
-                io.clear();
-                p.processBlock (io, midi);
-                const int n = (int) std::min<int64_t> (bs, total - pos);
-                for (int i = 0; i < n; ++i)
-                {
-                    const int64_t o = pos + i - latency;
-                    if (o < 0 || o >= out.getNumSamples()) continue;
-                    out.setSample (0, (int) o, io.getSample (0, i));
-                    out.setSample (1, (int) o, io.getSample (1, i));
-                }
-                pos += bs;
-                prog = (pass + (double) pos / (double) total) / passes;
-            }
-            return out;
-        };
-
-        auto lufsOf = [&] (const juce::AudioBuffer<float>& b) {
-            return im::integratedLoudness (b.getReadPointer (0), b.getReadPointer (1), b.getNumSamples(), sr);
-        };
+        const bool master = std::isfinite (opts.loudnessLufs);
+        const int mixPasses = master && ! opts.knownGainDb ? 4 : 1;
+        const int passes = mixPasses + (opts.stems ? nTracks : 0);
         juce::AudioBuffer<float> mix;
+        bool ok = true;
         if (master)
         {
-            // Delivery loudness: gain before the limiter, two corrections (the limiter makes it nonlinear).
-            p.setParamValue (im::masterParam (im::LimOn), 1.0f);
-            p.engine.deliveryGainDb = 0.0f;
-            for (int k = 0; k < 3; ++k)
-            {
-                mix = render (k);
-                const double l = lufsOf (mix);
-                if (! std::isfinite (l) || std::abs (l - loudnessLufs) < 0.2 || k == 2) break;
-                p.engine.deliveryGainDb = (float) std::clamp ((double) p.engine.deliveryGainDb.load() + (loudnessLufs - l), -30.0, 40.0);
-            }
+            auto r = masterTo (p, sr, opts.loudnessLufs, opts.knownGainDb.value_or (0.0), opts.knownGainDb.has_value(),
+                               [&] (double f) { prog = f * mixPasses / passes; return true; });
+            mix = std::move (r.mix);
         }
         else
-            mix = render (0);
-        lufsOut = lufsOf (mix);
-        bool ok = writeWav (dir.getChildFile ("mix.wav"), mix, sr);
+            ok = renderSong (p, sr, mix, [&] (double f) { prog = f / passes; return true; });
+        lufsOut = loudnessOf (mix, sr);
+        ok = ok && writeAudio (file, mix, sr, opts.format);
+        mix.setSize (0, 0);
         p.engine.deliveryGainDb = 0.0f; // stems as mixed
-        if (ok && stems)
+        p.engine.forceLimiter = false;
+        if (ok && opts.stems)
         {
-            auto stemDir = dir.getChildFile ("stems");
+            auto stemDir = dir.getChildFile (file.getFileNameWithoutExtension() + " stems");
             stemDir.createDirectory();
             p.setParamValue (im::masterParam (im::BcOn), 0.0f);
             p.setParamValue (im::masterParam (im::LimOn), 0.0f);
             for (int t = 0; t < nTracks && ok; ++t)
             {
                 for (int u = 0; u < nTracks; ++u) p.setParamValue (im::trackParam (u, im::Solo), u == t ? 1.0f : 0.0f);
-                auto nm = juce::String (t + 1).paddedLeft ('0', 2) + " " + safeName (names[(size_t) t]) + ".wav";
-                ok = writeWav (stemDir.getChildFile (nm), render ((master ? 3 : 1) + t), sr);
+                auto nm = juce::String (t + 1).paddedLeft ('0', 2) + " " + safeName (names[(size_t) t]) + juce::String (opts.format == "flac" ? ".flac" : ".wav");
+                juce::AudioBuffer<float> stem;
+                ok = renderSong (p, sr, stem, [&] (double f) { prog = (mixPasses + t + f) / passes; return true; })
+                     && writeAudio (stemDir.getChildFile (nm), stem, sr, opts.format);
             }
         }
         {
             std::lock_guard<std::mutex> lk (m);
-            if (ok) outDir = dir.getFullPathName().toStdString();
-            else err = "could not write to " + dir.getFullPathName().toStdString();
+            if (ok)
+            {
+                outDir = dir.getFullPathName().toStdString();
+                outFile = file.getFullPathName().toStdString();
+            }
+            else
+                err = "could not write to " + dir.getFullPathName().toStdString();
         }
         prog = 1.0;
-        // The engine must be released on the message thread (it owns timers and parameter listeners).
-        juce::MessageManager::callAsync ([proc] {});
+        releaseOnMessageThread (proc);
         busy = false;
     });
     return true;

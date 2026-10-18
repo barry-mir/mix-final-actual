@@ -16,23 +16,28 @@ in five turns, 2 min 18 s). How it is built: [docs/DESIGN.md](docs/DESIGN.md).
 or from a shell: `claude plugin marketplace add barry-mir/mix-final-actual` then
 `claude plugin install mix-final-actual@mix-final-actual`.
 
-**Codex** (desktop app or CLI): `codex plugin marketplace add barry-mir/mix-final-actual`, then install
-`mix-final-actual` from the plugin list.
+**Codex** (desktop app or CLI)
+```
+codex plugin marketplace add barry-mir/mix-final-actual
+```
+then install `mix-final-actual` from the plugin list (`/plugins` in the CLI).
 
 Then ask your agent: "mix the tracks in ~/Music/my-song". It makes the first mix (5 turns), the mixer page opens in your
-browser, and prompts you type there go to your agent. Export renders the whole song (and stems) next to your tracks, at a delivery loudness of your choice
-(-14 LUFS for streaming by default, limiter at the console's ceiling).
+browser, and requests you type there go to your agent. The page plays at the loudness you export at (-14 LUFS for
+streaming by default), so what you hear is what Export writes. Export asks where to save (default
+`Music/mix_final_ACTUAL/<song>/`), as 24-bit WAV or FLAC, optionally with stems.
 
 The plugin ships native binaries for macOS (universal), Linux (x64, arm64) and Windows (x64), built by CI on the
 `dist` branch. Nothing to install besides the plugin; no API keys; everything runs locally.
 
 ## What it writes, and where
 
-- Next to your tracks: `mix_final_ACTUAL project.json` (the mix, saved every 10 s; reopened next time) and
-  `mix_final_ACTUAL exports/<date time>/` (`mix.wav`, and `stems/` if asked). Your audio files are never changed.
+- Next to your tracks: `mix_final_ACTUAL project.json` (the mix and your clip edits, saved every 10 s; reopened next
+  time). Your audio files are never changed.
+- Exports: where you choose (default `Music/mix_final_ACTUAL/<song>/<song>.wav`, stems in `<song> stems/` next to it).
 - Per user (`~/Library/Application Support/mix-final-actual` on macOS, `~/.config/mix-final-actual` on Linux,
   `%APPDATA%\mix-final-actual` on Windows): `instances/` (how the agent finds a running mixer; removed on exit),
-  `turns/` (each turn's text), `logs/`, and `cache/` (converted copies of non-WAV tracks or tracks at another sample
+  `turns/` (each turn's text), `logs/`, `settings.json` (the last export folder), and `cache/` (converted copies of non-WAV tracks or tracks at another sample
   rate; safe to delete).
 - Nothing leaves your machine. The page and the agent tools only answer on 127.0.0.1, with a random token per session.
 

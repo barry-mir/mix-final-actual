@@ -46,8 +46,10 @@ set(MFA_ENGINE_SOURCES
     src/standalone/MultitrackPlayer.cpp
     src/PluginProcessor.cpp)
 
-# The web UI, compiled into the binary (no files to install next to it).
-juce_add_binary_data(mfa_web SOURCES web/index.html)
+# The web UI, compiled into the binary (no files to install next to it): every file in web/, served by name.
+file(GLOB MFA_WEB_FILES CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/web/*.html ${CMAKE_SOURCE_DIR}/web/*.css ${CMAKE_SOURCE_DIR}/web/*.js
+     ${CMAKE_SOURCE_DIR}/web/*.svg ${CMAKE_SOURCE_DIR}/web/*.png ${CMAKE_SOURCE_DIR}/web/*.woff2)
+juce_add_binary_data(mfa_web SOURCES ${MFA_WEB_FILES})
 
 function(mfa_configure tgt)
     target_include_directories(${tgt} PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/app)
@@ -63,11 +65,12 @@ function(mfa_configure tgt)
 endfunction()
 
 juce_add_console_app(mix-final-actual PRODUCT_NAME "mix-final-actual")
-target_sources(mix-final-actual PRIVATE ${MFA_ENGINE_SOURCES} app/main.cpp app/WebServer.cpp app/FirstMix.cpp app/Instances.cpp app/Mcp.cpp app/Export.cpp app/Project.cpp)
+target_sources(mix-final-actual PRIVATE ${MFA_ENGINE_SOURCES} app/main.cpp app/WebServer.cpp app/FirstMix.cpp app/Instances.cpp app/Mcp.cpp app/Export.cpp app/Project.cpp
+    app/Render.cpp app/LiveLoudness.cpp app/SaveDialog.cpp)
 mfa_configure(mix-final-actual)
 target_link_libraries(mix-final-actual PRIVATE mfa_web)
 
 # Native checks (tests/tests.cpp): run by CI on every platform.
 juce_add_console_app(mfa-tests PRODUCT_NAME "mfa-tests")
-target_sources(mfa-tests PRIVATE ${MFA_ENGINE_SOURCES} tests/tests.cpp)
+target_sources(mfa-tests PRIVATE ${MFA_ENGINE_SOURCES} app/Render.cpp tests/tests.cpp)
 mfa_configure(mfa-tests)

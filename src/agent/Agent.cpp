@@ -84,14 +84,44 @@ void Agent::userMessage (const std::string& text)
     trigger ({ "user", text });
 }
 
-void Agent::queueTurns (int n, const std::string& label)
+void Agent::queueTurns (int n, const std::string& label, const std::string& goal)
 {
     {
         std::lock_guard<std::mutex> lk (m);
         queued = n;
         queuedLabel = label;
+        queuedGoal = goal;
     }
     wake.signal();
+}
+
+const char* Agent::stageName (Stage s)
+{
+    switch (s)
+    {
+        case Stage::Listening: return "listening";
+        case Stage::Waiting: return "waiting";
+        case Stage::Applying: return "applying";
+        case Stage::Done: return "done";
+        default: return "none";
+    }
+}
+
+void Agent::setStage (Stage s, int changes)
+{
+    stageNow = (int) s;
+    stageChanges = changes;
+    stageSinceMs = nowMs();
+}
+
+Agent::TurnStatus Agent::turnStatus() const
+{
+    TurnStatus t;
+    t.tick = stageTick.load();
+    t.stage = (Stage) stageNow.load();
+    t.sinceSec = t.stage == Stage::None ? 0.0 : (nowMs() - stageSinceMs.load()) / 1000.0;
+    t.changes = stageChanges.load();
+    return t;
 }
 
 std::optional<Trigger> Agent::takePending()
@@ -102,7 +132,7 @@ std::optional<Trigger> Agent::takePending()
     if (! p && queued > 0)
     {
         --queued;
-        p = Trigger { "auto", {}, queuedLabel };
+        p = Trigger { queuedGoal.empty() ? "auto" : "goal", queuedGoal, queuedLabel };
     }
     return p;
 }
@@ -140,19 +170,25 @@ bool Agent::runTick (const Trigger& trig)
     const double t0 = nowMs();
     LatencyRow lat;
     lat.trigger = trig.kind;
-    if (bridge.secondsSinceAgentSeen() > 120.0)
-    {
-        ChatEntry s;
-        s.role = "system";
-        s.text = "Waiting for your coding agent. Ask it to connect to the mixer (its mix tools), and this turn starts.";
-        s.time = juce::Time::currentTimeMillis() / 1000.0;
-        store.addChat (s);
-    }
 
     st = State::Thinking;
     thinkingSince = nowMs();
     const int tick = store.nextTickNumber();
     lat.tick = tick;
+    stageTick = tick;
+
+    // 1. listen: the measurements must describe the mix as it is now (live: wait for fresh audio after any change)
+    setStage (Stage::Listening);
+    host.waitForFreshAudio (listenSec.load(), [this] { return threadShouldExit(); });
+    if (bridge.secondsSinceAgentSeen() > 60.0)
+    {
+        ChatEntry s;
+        s.role = "system";
+        s.tick = tick;
+        s.text = "Waiting for your coding agent. Ask it to connect to the mixer (its mix tools), and this turn starts.";
+        s.time = juce::Time::currentTimeMillis() / 1000.0;
+        store.addChat (s);
+    }
 
     auto snap = host.snapshot();
     const TrackMask mask = host.presentMask();
@@ -192,7 +228,15 @@ bool Agent::runTick (const Trigger& trig)
     {
         const json request = { { "messages", messages }, { "tools", toolSchemas() } };
         const auto label = attempt > 0 ? std::string ("retry") : trig.label.empty() ? trig.kind : trig.label;
-        auto res = bridge.ask (request, label, trig.msg, turnTimeoutS.load());
+        setStage (Stage::Waiting);
+        auto res = bridge.ask (request, label, trig.msg, turnTimeoutS.load(), [this, tick] (const std::string& text) {
+            ChatEntry n;
+            n.role = "note";
+            n.tick = tick;
+            n.text = text;
+            n.time = juce::Time::currentTimeMillis() / 1000.0;
+            store.addChat (n);
+        });
         logs.transcript (tick, attempt, request, res.ok ? res.response : json ({ { "error", res.error } }));
         if (! res.ok)
         {
@@ -245,6 +289,7 @@ bool Agent::runTick (const Trigger& trig)
                                         : "Turn " + std::to_string (tick) + " skipped: " + failure.substr (0, 200);
         s.time = rec.time;
         store.addChat (s);
+        setStage (Stage::Done, 0);
         st = State::Idle;
         return false;
     }
@@ -260,6 +305,7 @@ bool Agent::runTick (const Trigger& trig)
     const auto val = validateToolCalls (parsed.calls, ctx);
 
     // apply (message thread, LLM ramp)
+    setStage (Stage::Applying, (int) val.targets.size());
     if (! val.targets.empty()) host.applyAgentChanges (tick, val.targets, cfg.llmRampS);
 
     // record + chat
@@ -305,6 +351,7 @@ bool Agent::runTick (const Trigger& trig)
     logs.latency (lat);
     logs.deltas (tick, val.deltas);
     ++completed;
+    setStage (Stage::Done, (int) val.targets.size());
     st = State::Idle;
     return true;
 }

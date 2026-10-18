@@ -16,6 +16,8 @@
 #include <atomic>
 #include <memory>
 #include <mutex>
+#include <string>
+#include <vector>
 
 namespace im
 {
@@ -40,6 +42,20 @@ public:
         double gainDb = 0.0;                      // applied to every track
         float gain = 1.0f;
     };
+
+    // A clip on the timeline (seconds): `len` seconds of the file from `src`, starting at `pos`; gain in dB; equal-power
+    // fades in seconds. A track's regions never overlap. The default edit (identity) is one region per track covering
+    // its whole file at 0, which plays exactly like the file.
+    struct Region
+    {
+        double pos = 0, src = 0, len = 0, gainDb = 0, fadeIn = 0, fadeOut = 0;
+        bool operator== (const Region&) const = default;
+    };
+    using Regions = std::vector<Region>;
+    static constexpr int kMaxRegions = 256;
+    // Checks and tidies one track's regions against its file length: "" when valid (then `r` is sorted, overlaps cut
+    // with later regions in the list winning, fades clamped to half the region), else what is wrong.
+    static std::string normaliseRegions (Regions& r, double fileLenSec);
 
     MultitrackPlayer();
     ~MultitrackPlayer();
@@ -74,13 +90,52 @@ public:
     double excerptEndSec() const noexcept { return excB.load(); }
     double inputGainDb() const noexcept { return gainDbNow.load(); }
 
+    // ---- clips (message thread) ----
+    std::vector<Regions> edits() const;          // per loaded track (identity regions where not edited)
+    int editsVersion() const noexcept { return editsVer.load(); }
+    bool editsAreIdentity() const;
+    std::string setTrackRegions (int track, Regions r); // "" or the error (nothing changed then)
+    void setAllEdits (const std::vector<Regions>& all); // saved state; invalid regions dropped; empty = identity
+    double trackLengthSec (int track) const;            // the file's length
+
+    // ---- waveform overview (any thread) ----
+    // One value per peaksBlock() frames: round(255 * sqrt(max |sample| of both channels)). Built once per session in
+    // the background; empty until peaksReady().
+    int peaksBlock() const noexcept { return peakBlock.load(); }
+    bool peaksReady() const noexcept { return peaksDone.load(); }
+    std::vector<uint8_t> peaks (int track) const;
+
     // Audio thread. Fills one stereo buffer per track; returns the tracks provided.
     TrackMask fill (float* const* L, float* const* R, int n) noexcept;
     bool hasSession() const noexcept { return numTracks.load() > 0; }
 
 private:
+    struct RtRegion
+    {
+        int64_t pos, src, len, fadeIn, fadeOut;
+        float gain;
+    };
+    struct RtEdits // immutable once published; kept alive until the player is destroyed
+    {
+        const Session* session = nullptr;
+        bool identity = true;
+        int64_t end = 0; // song length in frames
+        std::vector<std::vector<RtRegion>> tracks;
+    };
+    void publishEdits (const Session* s); // message thread, infoMutex held
+    static void renderRegions (const Track& trk, const std::vector<RtRegion>& regs, int64_t start, int n, float* L, float* R) noexcept;
+
     class Prefetcher;
+    class PeakBuilder;
     std::unique_ptr<Prefetcher> prefetch;
+    std::unique_ptr<PeakBuilder> peakBuilder;
+    std::vector<Regions> editSec;                   // what the user set (guarded by infoMutex); empty = identity
+    std::vector<std::unique_ptr<RtEdits>> rtOwned;  // guarded by infoMutex
+    std::atomic<RtEdits*> rtEdits { nullptr };
+    std::atomic<int> editsVer { 0 };
+    std::vector<std::vector<uint8_t>> peakData;     // guarded by infoMutex
+    std::atomic<int> peakBlock { 256 };
+    std::atomic<bool> peaksDone { false };
     Session* current = nullptr;                 // audio thread
     std::atomic<Session*> pending { nullptr };  // set by setSession, taken by the audio thread
     std::atomic<Session*> active { nullptr };   // what plays (read by the prefetcher)

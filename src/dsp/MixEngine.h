@@ -39,8 +39,14 @@ public:
     MixEngine() { for (auto& g : trackGroup) g.store (-1); }
     MasterMeters masterMeters;
 
-    // Extra gain before the limiter, outside the mix settings: export to a delivery loudness (0 = as mixed).
+    // Extra gain before the limiter, outside the mix settings: master to a delivery loudness (0 = as mixed). Glides
+    // over 1 s when it changes while playing; prepare() jumps to it (offline renders).
     std::atomic<float> deliveryGainDb { 0.0f };
+    // While mastering, the limiter is on whatever its parameter says (export and live playback alike).
+    std::atomic<bool> forceLimiter { false };
+    // Live playback with a delivery gain: the analysis tap gets the mix as mixed (no delivery gain, the limiter as its
+    // parameter says) through a second limiter, so the agent's measurements do not depend on the playback loudness.
+    std::atomic<bool> separateAnalysis { false };
 
     void prepare (double sampleRate, int maxBlockSize);
     int maxBlock() const noexcept { return maxBlockSize; }
@@ -84,7 +90,9 @@ private:
     std::array<std::vector<float>, kNumGroupBuses> groupL, groupR;
     Compressor busComp;
     juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear> busOnPower, busMakeupDb, limOn;
-    Limiter limiter;
+    Limiter limiter, analysisLimiter;
+    juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear> deliverySm, anaLimOn;
+    std::vector<float> anaL, anaR, anaW;
 
     std::atomic<bool> bypass { false }, levelMatch { true };
     juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear> bypassW;

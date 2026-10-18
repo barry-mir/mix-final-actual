@@ -1028,6 +1028,7 @@ std::string triggerSection (const PromptInputs& in)
     std::string trig;
     if (in.trigger == "user") trig = "TRIGGER: user message: \"" + in.userMsg + "\"";
     else if (in.trigger == "stage") trig = "TRIGGER: stage edit: \"" + in.userMsg + "\"";
+    else if (in.trigger == "goal") trig = "TRIGGER: remix turn; the user's goal for this remix: \"" + in.userMsg + "\"";
     else trig = "TRIGGER: periodic check (no user message)";
     if (in.promptVersion >= 4)
         return trig + "\nRespond with \"Intent: ...\" (first turn, or if it changes), 1-3 sentences on what you change and why, then tool calls.";

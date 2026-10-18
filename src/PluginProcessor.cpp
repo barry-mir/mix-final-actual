@@ -121,11 +121,20 @@ void InteractiveMixerProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
     // Any mix parameter moved (agent ramp, user, automation): restart the analyzer's long-term level average.
     double sig = 0;
     for (size_t i = 0; i < rawParams.size(); ++i) sig += (double) rawParams[i]->load (std::memory_order_relaxed) * (double) (i % 97 + 1);
-    if (sig != paramSig)
+    // The same for clip edits and group routing; also restarts the count of audio played since the last change.
+    const int ev = player.editsVersion();
+    int gsig = 0;
+    for (int t = 0; t < player.numLoadedTracks(); ++t) gsig = gsig * 31 + engine.trackGroup[(size_t) t].load (std::memory_order_relaxed) + 2;
+    if (sig != paramSig || ev != seenEditsVer || gsig != seenGroupSig)
     {
         paramSig = sig;
+        seenEditsVer = ev;
+        seenGroupSig = gsig;
         analyzer.noteParamChange();
+        freshSamples.store (0, std::memory_order_relaxed);
     }
+    else if (player.isPlaying())
+        freshSamples.fetch_add (n, std::memory_order_relaxed);
 
     TrackMask mask {};
     float* outL = buffer.getWritePointer (0);
@@ -169,6 +178,63 @@ void InteractiveMixerProcessor::applyAgentChanges (int tick, const std::vector<P
     juce::MessageManager::callAsync ([this, weak, tick, targets, rampSec] {
         if (weak.lock()) applyLlmBatch (tick, targets, rampSec);
     });
+}
+
+void InteractiveMixerProcessor::waitForFreshAudio (double needSec, const std::function<bool()>& stop)
+{
+    if (! servicesStarted || needSec <= 0) return; // offline engines (first mix, export) drive their own audio
+    listenNeed = needSec;
+    const double t0 = nowMs(), limitMs = (needSec * 4.0 + 20.0) * 1000.0; // a stalled audio device must not hang the turn
+    for (;;)
+    {
+        const double have = freshAudioSec();
+        listenHave = std::min (have, needSec);
+        if (have >= needSec || (stop && stop()) || nowMs() - t0 > limitMs) break;
+        if (! player.isPlaying())
+        {
+            if (! player.isLooping() && player.positionSec() >= player.lengthSec() - 0.05) player.seek (0.0);
+            player.setPlaying (true);
+        }
+        juce::Thread::sleep (50);
+    }
+    listenNeed = 0.0;
+    listenHave = 0.0;
+}
+
+json InteractiveMixerProcessor::editsJson() const
+{
+    json tracks = json::array();
+    for (auto& rs : player.edits())
+    {
+        json a = json::array();
+        for (auto& r : rs)
+            a.push_back ({ { "pos", r.pos }, { "src", r.src }, { "len", r.len }, { "gain", r.gainDb }, { "fadeIn", r.fadeIn }, { "fadeOut", r.fadeOut } });
+        tracks.push_back (a);
+    }
+    return { { "version", player.editsVersion() }, { "tracks", tracks } };
+}
+
+std::string InteractiveMixerProcessor::regionsFromJson (const json& arr, MultitrackPlayer::Regions& out)
+{
+    out.clear();
+    if (! arr.is_array()) return "regions must be a list";
+    for (size_t k = 0; k < arr.size(); ++k)
+    {
+        const auto& j = arr[k];
+        if (! j.is_object()) return "clip " + std::to_string (k + 1) + " must be an object";
+        auto num = [&] (const char* key, double def, bool required, double& v) -> bool {
+            if (! j.contains (key)) { v = def; return ! required; }
+            if (! j[key].is_number()) return false;
+            v = j[key].get<double>();
+            return true;
+        };
+        MultitrackPlayer::Region r;
+        if (! num ("pos", 0, true, r.pos) || ! num ("src", 0, true, r.src) || ! num ("len", 0, true, r.len) || ! num ("gain", 0, false, r.gainDb)
+            || ! num ("fadeIn", 0, false, r.fadeIn) || ! num ("fadeOut", 0, false, r.fadeOut))
+            return "clip " + std::to_string (k + 1) + ": pos, src and len are required numbers (gain, fadeIn, fadeOut optional numbers)";
+        out.push_back (r);
+    }
+    return {};
 }
 
 void InteractiveMixerProcessor::applyLlmBatch (int tick, const std::vector<ParamTarget>& targets, double rampSec)
@@ -380,6 +446,7 @@ void InteractiveMixerProcessor::getStateInformation (juce::MemoryBlock& dest)
     auto* extra = xml->createNewChildElement ("IMSTATE");
     extra->addTextElement (store.toJson().dump());
     if (player.hasSession()) xml->setAttribute ("sessionFolder", player.loadedFolder().getFullPathName());
+    if (! player.editsAreIdentity()) xml->createNewChildElement ("EDITS")->addTextElement (editsJson()["tracks"].dump());
     copyXmlToBinary (*xml, dest);
 }
 
@@ -392,6 +459,23 @@ void InteractiveMixerProcessor::setStateInformation (const void* data, int size)
         auto j = json::parse (extra->getAllSubText().toStdString(), nullptr, false);
         if (! j.is_discarded()) store.fromJson (j);
         xml->removeChildElement (extra, true);
+    }
+    {
+        // Clip edits (none saved = every file plays whole, from 0).
+        std::vector<MultitrackPlayer::Regions> all;
+        if (auto* ed = xml->getChildByName ("EDITS"))
+        {
+            auto j = json::parse (ed->getAllSubText().toStdString(), nullptr, false);
+            if (j.is_array())
+                for (auto& t : j)
+                {
+                    MultitrackPlayer::Regions r;
+                    if (! regionsFromJson (t, r).empty()) r.clear();
+                    all.push_back (std::move (r));
+                }
+            xml->removeChildElement (ed, true);
+        }
+        player.setAllEdits (all);
     }
     const auto folder = xml->getStringAttribute ("sessionFolder");
     if (xml->hasTagName (apvts.state.getType())) apvts.replaceState (juce::ValueTree::fromXml (*xml));

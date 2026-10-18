@@ -31,6 +31,9 @@ Loop: `next_turn` → answer → `submit_turn`.
   at its end.
 - Before answering, think it through: what kind of song this is and what it needs, how the tracks relate (levels, band
   shares, conflicts), what your earlier turns did and what they changed, and which moves follow from that.
+- While you work, post 2-4 short notes with `post_note(turn, text)`: first what you read in the measurements (one or two
+  sentences, e.g. "Guitars sit 4 dB above their range and own the low-mids; vocals are 3 dB under."), then your plan.
+  The user watches these live in the mixer page, as if watching you think. Keep them plain and short; then submit.
 - Answer with ONE `submit_turn(turn, content, tool_calls)`: `content` is the reply the SYSTEM part asks for, and
   `tool_calls` is every console call of the turn, `[{"name": "set_fader", "arguments": {"track": "Lead Vocal", "db": -3}}, ...]`,
   following the TOOLS schemas. Turn 1 usually needs many calls (a whole mix); later turns fix what the measurements
@@ -44,9 +47,11 @@ does (a sentence or two from your turns).
 
 ## 3. Stay with the user
 
-The user can now play the mix, change any control, loop another part of the song, and type requests in the page
-("vocals more upfront", "less reverb on the drums"), or press "Mix it" for another full 5-turn pass. Each of those
-arrives as a turn through `next_turn`. Keep calling `next_turn` (it waits up to 45 s each call, then returns
+The user can now play the mix, change any control, edit clips, loop another part of the song, and type requests in
+the page: **Ask** ("vocals more upfront", "less reverb on the drums") runs one turn on that request; **Remix** runs another
+full 5-turn pass, toward the text in the box if there is any (the turns show it as the user's goal). Each of those
+arrives as a turn through `next_turn`. Before a live turn the console plays a few seconds of the loop, so the
+measurements describe the mix as it is now. Keep calling `next_turn` (it waits up to 45 s each call, then returns
 "No turn waiting") and answer every turn as above, until the user tells you they are done. Requests may also come to
 you directly in this conversation: pass them on by answering the next turn with that in mind, or tell the user to type
 it in the page.
