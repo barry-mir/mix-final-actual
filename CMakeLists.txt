@@ -41,8 +41,7 @@ set(MFA_ENGINE_SOURCES
     src/analysis/Analyzer.cpp
     src/agent/Tools.cpp
     src/agent/PromptBuilder.cpp
-    src/agent/LlmClient.cpp
-    src/agent/ServerManager.cpp
+    src/agent/Bridge.cpp
     src/agent/Agent.cpp
     src/agent/AgentLog.cpp
     src/standalone/MultitrackPlayer.cpp
@@ -52,7 +51,7 @@ set(MFA_ENGINE_SOURCES
 juce_add_binary_data(mfa_web SOURCES web/index.html)
 
 juce_add_console_app(mix-final-actual PRODUCT_NAME "mix-final-actual")
-target_sources(mix-final-actual PRIVATE ${MFA_ENGINE_SOURCES} app/main.cpp app/WebServer.cpp)
+target_sources(mix-final-actual PRIVATE ${MFA_ENGINE_SOURCES} app/main.cpp app/WebServer.cpp app/FirstMix.cpp app/Instances.cpp app/Mcp.cpp)
 target_include_directories(mix-final-actual PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/app)
 target_include_directories(mix-final-actual SYSTEM PRIVATE ${juce_SOURCE_DIR}/modules/juce_audio_processors_headless/format_types/VST3_SDK)
 target_compile_definitions(mix-final-actual PRIVATE

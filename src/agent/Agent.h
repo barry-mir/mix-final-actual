@@ -3,16 +3,15 @@
 //  1. trigger: Auto interval (tick_s), user message, or stage drag end
 //     (debounced by the caller). While a tick runs, at most one trigger is
 //     queued (priority user > stage > auto; queued user messages are merged).
-//  2. build prompt; send request on the worker thread.
+//  2. build prompt; hand the request to the bridge (the user's coding agent answers it).
 //  3. parse tool calls (one retry on malformed JSON, then skip), validate,
 //     clamp, max-step limits, skip locked; apply via the host (message thread,
 //     LLM ramp).
 //  4. append memory record; post rationale + applied diff to chat.
 //  5. the next tick fills features_after of the previous record.
 #include "agent/AgentLog.h"
-#include "agent/LlmClient.h"
+#include "agent/Bridge.h"
 #include "agent/PromptBuilder.h"
-#include "agent/ServerManager.h"
 #include <juce_core/juce_core.h>
 #include <atomic>
 #include <mutex>
@@ -37,6 +36,7 @@ struct Trigger
 {
     std::string kind = "auto"; // "auto" | "user" | "stage"
     std::string msg;
+    std::string label; // what the coding agent sees as the turn's trigger (default: kind), e.g. "first_mix"
 };
 
 class Agent : private juce::Thread
@@ -44,7 +44,7 @@ class Agent : private juce::Thread
 public:
     enum class State { Offline, Idle, Thinking };
 
-    Agent (StateStore& store, AgentHost& host, ServerManager* server);
+    Agent (StateStore& store, AgentHost& host, Bridge& bridge);
     ~Agent() override;
 
     void start();
@@ -53,6 +53,8 @@ public:
     // Any thread. Ignored when mode is Off (user messages are still logged).
     void trigger (Trigger t);
     void userMessage (const std::string& text);
+    // Run n turns one after another (the multi-turn method), each labelled `label` for the coding agent.
+    void queueTurns (int n, const std::string& label);
 
     State state() const noexcept { return st.load(); }
     static const char* stateName (State s);
@@ -63,8 +65,8 @@ public:
     // Synchronous single tick (tests / offline). Returns false if skipped.
     bool runTick (const Trigger& t);
 
-    // Host/port override (tests use a mock server).
-    void setEndpoint (const std::string& host, int port);
+    // How long a turn waits for the coding agent before it is skipped.
+    void setTurnTimeout (double seconds) { turnTimeoutS = seconds; }
 
 private:
     void run() override;
@@ -72,20 +74,18 @@ private:
 
     StateStore& store;
     AgentHost& host;
-    ServerManager* server;
+    Bridge& bridge;
     AgentLog logs;
 
     mutable std::mutex m;
     std::optional<Trigger> pending;
-    std::string endpointHost = "127.0.0.1";
-    int endpointPort = -1; // -1 = from settings
+    int queued = 0;            // turns still to run from queueTurns (guarded by m)
+    std::string queuedLabel;
+    std::atomic<double> turnTimeoutS { 1800.0 };
     std::atomic<State> st { State::Idle };
     std::atomic<double> thinkingSince { 0 };
     std::atomic<int> completed { 0 };
     double lastTickEndMs = 0;
-    std::string fixedKey;
-    int fixedTokensCached = -1;
     juce::WaitableEvent wake;
-    CancelToken cancelToken; // aborts an in-flight request on stop()
 };
 } // namespace im

@@ -30,11 +30,6 @@ double stepDelta (const ParamSpec& s, double from, double to);
 
 struct Settings
 {
-    std::string modelPath;
-    std::string serverPath = "llama-server";
-    int port = 8089;
-    bool autoStart = true;
-    bool cpuOnly = false;    // false = all layers on the GPU (Metal, -ngl 99; ~3x faster per turn); true = -ngl 0 (the spec's CPU-only agent)
     double tickS = 30.0;     // Auto interval, 2..300 (30 s: CPU-only ticks take 23-31 s)
     int memoryK = 3;         // records in prompt (3: fits the token budget with 5 busy tracks)
     double llmRampS = 2.0;   // 0.5..5
@@ -44,7 +39,6 @@ struct Settings
     int promptVersion = 3;      // 1 = original tables, 2 = tables + diagnoses vs. mix priors, 3 = + checklist vs. 230 finished mixes, 4 = engineer, 5 = engineer for many tracks + full effect set (API models)
     int maxTokens = 1000;       // completion budget per tick (400 truncated multi-call replies)
     bool enableThinking = false;
-    int contextSize = 16384;    // llama-server -c (raised from 8192)
 
     json toJson() const;
     static Settings fromJson (const json& j);

@@ -6,17 +6,14 @@
 #include <string>
 #include <thread>
 
-namespace im
-{
-class InteractiveMixerProcessor;
-}
-
 namespace mfa
 {
+struct AppState;
+
 class WebServer
 {
 public:
-    WebServer (im::InteractiveMixerProcessor& proc, std::string token);
+    WebServer (AppState& app, std::string token);
     ~WebServer();
 
     // Binds 127.0.0.1:port (0 = any free port); returns the bound port, or -1.

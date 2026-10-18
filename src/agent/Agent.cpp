@@ -1,4 +1,6 @@
 #include "agent/Agent.h"
+#include "agent/Tools.h"
+#include "core/Paths.h"
 #include <cstdlib>
 #include <cmath>
 
@@ -10,9 +12,9 @@ int priority (const std::string& k) { return k == "user" ? 3 : k == "stage" ? 2 
 double nowMs() { return juce::Time::getMillisecondCounterHiRes(); }
 } // namespace
 
-Agent::Agent (StateStore& s, AgentHost& h, ServerManager* srv) : juce::Thread ("IM Agent"), store (s), host (h), server (srv)
+Agent::Agent (StateStore& s, AgentHost& h, Bridge& b) : juce::Thread ("Agent"), store (s), host (h), bridge (b)
 {
-    logs.setDir (ServerManager::logsDir());
+    logs.setDir (appDataDir().getChildFile ("logs"));
 }
 
 Agent::~Agent() { stop(); }
@@ -29,7 +31,6 @@ const char* Agent::stateName (State s)
 
 void Agent::start()
 {
-    cancelToken.reset();
     lastTickEndMs = nowMs();
     if (! isThreadRunning()) startThread (juce::Thread::Priority::normal);
 }
@@ -39,17 +40,10 @@ void Agent::stop()
     if (isThreadRunning())
     {
         signalThreadShouldExit();
-        cancelToken.cancel(); // abort an in-flight request instead of waiting for its timeout
+        bridge.cancel(); // release a turn that is waiting for the coding agent
         wake.signal();
         stopThread (5000);
     }
-}
-
-void Agent::setEndpoint (const std::string& h, int p)
-{
-    std::lock_guard<std::mutex> lk (m);
-    endpointHost = h;
-    endpointPort = p;
 }
 
 double Agent::thinkingElapsedSec() const
@@ -90,11 +84,26 @@ void Agent::userMessage (const std::string& text)
     trigger ({ "user", text });
 }
 
+void Agent::queueTurns (int n, const std::string& label)
+{
+    {
+        std::lock_guard<std::mutex> lk (m);
+        queued = n;
+        queuedLabel = label;
+    }
+    wake.signal();
+}
+
 std::optional<Trigger> Agent::takePending()
 {
     std::lock_guard<std::mutex> lk (m);
     auto p = pending;
     pending.reset();
+    if (! p && queued > 0)
+    {
+        --queued;
+        p = Trigger { "auto", {}, queuedLabel };
+    }
     return p;
 }
 
@@ -112,8 +121,8 @@ void Agent::run()
         wake.wait (waitMs);
         if (threadShouldExit()) break;
 
-        if (server != nullptr && st.load() != State::Thinking)
-            st = server->status() == ServerManager::Status::Online ? State::Idle : State::Offline;
+        if (st.load() != State::Thinking)
+            st = bridge.secondsSinceAgentSeen() < 120.0 ? State::Idle : State::Offline;
 
         auto t = takePending();
         if (! t && store.settings().mode == AgentMode::Auto && nowMs() >= lastTickEndMs + store.settings().tickS * 1000.0)
@@ -128,27 +137,16 @@ void Agent::run()
 bool Agent::runTick (const Trigger& trig)
 {
     const auto cfg = store.settings();
-    std::string h;
-    int port;
-    {
-        std::lock_guard<std::mutex> lk (m);
-        h = endpointHost;
-        port = endpointPort > 0 ? endpointPort : cfg.port;
-    }
-    LlmClient client (h, port);
     const double t0 = nowMs();
     LatencyRow lat;
     lat.trigger = trig.kind;
-
-    if (! client.health (800))
+    if (bridge.secondsSinceAgentSeen() > 120.0)
     {
-        st = State::Offline;
         ChatEntry s;
         s.role = "system";
-        s.text = "LLM offline (no llama-server on port " + std::to_string (port) + "). Mixer keeps working.";
+        s.text = "Waiting for your coding agent. Ask it to connect to the mixer (its mix tools), and this turn starts.";
         s.time = juce::Time::currentTimeMillis() / 1000.0;
         store.addChat (s);
-        return false;
     }
 
     st = State::Thinking;
@@ -181,27 +179,6 @@ bool Agent::runTick (const Trigger& trig)
     in.userMsg = trig.msg;
     in.tokenBudget = cfg.promptTokenBudget;
     in.promptVersion = cfg.promptVersion;
-    // Exact counts from the server's tokenizer when available (fixed prefix measured once per endpoint).
-    {
-        const std::string key = h + ":" + std::to_string (port);
-        if (fixedKey != key)
-        {
-            // Exact fixed prefix: system + tools rendered by the server's own chat template (empty user turn).
-            fixedTokensCached = client.templatedTokens (json::array ({ { { "role", "system" }, { "content", systemPrompt (cfg.promptVersion) } },
-                                                                      { { "role", "user" }, { "content", "" } } }));
-            if (fixedTokensCached < 0) // older servers without /apply-template
-            {
-                const int sys = client.tokenize (systemPrompt()), tools = client.tokenize (toolSchemas().dump (1));
-                fixedTokensCached = (sys >= 0 && tools >= 0) ? sys + tools + kTemplateOverheadTokens : -1;
-            }
-            fixedKey = key;
-        }
-        if (fixedTokensCached >= 0)
-        {
-            in.fixedTokens = fixedTokensCached;
-            in.countTokens = [&client] (const std::string& text) { return client.tokenize (text); };
-        }
-    }
     const auto prompt = buildPrompt (in);
     lat.estPromptTokens = prompt.estTokens;
 
@@ -213,9 +190,9 @@ bool Agent::runTick (const Trigger& trig)
     double prefill = 0, decode = 0;
     for (int attempt = 0; attempt < 2; ++attempt)
     {
-        const auto request = LlmClient::makeRequest (messages, cfg.maxTokens, cfg.enableThinking);
-        static const int timeoutS = [] { const char* e = std::getenv ("IM_LLM_TIMEOUT_S"); return e ? std::max (30, std::atoi (e)) : 300; }();
-        auto res = client.chat (request, timeoutS, &cancelToken);
+        const json request = { { "messages", messages }, { "tools", toolSchemas() } };
+        const auto label = attempt > 0 ? std::string ("retry") : trig.label.empty() ? trig.kind : trig.label;
+        auto res = bridge.ask (request, label, trig.msg, turnTimeoutS.load());
         logs.transcript (tick, attempt, request, res.ok ? res.response : json ({ { "error", res.error } }));
         if (! res.ok)
         {

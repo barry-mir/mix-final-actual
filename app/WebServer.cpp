@@ -1,4 +1,5 @@
 #include "WebServer.h"
+#include "AppState.h"
 #include "BinaryData.h"
 #include "PluginProcessor.h"
 #include <httplib.h>
@@ -19,36 +20,45 @@ bool loopbackHost (const httplib::Request& r)
     const auto host = h.substr (0, h.rfind (':') == std::string::npos ? h.size() : h.rfind (':'));
     return host == "127.0.0.1" || host == "localhost" || host == "[::1]";
 }
+
+void reply (httplib::Response& res, const json& j, int status = 200)
+{
+    res.status = status;
+    res.set_content (j.dump(), "application/json");
+}
+
+json parseBody (const httplib::Request& req) { return json::parse (req.body, nullptr, false); }
 } // namespace
 
 struct WebServer::Impl
 {
-    InteractiveMixerProcessor& p;
+    AppState& app;
     std::string token;
     httplib::Server http;
 
-    Impl (InteractiveMixerProcessor& proc, std::string t) : p (proc), token (std::move (t)) {}
+    Impl (AppState& a, std::string t) : app (a), token (std::move (t)) {}
 
-    int numTracks() const { return p.player.numLoadedTracks(); }
+    // ---- live engine views ------------------------------------------------------------------------------------
+    static int numTracks (const InteractiveMixerProcessor& p) { return p.player.numLoadedTracks(); }
 
     // Parameters that exist in this session: every slot of the loaded tracks, plus the master section.
-    std::vector<int> liveParams() const
+    static std::vector<int> liveParams (const InteractiveMixerProcessor& p)
     {
         std::vector<int> v;
-        const int n = numTracks();
+        const int n = numTracks (p);
         for (auto& s : im::allParams())
             if (s.track < n) v.push_back (s.index);
         return v;
     }
 
-    json sessionJson() const
+    static json sessionJson (const InteractiveMixerProcessor& p)
     {
         json tracks = json::array();
         const auto names = p.store.trackNames();
-        for (int t = 0; t < numTracks(); ++t)
-            tracks.push_back ({ { "index", t }, { "name", t < (int) names.size() ? names[(size_t) t] : "Track " + std::to_string (t + 1) } });
+        for (int t = 0; t < numTracks (p); ++t)
+            tracks.push_back ({ { "index", t }, { "name", names[(size_t) t].empty() ? "Track " + std::to_string (t + 1) : names[(size_t) t] } });
         json params = json::array();
-        for (int i : liveParams())
+        for (int i : liveParams (p))
         {
             const auto& s = im::spec (i);
             json j = { { "i", i }, { "id", s.id }, { "module", s.module }, { "name", s.name }, { "track", s.track },
@@ -60,25 +70,63 @@ struct WebServer::Impl
         return { { "tracks", tracks }, { "params", params }, { "folder", p.player.loadedFolder().getFullPathName().toStdString() } };
     }
 
-    json valuesJson() const
+    static json valuesJson (const InteractiveMixerProcessor& p)
     {
         json v = json::object();
-        for (int i : liveParams()) v[std::to_string (i)] = p.paramValue (i);
+        for (int i : liveParams (p)) v[std::to_string (i)] = p.paramValue (i);
         return v;
     }
 
-    json statusJson() const
+    static json statusJson (const InteractiveMixerProcessor& p)
     {
         json peaks = json::array();
-        for (int t = 0; t < numTracks(); ++t) peaks.push_back (p.engine.meters[(size_t) t].outPeak.load());
+        for (int t = 0; t < numTracks (p); ++t) peaks.push_back (p.engine.meters[(size_t) t].outPeak.load());
         const auto& m = p.engine.masterMeters;
         return { { "playing", p.player.isPlaying() }, { "looping", p.player.isLooping() },
                  { "pos", p.player.positionSec() }, { "len", p.player.lengthSec() },
                  { "master", { m.peakL.load(), m.peakR.load() } }, { "tracks", peaks },
-                 { "limGr", m.limGr.load() }, { "busGr", m.busGr.load() }, { "cpu", p.cpuLoad.load() } };
+                 { "limGr", m.limGr.load() }, { "busGr", m.busGr.load() }, { "cpu", p.cpuLoad.load() },
+                 { "agent", im::Agent::stateName (p.agent.state()) }, { "thinking_s", p.agent.thinkingElapsedSec() },
+                 { "chat_version", p.store.chatVersion() } };
     }
 
-    static void reply (httplib::Response& res, const json& j) { res.set_content (j.dump(), "application/json"); }
+    static json chatJson (const InteractiveMixerProcessor& p)
+    {
+        json out = json::array();
+        for (auto& e : p.store.chat())
+        {
+            auto j = e.toJson();
+            j.erase ("debugPrompt");
+            j.erase ("debugReply");
+            out.push_back (j);
+        }
+        return { { "version", p.store.chatVersion() }, { "entries", out } };
+    }
+
+    json stateJson() const
+    {
+        std::string err;
+        {
+            std::lock_guard<std::mutex> lk (app.errMutex);
+            err = app.error;
+        }
+        auto& b = im::Bridge::shared();
+        return { { "phase", app.phase() }, { "folder", app.folder },
+                 { "first_mix", { { "turn", app.first.turn.load() }, { "turns", app.first.turns.load() }, { "done", app.first.done.load() } } },
+                 { "error", err }, { "agent_seen_s", std::min (b.secondsSinceAgentSeen(), 1e6) }, { "turn_waiting", b.hasPending() } };
+    }
+
+    // ---- routes -----------------------------------------------------------------------------------------------
+    // Wraps a handler that needs the live engine (409 while the first mix is still running).
+    template <typename F>
+    httplib::Server::Handler live (F f)
+    {
+        return [this, f] (const httplib::Request& req, httplib::Response& res) {
+            auto* p = app.live.load();
+            if (p == nullptr) return reply (res, { { "error", "the first mix is still running" }, { "state", stateJson() } }, 409);
+            f (*p, req, res);
+        };
+    }
 
     void routes()
     {
@@ -91,35 +139,86 @@ struct WebServer::Impl
             }
             return httplib::Server::HandlerResponse::Unhandled;
         });
+        // Long polls (the agent's turn wait) must not be cut off by the default 5 s read/write timeouts.
+        http.set_read_timeout (120, 0);
+        http.set_write_timeout (120, 0);
+
         http.Get ("/", [] (const httplib::Request&, httplib::Response& res) {
             res.set_content (std::string (BinaryData::index_html, (size_t) BinaryData::index_htmlSize), "text/html; charset=utf-8");
         });
-        http.Get ("/api/session", [this] (const httplib::Request&, httplib::Response& res) { reply (res, sessionJson()); });
-        http.Get ("/api/values", [this] (const httplib::Request&, httplib::Response& res) { reply (res, valuesJson()); });
-        http.Get ("/api/status", [this] (const httplib::Request&, httplib::Response& res) { reply (res, statusJson()); });
+        http.Get ("/api/state", [this] (const httplib::Request&, httplib::Response& res) { reply (res, stateJson()); });
+
+        http.Get ("/api/session", live ([] (InteractiveMixerProcessor& p, const httplib::Request&, httplib::Response& res) { reply (res, sessionJson (p)); }));
+        http.Get ("/api/values", live ([] (InteractiveMixerProcessor& p, const httplib::Request&, httplib::Response& res) { reply (res, valuesJson (p)); }));
+        http.Get ("/api/status", live ([] (InteractiveMixerProcessor& p, const httplib::Request&, httplib::Response& res) { reply (res, statusJson (p)); }));
+        http.Get ("/api/chat", live ([] (InteractiveMixerProcessor& p, const httplib::Request&, httplib::Response& res) { reply (res, chatJson (p)); }));
+
         // {"i": index, "v": display value}; applied on the message thread with the engine's 20 ms manual ramp.
-        http.Post ("/api/param", [this] (const httplib::Request& req, httplib::Response& res) {
-            auto j = json::parse (req.body, nullptr, false);
-            if (j.is_discarded() || ! j.contains ("i") || ! j.contains ("v")) { res.status = 400; return; }
+        http.Post ("/api/param", live ([] (InteractiveMixerProcessor& p, const httplib::Request& req, httplib::Response& res) {
+            auto j = parseBody (req);
+            if (j.is_discarded() || ! j.contains ("i") || ! j.contains ("v")) return reply (res, { { "error", "need i and v" } }, 400);
             const int i = j["i"].get<int>();
-            if (i < 0 || i >= im::kNumParams) { res.status = 400; return; }
+            if (i < 0 || i >= im::kNumParams) return reply (res, { { "error", "bad index" } }, 400);
             const float v = im::clampToSpec (im::spec (i), j["v"].get<float>());
-            juce::MessageManager::callAsync ([this, i, v] { p.setParamValue (i, v); });
+            juce::MessageManager::callAsync ([&p, i, v] { p.setParamValue (i, v); });
             reply (res, { { "i", i }, { "v", v } });
-        });
+        }));
         // {"play": bool, "loop": bool, "seek": seconds} (any subset)
-        http.Post ("/api/transport", [this] (const httplib::Request& req, httplib::Response& res) {
-            auto j = json::parse (req.body, nullptr, false);
-            if (j.is_discarded()) { res.status = 400; return; }
+        http.Post ("/api/transport", live ([] (InteractiveMixerProcessor& p, const httplib::Request& req, httplib::Response& res) {
+            auto j = parseBody (req);
+            if (j.is_discarded()) return reply (res, { { "error", "bad json" } }, 400);
             if (j.contains ("play")) p.player.setPlaying (j["play"].get<bool>());
             if (j.contains ("loop")) p.player.setLooping (j["loop"].get<bool>());
             if (j.contains ("seek")) p.player.seek (j["seek"].get<double>());
-            reply (res, statusJson());
+            reply (res, statusJson (p));
+        }));
+        // A prompt from the page: one turn, answered by the coding agent. {"text": "..."}
+        http.Post ("/api/prompt", live ([] (InteractiveMixerProcessor& p, const httplib::Request& req, httplib::Response& res) {
+            auto j = parseBody (req);
+            if (j.is_discarded() || ! j.contains ("text") || ! j["text"].is_string()) return reply (res, { { "error", "need text" } }, 400);
+            const auto text = j["text"].get<std::string>();
+            p.player.setPlaying (true); // the turn measures what plays
+            juce::MessageManager::callAsync ([&p, text] { p.agent.userMessage (text); });
+            reply (res, { { "ok", true } });
+        }));
+        // "Mix it": the full multi-turn method on the live engine. {"turns": 5}
+        http.Post ("/api/mix", live ([] (InteractiveMixerProcessor& p, const httplib::Request& req, httplib::Response& res) {
+            auto j = parseBody (req);
+            const int n = std::clamp (j.is_discarded() ? 5 : j.value ("turns", 5), 1, 10);
+            p.player.setPlaying (true);
+            p.agent.queueTurns (n, "mix");
+            reply (res, { { "ok", true }, { "turns", n } });
+        }));
+        http.Post ("/api/undo_turn", live ([] (InteractiveMixerProcessor& p, const httplib::Request& req, httplib::Response& res) {
+            auto j = parseBody (req);
+            if (j.is_discarded() || ! j.contains ("tick")) return reply (res, { { "error", "need tick" } }, 400);
+            const int tick = j["tick"].get<int>();
+            juce::MessageManager::callAsync ([&p, tick] { p.undoTick (tick); });
+            reply (res, { { "ok", true } });
+        }));
+
+        // ---- the coding agent's side (used by `mix-final-actual mcp`) ----------------------------------------
+        // Waits up to ?wait= seconds (max 50) for a turn. The same turn is returned until it is answered.
+        http.Get ("/api/agent/turn", [this] (const httplib::Request& req, httplib::Response& res) {
+            const double wait = std::clamp (req.has_param ("wait") ? std::atof (req.get_param_value ("wait").c_str()) : 45.0, 0.0, 50.0);
+            auto turn = im::Bridge::shared().waitTurn (wait);
+            json j = stateJson();
+            j["turn"] = turn ? json { { "id", turn->id }, { "trigger", turn->trigger }, { "user_msg", turn->userMsg }, { "text", turn->text } } : json();
+            reply (res, j);
+        });
+        // {"turn": id, "content": "...", "tool_calls": [{"name", "arguments"}]}
+        http.Post ("/api/agent/answer", [] (const httplib::Request& req, httplib::Response& res) {
+            auto j = parseBody (req);
+            if (j.is_discarded() || ! j.contains ("turn")) return reply (res, { { "error", "need turn, content, tool_calls" } }, 400);
+            json r = { { "content", j.value ("content", std::string()) }, { "tool_calls", j.value ("tool_calls", json::array()) } };
+            const auto err = im::Bridge::shared().answer (j["turn"].get<int>(), r);
+            if (! err.empty()) return reply (res, { { "error", err } }, 400);
+            reply (res, { { "ok", true } });
         });
     }
 };
 
-WebServer::WebServer (InteractiveMixerProcessor& proc, std::string token) : impl (std::make_unique<Impl> (proc, std::move (token)))
+WebServer::WebServer (AppState& app, std::string token) : impl (std::make_unique<Impl> (app, std::move (token)))
 {
     impl->routes();
 }

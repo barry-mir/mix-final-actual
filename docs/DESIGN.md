@@ -31,7 +31,7 @@ mix-final-actual  (one native binary)
   ├─ analysis    Analyzer: the features the agent reads every turn
   ├─ agent loop  Agent / PromptBuilder / Tools: builds each turn's request, validates and applies the tool calls
   ├─ web         HTTP API + the page (compiled in)                       app/WebServer.cpp, web/index.html
-  └─ bridge      MCP tools for the coding agent (to do)
+  └─ bridge      Bridge + `mix-final-actual mcp` (stdio MCP front)      src/agent/Bridge.cpp, app/Mcp.cpp
 ```
 
 The agent loop already builds a complete request (system prompt, the turn's measurements and memory, tool
@@ -47,9 +47,9 @@ Process lifetime: an MCP server over stdio dies with the agent session, but the 
 
 1. **Playable page** (done): load a folder, play, loop, seek; strips with fader, pan, mute, solo, meters; every
    parameter of a track or the master in a detail panel generated from the parameter registry.
-2. **Agent bridge**: replace `LlmClient` / `ServerManager` with the bridge; MCP tools `open`, `next_request`,
-   `submit`, `status`; the first-mix flow (excerpt, 5 turns, then open the page); prompts typed in the page go to the
-   agent's queue.
+2. **Agent bridge** (done): `LlmClient` / `ServerManager` replaced by the bridge; MCP tools `open_session`, `next_turn`,
+   `submit_turn`, `session_status`, `close_session`; the first mix runs offline before the page opens; prompts and
+   "Mix it" from the page become turns; per-turn undo in the page.
 3. **Session maker in C++**: excerpt choice, loudness gain, silent-track removal, group guess from names (now
    Python in the research repo).
 4. **No track limit**: replace the 64-bit `TrackMask` and fixed arrays with sizes set when a session loads.

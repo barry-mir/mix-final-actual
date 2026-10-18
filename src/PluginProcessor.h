@@ -11,7 +11,7 @@
 namespace im
 {
 // Test hook: when set before construction, no background threads (analysis,
-// agent, llama-server monitor) are started; tests drive them synchronously.
+// agent) are started; tests drive them synchronously.
 extern bool gDisableBackgroundServices;
 
 // RAII marker for "this thread is the audio thread" (allocation guard in tests).
@@ -93,8 +93,8 @@ public:
     AnalysisTaps taps;
     MixEngine engine;
     Analyzer analyzer { taps };
-    ServerManager server;
-    Agent agent { store, *this, &server };
+    Bridge& bridge = Bridge::shared(); // turns go to the user's coding agent
+    Agent agent { store, *this, bridge };
     MultitrackPlayer player;
 
     std::atomic<double> lastProcessMs { 0.0 };

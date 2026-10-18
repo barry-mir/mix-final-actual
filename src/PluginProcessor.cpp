@@ -1,4 +1,5 @@
 #include "PluginProcessor.h"
+#include "core/Paths.h"
 #include "agent/MixPriors.h"
 #if IM_HAS_EDITOR
  #include "PluginEditor.h"
@@ -45,10 +46,13 @@ InteractiveMixerProcessor::InteractiveMixerProcessor()
     }
     engine.setTaps (&taps);
     {
+        // The coding agent answers every turn: the engineer prompt for many tracks, no prompt-size squeeze, and every
+        // prompt from the page runs one turn.
         auto st = store.settings();
-        if (st.modelPath.empty())
-            st.modelPath = ServerManager::logsDir().getParentDirectory().getChildFile ("models")
-                               .getChildFile ("Qwen3.5-4B-Q4_K_M.gguf").getFullPathName().toStdString();
+        st.mode = AgentMode::Assist;
+        st.promptVersion = 5;
+        st.promptTokenBudget = 400000;
+        st.maxTokens = 16000;
         store.setSettings (st);
     }
     pushUndoSnapshot();
@@ -63,7 +67,6 @@ InteractiveMixerProcessor::~InteractiveMixerProcessor()
     for (auto* p : paramPtrs)
         if (p) p->removeListener (this);
     agent.stop();
-    server.stopMonitoring();
     analyzer.stop();
 }
 
@@ -71,15 +74,10 @@ void InteractiveMixerProcessor::startServices()
 {
     if (gDisableBackgroundServices || servicesStarted) return;
     servicesStarted = true;
-    server.configure (store.settings());
-    server.startMonitoring();
     agent.start();
 }
 
-void InteractiveMixerProcessor::settingsChanged()
-{
-    server.configure (store.settings());
-}
+void InteractiveMixerProcessor::settingsChanged() {}
 
 // ------------------------------------------------------------------ buses
 bool InteractiveMixerProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
@@ -378,7 +376,7 @@ void InteractiveMixerProcessor::pollHostTrackNames()
     if (diag != lastHostDiag)
     {
         lastHostDiag = diag;
-        ServerManager::logsDir().getChildFile ("host.log").appendText (juce::Time::getCurrentTime().toISO8601 (true) + "  " + diag + "\n");
+        appDataDir().getChildFile ("host.log").appendText (juce::Time::getCurrentTime().toISO8601 (true) + "  " + diag + "\n");
     }
 }
 
