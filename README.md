@@ -4,8 +4,8 @@ A mixing console in your browser, mixed by your coding agent. Give it a folder o
 ("Lead Vocal.wav", "Kick.wav", ...); your agent (Claude Code or Codex) makes the mix by reading the console's
 measurements turn by turn, then you keep adjusting it and hear every change at once.
 
-Work in progress (see [docs/DESIGN.md](docs/DESIGN.md)): the mixer page and the agent bridge work; the session maker,
-the plugin packaging and the release builds are next.
+See a real run: [docs/examples/pocket-knife.md](docs/examples/pocket-knife.md) (a 21-track band mixed by Claude Code
+in five turns, 2 min 18 s). How it is built: [docs/DESIGN.md](docs/DESIGN.md).
 
 ## Install
 
