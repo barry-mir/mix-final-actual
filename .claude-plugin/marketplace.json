@@ -1,0 +1,23 @@
+{
+  "name": "mix-final-actual",
+  "description": "mix_final_ACTUAL.wav: multitrack mixing by your coding agent, with a live mixer page in the browser.",
+  "owner": {
+    "name": "barry-mir"
+  },
+  "plugins": [
+    {
+      "name": "mix-final-actual",
+      "description": "Mix a folder of audio tracks; tweak the mix live in the browser.",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/barry-mir/mix-final-actual.git",
+        "ref": "dist"
+      },
+      "category": "productivity",
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      }
+    }
+  ]
+}

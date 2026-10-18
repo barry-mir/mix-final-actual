@@ -1,0 +1,27 @@
+{
+  "name": "mix-final-actual",
+  "displayName": "mix_final_ACTUAL.wav",
+  "version": "0.1.0",
+  "description": "Mix a folder of audio tracks on a real mixing console: your coding agent makes the mix from the console's measurements, then you keep tweaking it in a mixer page in your browser and hear every change at once.",
+  "author": {
+    "name": "barry-mir"
+  },
+  "homepage": "https://github.com/barry-mir/mix-final-actual",
+  "repository": "https://github.com/barry-mir/mix-final-actual",
+  "license": "AGPL-3.0-only",
+  "keywords": [
+    "audio",
+    "mixing",
+    "music",
+    "multitrack",
+    "daw"
+  ],
+  "mcpServers": {
+    "mix-final-actual": {
+      "command": "${CLAUDE_PLUGIN_ROOT}/bin/mix-final-actual",
+      "args": [
+        "mcp"
+      ]
+    }
+  }
+}

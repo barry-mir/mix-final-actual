@@ -92,6 +92,12 @@ struct WebServer::Impl
                  { "chat_version", p.store.chatVersion() } };
     }
 
+    json exportJson() const
+    {
+        auto& e = app.exporter;
+        return { { "running", e.running() }, { "progress", e.progress() }, { "folder", e.folder() }, { "error", e.error() } };
+    }
+
     static json chatJson (const InteractiveMixerProcessor& p)
     {
         json out = json::array();
@@ -193,6 +199,15 @@ struct WebServer::Impl
             p.agent.queueTurns (n, "mix");
             reply (res, { { "ok", true }, { "turns", n } });
         }));
+        // Render the whole song (and optionally stems) with the current settings. {"stems": bool}
+        http.Post ("/api/export", live ([this] (InteractiveMixerProcessor& p, const httplib::Request& req, httplib::Response& res) {
+            auto j = parseBody (req);
+            const bool stems = ! j.is_discarded() && j.value ("stems", false);
+            if (app.exporter.running()) return reply (res, { { "error", "an export is already running" } }, 409);
+            juce::MessageManager::callAsync ([this, &p, stems] { app.exporter.start (p, stems); });
+            reply (res, { { "ok", true } });
+        }));
+        http.Get ("/api/export", [this] (const httplib::Request&, httplib::Response& res) { reply (res, exportJson()); });
         http.Post ("/api/undo_turn", live ([] (InteractiveMixerProcessor& p, const httplib::Request& req, httplib::Response& res) {
             auto j = parseBody (req);
             if (j.is_discarded() || ! j.contains ("tick")) return reply (res, { { "error", "need tick" } }, 400);

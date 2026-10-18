@@ -1,0 +1,16 @@
+#!/bin/sh
+# Starts the native binary for this machine (macOS, Linux). On Windows, bin/mix-final-actual.exe is started instead
+# (a command without an extension resolves to .exe there). MFA_BIN overrides the binary (development builds).
+d=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+if [ -n "$MFA_BIN" ]; then exec "$MFA_BIN" "$@"; fi
+case "$(uname -s)-$(uname -m)" in
+  Darwin-*)              b="$d/macos/mix-final-actual" ;;
+  Linux-x86_64)          b="$d/linux-x64/mix-final-actual" ;;
+  Linux-aarch64|Linux-arm64) b="$d/linux-arm64/mix-final-actual" ;;
+  *) echo "mix-final-actual: no build for $(uname -s) $(uname -m)" >&2; exit 1 ;;
+esac
+if [ ! -x "$b" ]; then
+  echo "mix-final-actual: $b is missing. Install the plugin from the 'dist' branch, or set MFA_BIN to a local build." >&2
+  exit 1
+fi
+exec "$b" "$@"

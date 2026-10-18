@@ -55,9 +55,16 @@ Process lifetime: an MCP server over stdio dies with the agent session, but the 
    as the default loop region. Checked against the Python maker on a 21-track song: excerpt 1 s later (frame
    alignment), gain within 0.1 dB. Silent tracks are kept (they may play outside the excerpt).
 4. **No track limit**: replace the 64-bit `TrackMask` and fixed arrays with sizes set when a session loads.
-5. **Page, full**: chat and change history with undo, A/B of a turn, loop region as the analysis window, rename and
-   regroup tracks, export, project save/open, drag-and-drop input.
-6. **Plugin packaging**: skill (`SKILL.md`), Claude Code and Codex manifests, marketplace file, binary download on
-   first run; CI builds for macOS, Windows and Linux.
+5. **Page, full**: done so far: chat with per-turn changes and undo, prompts, "Mix it", export (whole song, 24-bit WAV at
+   the source rate, optional stems; checked: nulls against the raw sum to -113 dB with default settings, stems sum to the
+   mix within -88 dB). To do: A/B of a turn, loop-region editing on the timeline, rename and regroup tracks, project
+   save/open, drag-and-drop input.
+6. **Plugin packaging** (done, CI to be confirmed): skill `skills/mix/SKILL.md`; Claude Code manifest
+   `.claude-plugin/plugin.json` (MCP server inline); Codex portable `plugin.json` + `mcp.json` (stdio, `./bin/...`);
+   one marketplace file `.claude-plugin/marketplace.json` read by both (source: `url` + `ref: dist`, the source type both
+   accept); `bin/mix-final-actual` picks the platform binary (Windows resolves `bin/mix-final-actual.exe`). CI builds
+   every platform and force-pushes plugin files + binaries to the `dist` branch. Tested: Claude Code loads the plugin and
+   Sonnet made a full 5-turn first mix through it (120 changes in turn 1, 10-21 in turns 2-5). OpenAI's public directory
+   takes local-MCP plugins only from allowlisted partners; installing from this repo's marketplace needs no approval.
 7. **Clean-up**: drop the plugin-host leftovers (`ReaperBridge`, VST3 extensions, the APVTS where it only served
    hosts).

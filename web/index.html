@@ -77,6 +77,9 @@ legend { color: var(--accent); font-size: 11px; text-transform: uppercase; lette
   <span id="time">0:00.0 / 0:00.0</span>
   <input id="seek" type="range" min="0" max="1000" value="0">
   <span id="folder"></span>
+  <label style="color:var(--dim);font-size:12px"><input type="checkbox" id="stems"> stems</label>
+  <button id="export" title="Render the whole song with these settings (24-bit WAV, next to your tracks)">Export</button>
+  <span id="exportState" style="color:var(--dim);font-size:12px"></span>
 </header>
 <main>
   <div id="strips"></div>
@@ -317,6 +320,15 @@ function sendPrompt() {
   api("prompt", { text }).catch(showErr);
 }
 
+async function pollExport() {
+  const e = await api("export");
+  const el = document.getElementById("exportState");
+  document.getElementById("export").disabled = e.running;
+  if (e.running) { el.textContent = `exporting ${Math.round(100 * e.progress)}%`; setTimeout(pollExport, 500); }
+  else el.textContent = e.error ? `export failed: ${e.error}` : e.folder ? `saved to ${e.folder}` : "";
+  el.title = el.textContent;
+}
+
 // ---- first mix: wait until the live engine is up ---------------------------------------------------------------
 async function waitForLive() {
   const w = document.getElementById("wait");
@@ -351,6 +363,9 @@ async function init() {
   document.addEventListener("keydown", e => { if (e.code === "Space" && !["INPUT", "TEXTAREA"].includes(e.target.tagName)) { e.preventDefault(); document.getElementById("play").click(); } });
   document.getElementById("send").onclick = sendPrompt;
   document.getElementById("prompt").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendPrompt(); } });
+  document.getElementById("export").onclick = async () => {
+    try { await api("export", { stems: document.getElementById("stems").checked }); pollExport(); } catch (e) { showErr(e); }
+  };
   document.getElementById("mixit").onclick = () => api("mix", { turns: 5 }).catch(showErr);
   poll();
   pollValues();

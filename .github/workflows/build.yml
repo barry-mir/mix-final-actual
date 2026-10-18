@@ -1,0 +1,86 @@
+name: build
+
+# Builds the binary on every platform; on main, assembles the installable plugin (plugin files + binaries) on the
+# `dist` branch, which the marketplace entry points to. Binaries never go on main.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: macos, os: macos-14, exe: mix-final-actual, cmake: '-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64' }
+          - { name: linux-x64, os: ubuntu-22.04, exe: mix-final-actual, cmake: '' }
+          - { name: linux-arm64, os: ubuntu-22.04-arm, exe: mix-final-actual, cmake: '' }
+          - { name: windows-x64, os: windows-2022, exe: mix-final-actual.exe, cmake: '' }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Linux packages
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build libasound2-dev libfreetype-dev libfontconfig1-dev libx11-dev \
+            libxrandr-dev libxinerama-dev libxcursor-dev libxext-dev libxcomposite-dev libgl1-mesa-dev
+      - name: Configure
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then gen=(-G Ninja); else gen=(); fi
+          cmake -S . -B build "${gen[@]}" -DCMAKE_BUILD_TYPE=Release ${{ matrix.cmake }}
+      - name: Build
+        run: cmake --build build --config Release --parallel
+      - name: Smoke test
+        shell: bash
+        run: |
+          b=$(find build -type f -name '${{ matrix.exe }}' -path '*_artefacts*' | head -1)
+          echo "binary: $b"
+          printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18"}}' \
+                        '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' | "$b" mcp | tee mcp.out
+          grep -q '"open_session"' mcp.out
+          mkdir -p out && cp "$b" out/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}
+          path: out/
+
+  dist:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Assemble the plugin
+        run: |
+          set -e
+          d=dist-tree
+          mkdir -p $d/bin/macos $d/bin/linux-x64 $d/bin/linux-arm64
+          cp -r .claude-plugin plugin.json mcp.json skills README.md LICENSE $d/
+          rm -f $d/.claude-plugin/marketplace.json
+          cp bin/mix-final-actual $d/bin/
+          cp artifacts/macos/mix-final-actual $d/bin/macos/
+          cp artifacts/linux-x64/mix-final-actual $d/bin/linux-x64/
+          cp artifacts/linux-arm64/mix-final-actual $d/bin/linux-arm64/
+          cp artifacts/windows-x64/mix-final-actual.exe $d/bin/
+          chmod +x $d/bin/mix-final-actual $d/bin/*/mix-final-actual
+          echo "${GITHUB_SHA}" > $d/BUILD_COMMIT
+      - name: Push to the dist branch
+        run: |
+          set -e
+          cd dist-tree
+          git init -q -b dist
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Plugin build of ${GITHUB_SHA}"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" dist
