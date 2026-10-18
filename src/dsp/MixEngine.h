@@ -1,8 +1,8 @@
 #pragma once
-// The complete realtime mixer: kMaxTracks channel strips, instrument-group buses, reverb and echo send/return, bus
+// The complete realtime mixer: maxTracks() channel strips, instrument-group buses, reverb and echo send/return, bus
 // compressor, master fader and true-peak limiter. Owns the ParamEngine.
 // Audio thread only: no allocation, no locks, no I/O (all buffers preallocated
-// in prepare() for kMaxTracks tracks).
+// in prepare() for maxTracks() tracks).
 #include "analysis/Taps.h"
 #include "dsp/ChannelStrip.h"
 #include "dsp/Echo.h"
@@ -31,10 +31,10 @@ class MixEngine
 {
 public:
     ParamEngine params;
-    std::array<TrackMeters, kMaxTracks> meters;
+    std::vector<TrackMeters> meters = std::vector<TrackMeters> ((size_t) maxTracks());
     // Instrument group per track (0 vocals .. 4 keys/other, -1 none), set from the track names on the message thread;
     // a track with a group is summed into that group's bus (compressor + peak clipper) instead of straight to the mix.
-    std::array<std::atomic<int>, kMaxTracks> trackGroup {};
+    std::vector<std::atomic<int>> trackGroup = std::vector<std::atomic<int>> ((size_t) maxTracks());
 
     MixEngine() { for (auto& g : trackGroup) g.store (-1); }
     MasterMeters masterMeters;
@@ -44,7 +44,7 @@ public:
     int latencySamples() const noexcept { return limiter.latencySamples(); }
     void setTaps (AnalysisTaps* t) noexcept { taps = t; }
 
-    // inL/inR: kMaxTracks pointers (nullptr = track not present). n <= maxBlock().
+    // inL/inR: maxTracks() pointers (nullptr = track not present). n <= maxBlock().
     void process (const float* const* inL, const float* const* inR, float* outL, float* outR, int n) noexcept;
 
     ChannelStrip& strip (int t) noexcept { return strips[(size_t) t]; }
@@ -70,9 +70,9 @@ private:
     int maxBlockSize = 512;
     AnalysisTaps* taps = nullptr;
 
-    std::array<ChannelStrip, kMaxTracks> strips;
-    std::array<juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear>, kMaxTracks> audiblePower;
-    std::array<bool, kMaxTracks> audible {};
+    std::vector<ChannelStrip> strips = std::vector<ChannelStrip> ((size_t) maxTracks());
+    std::vector<juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear>> audiblePower = std::vector<juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear>> ((size_t) maxTracks());
+    std::vector<bool> audible = std::vector<bool> ((size_t) maxTracks());
     FdnReverb reverb;
     Echo echo;
     std::array<Compressor, kNumGroupBuses> groupComp;

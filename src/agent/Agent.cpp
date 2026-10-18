@@ -285,8 +285,7 @@ bool Agent::runTick (const Trigger& trig)
         if (c.status != "superseded" && c.status != "unchanged") e.diff.push_back (c);
     for (auto& err : val.errors) e.text += "\n(" + err + ")";
     {
-        int nTracks = 0;
-        for (int t = 0; t < kMaxTracks; ++t) nTracks += (int) ((mask >> t) & 1u);
+        const int nTracks = mask.count();
         char b[256];
         std::snprintf (b, sizeof (b), "read %d tracks + mix (3 s features), %d memory turn%s, %d prompt tokens; %d tool call%s; %.1f s",
                        nTracks, prompt.memoryUsed, prompt.memoryUsed == 1 ? "" : "s", lat.promptTokens > 0 ? lat.promptTokens : prompt.estTokens,

@@ -40,8 +40,8 @@ struct ParamTarget
 
 struct ToolContext
 {
-    std::array<std::string, kMaxTracks> names;
-    TrackMask presentMask = 0xFFFF;
+    std::vector<std::string> names = std::vector<std::string> ((size_t) maxTracks());
+    TrackMask presentMask { maxTracks() };
     std::function<float (int)> currentValue; // display value
     std::function<bool (int)> isLocked;
     Settings settings;
@@ -68,5 +68,5 @@ struct ValidationResult
 ValidationResult validateToolCalls (const std::vector<ToolCall>& calls, const ToolContext& ctx);
 
 // Resolve "track" argument: integer index (1-based) or exact name. Returns 0-based or -1.
-int resolveTrack (const json& v, const std::array<std::string, kMaxTracks>& names);
+int resolveTrack (const json& v, const std::vector<std::string>& names);
 } // namespace im

@@ -18,9 +18,9 @@ struct GrRecord
 
 struct AnalysisTaps
 {
-    std::array<SpscRing<float>, kMaxTracks> pre, post;
+    std::vector<SpscRing<float>> pre = std::vector<SpscRing<float>> ((size_t) maxTracks()), post = std::vector<SpscRing<float>> ((size_t) maxTracks());
     SpscRing<float> master, preMaster; // preMaster: the mix before the glue compressor and limiter
-    std::array<SpscRing<GrRecord>, kMaxTracks> gr;
+    std::vector<SpscRing<GrRecord>> gr = std::vector<SpscRing<GrRecord>> ((size_t) maxTracks());
     std::atomic<uint64_t> droppedSamples { 0 };
     double sampleRate = 48000.0;
 

@@ -23,17 +23,14 @@ double nowMs() { return juce::Time::getMillisecondCounterHiRes(); }
 
 juce::AudioProcessor::BusesProperties InteractiveMixerProcessor::makeBuses()
 {
-    BusesProperties b;
-    for (int t = 0; t < kMaxTracks; ++t)
-        b = b.withInput ("Track " + juce::String (t + 1), juce::AudioChannelSet::stereo(), true);
-    return b.withOutput ("Mix", juce::AudioChannelSet::stereo(), true);
+    return BusesProperties().withOutput ("Mix", juce::AudioChannelSet::stereo(), true); // tracks come from the player
 }
 
 InteractiveMixerProcessor::InteractiveMixerProcessor()
     : juce::AudioProcessor (makeBuses()),
       apvts (*this, nullptr, "IMPARAMS", createLayout())
 {
-    for (int i = 0; i < kNumParams; ++i)
+    for (int i = 0; i < numParams(); ++i)
     {
         const auto& s = spec (i);
         rawParams[(size_t) i] = apvts.getRawParameterValue (s.id);
@@ -82,23 +79,7 @@ void InteractiveMixerProcessor::settingsChanged() {}
 // ------------------------------------------------------------------ buses
 bool InteractiveMixerProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
 {
-    if (layouts.outputBuses.size() != 1 || layouts.getMainOutputChannelSet() != juce::AudioChannelSet::stereo())
-        return false;
-    const auto main = layouts.getMainInputChannelSet();
-    // REAPER-style: single 2*kMaxTracks-channel input, channel pair k = track k.
-    if (main.size() == 2 * kMaxTracks)
-    {
-        for (int b = 1; b < layouts.inputBuses.size(); ++b)
-            if (! layouts.inputBuses[b].isDisabled()) return false;
-        return true;
-    }
-    if (! main.isDisabled() && main != juce::AudioChannelSet::stereo()) return false;
-    for (int b = 1; b < layouts.inputBuses.size(); ++b)
-    {
-        const auto& s = layouts.inputBuses[b];
-        if (! s.isDisabled() && s != juce::AudioChannelSet::stereo()) return false;
-    }
-    return true;
+    return layouts.outputBuses.size() == 1 && layouts.getMainOutputChannelSet() == juce::AudioChannelSet::stereo();
 }
 
 void InteractiveMixerProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
@@ -108,52 +89,25 @@ void InteractiveMixerProcessor::prepareToPlay (double sampleRate, int samplesPer
     taps.prepare (sampleRate);
     engine.prepare (sampleRate, maxBlock);
     setLatencySamples (engine.latencySamples());
-    playerBufL.assign (kMaxTracks, std::vector<float> ((size_t) maxBlock, 0.0f));
-    playerBufR.assign (kMaxTracks, std::vector<float> ((size_t) maxBlock, 0.0f));
+    playerBufL.assign ((size_t) maxTracks(), std::vector<float> ((size_t) maxBlock, 0.0f));
+    playerBufR.assign ((size_t) maxTracks(), std::vector<float> ((size_t) maxBlock, 0.0f));
+    fillL.resize ((size_t) maxTracks());
+    fillR.resize ((size_t) maxTracks());
+    for (size_t t = 0; t < fillL.size(); ++t)
+    {
+        fillL[t] = playerBufL[t].data();
+        fillR[t] = playerBufR[t].data();
+    }
+    inL.assign ((size_t) maxTracks(), nullptr);
+    inR.assign ((size_t) maxTracks(), nullptr);
     analyzer.start (sampleRate, ! gDisableBackgroundServices);
 
-    // Standalone convenience: IM_SESSION_DIR=<folder of stems> auto-loads on first start.
-    if (! player.hasSession() && isStandaloneInstance())
-        if (auto* env = std::getenv ("IM_SESSION_DIR"); env != nullptr && juce::File (env).isDirectory())
-        {
-            loadSessionFolder (juce::File (env));
-            player.setPlaying (true);
-        }
     // Standalone: resample the loaded session if the device rate changed.
     if (player.hasSession() && std::abs (player.loadedSampleRate() - sampleRate) > 0.5)
         player.loadFolder (player.loadedFolder(), sampleRate);
 }
 
 void InteractiveMixerProcessor::releaseResources() { analyzer.stop(); }
-
-TrackMask InteractiveMixerProcessor::trackFromBuses (const juce::AudioBuffer<float>& buffer, const float** L, const float** R)
-{
-    TrackMask mask = 0;
-    const int mainIn = getChannelCountOfBus (true, 0);
-    if (mainIn >= 2 * kMaxTracks)
-    {
-        for (int t = 0; t < kMaxTracks; ++t)
-        {
-            L[t] = buffer.getReadPointer (2 * t);
-            R[t] = buffer.getReadPointer (2 * t + 1);
-            mask |= TrackMask (1) << t;
-        }
-    }
-    else
-    {
-        const int nb = std::min (getBusCount (true), kMaxTracks);
-        for (int b = 0; b < nb; ++b)
-        {
-            if (getChannelCountOfBus (true, b) != 2) continue;
-            const int idx = getChannelIndexInProcessBlockBuffer (true, b, 0);
-            if (idx + 1 >= buffer.getNumChannels()) continue;
-            L[b] = buffer.getReadPointer (idx);
-            R[b] = buffer.getReadPointer (idx + 1);
-            mask |= TrackMask (1) << b;
-        }
-    }
-    return mask;
-}
 
 void InteractiveMixerProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
 {
@@ -173,37 +127,20 @@ void InteractiveMixerProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
         analyzer.noteParamChange();
     }
 
-    const float* L[kMaxTracks] = {};
-    const float* R[kMaxTracks] = {};
-    TrackMask mask = 0;
-    const bool usePlayer = player.hasSession();
-    if (! usePlayer) mask = trackFromBuses (buffer, L, R);
-
+    TrackMask mask {};
     float* outL = buffer.getWritePointer (0);
     float* outR = buffer.getWritePointer (1);
     const int mb = engine.maxBlock();
     for (int off = 0; off < n; off += mb)
     {
         const int len = std::min (mb, n - off);
-        const float* cl[kMaxTracks] = {};
-        const float* cr[kMaxTracks] = {};
-        if (usePlayer)
+        mask = player.hasSession() ? player.fill (fillL.data(), fillR.data(), len) : TrackMask {};
+        for (int t = 0; t < (int) inL.size(); ++t)
         {
-            float* pl[kMaxTracks];
-            float* pr[kMaxTracks];
-            for (int t = 0; t < kMaxTracks; ++t)
-            {
-                pl[t] = playerBufL[(size_t) t].data();
-                pr[t] = playerBufR[(size_t) t].data();
-            }
-            mask = player.fill (pl, pr, len);
-            for (int t = 0; t < kMaxTracks; ++t)
-                if ((mask >> t) & 1u) { cl[t] = pl[t]; cr[t] = pr[t]; }
+            inL[(size_t) t] = mask.has (t) ? fillL[(size_t) t] : nullptr;
+            inR[(size_t) t] = mask.has (t) ? fillR[(size_t) t] : nullptr;
         }
-        else
-            for (int t = 0; t < kMaxTracks; ++t)
-                if (L[t]) { cl[t] = L[t] + off; cr[t] = R[t] + off; }
-        engine.process (cl, cr, outL + off, outR + off, len);
+        engine.process (inL.data(), inR.data(), outL + off, outR + off, len);
     }
     for (int ch = 2; ch < getTotalNumOutputChannels(); ++ch) buffer.clear (ch, 0, n);
 
@@ -353,43 +290,6 @@ void InteractiveMixerProcessor::timerCallback()
     }
 
     player.collectGarbage();
-    if (now >= nextHostPollMs)
-    {
-        nextHostPollMs = now + 2000.0;
-        pollHostTrackNames();
-    }
-}
-
-void InteractiveMixerProcessor::pollHostTrackNames()
-{
-    if (! reaperTried && hostContext.load() != nullptr)
-    {
-        reaperTried = true;
-        reaper.attach (hostContext.load());
-    }
-    if (! reaper.available()) return;
-    const auto names = reaper.inputNames();
-    for (int t = 0; t < kMaxTracks; ++t)
-        if (! names[(size_t) t].empty() && store.nameSource (t) != NameSource::User && store.trackName (t) != names[(size_t) t])
-            store.setTrackName (t, names[(size_t) t], NameSource::Host);
-    const auto diag = reaper.diagnostics();
-    if (diag != lastHostDiag)
-    {
-        lastHostDiag = diag;
-        appDataDir().getChildFile ("host.log").appendText (juce::Time::getCurrentTime().toISO8601 (true) + "  " + diag + "\n");
-    }
-}
-
-void InteractiveMixerProcessor::updateTrackProperties (const TrackProperties& props)
-{
-    // Generic hosts only tell us the name of the track we are inserted on: use it for input 1.
-    if (! props.name.has_value()) return;
-    const auto name = props.name->toStdString();
-    std::weak_ptr<bool> weak = alive;
-    juce::MessageManager::callAsync ([this, weak, name] {
-        if (! weak.lock() || reaper.available() || name.empty()) return;
-        if (store.nameSource (0) != NameSource::User) store.setTrackName (0, name, NameSource::Host);
-    });
 }
 
 void InteractiveMixerProcessor::stageMoved (int track, StagePos from, StagePos to)
@@ -402,15 +302,15 @@ void InteractiveMixerProcessor::stageMoved (int track, StagePos from, StagePos t
 // ------------------------------------------------------------------ undo
 std::vector<float> InteractiveMixerProcessor::captureRaw() const
 {
-    std::vector<float> v ((size_t) kNumParams);
-    for (int i = 0; i < kNumParams; ++i) v[(size_t) i] = paramValue (i);
+    std::vector<float> v ((size_t) numParams());
+    for (int i = 0; i < numParams(); ++i) v[(size_t) i] = paramValue (i);
     return v;
 }
 
 void InteractiveMixerProcessor::restoreRaw (const std::vector<float>& v)
 {
     restoring = true;
-    for (int i = 0; i < kNumParams; ++i)
+    for (int i = 0; i < numParams(); ++i)
         if (std::fabs (v[(size_t) i] - paramValue (i)) > 1e-6f) setParamValue (i, v[(size_t) i]);
     restoring = false;
 }
@@ -428,8 +328,8 @@ void InteractiveMixerProcessor::pushUndoSnapshot()
 void InteractiveMixerProcessor::resetAllParams()
 {
     pushUndoSnapshot();
-    std::vector<float> defaults ((size_t) kNumParams);
-    for (int i = 0; i < kNumParams; ++i) defaults[(size_t) i] = spec (i).def;
+    std::vector<float> defaults ((size_t) numParams());
+    for (int i = 0; i < numParams(); ++i) defaults[(size_t) i] = spec (i).def;
     restoreRaw (defaults);
     pushUndoSnapshot();
 }
@@ -495,8 +395,6 @@ void InteractiveMixerProcessor::setStateInformation (const void* data, int size)
     }
     const auto folder = xml->getStringAttribute ("sessionFolder");
     if (xml->hasTagName (apvts.state.getType())) apvts.replaceState (juce::ValueTree::fromXml (*xml));
-    if (folder.isNotEmpty() && isStandaloneInstance() && juce::File (folder).isDirectory())
-        player.loadFolder (juce::File (folder), sampleRateNow);
     settingsChanged();
     pushUndoSnapshot();
 }
@@ -516,14 +414,14 @@ juce::String InteractiveMixerProcessor::loadSessionFolder (const juce::File& dir
 void InteractiveMixerProcessor::updateTrackGroups()
 {
     const auto names = store.trackNames();
-    for (int t = 0; t < kMaxTracks; ++t)
+    for (int t = 0; t < maxTracks(); ++t)
         engine.trackGroup[(size_t) t].store (names[(size_t) t].empty() ? -1 : priors::roleForName (names[(size_t) t]));
 }
 
 void InteractiveMixerProcessor::applyLoadedTrackNames()
 {
     const auto names = player.loadedNames();
-    for (int t = 0; t < (int) names.size() && t < kMaxTracks; ++t)
+    for (int t = 0; t < (int) names.size() && t < maxTracks(); ++t)
         if (store.nameSource (t) != NameSource::User) store.setTrackName (t, names[(size_t) t], NameSource::File);
 }
 

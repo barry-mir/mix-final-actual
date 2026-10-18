@@ -15,7 +15,7 @@ std::string runFirstMix (const juce::File& tracksDir, int turns, double listenSe
     im::gDisableBackgroundServices = before;
     auto& p = *proc;
 
-    const double sr = 48000.0;
+    const double sr = im::MultitrackPlayer::sessionRate (tracksDir); // the tracks' own rate: nothing to convert
     const int bs = 512;
     p.setRateAndBufferSizeDetails (sr, bs);
     p.prepareToPlay (sr, bs);
@@ -29,7 +29,7 @@ std::string runFirstMix (const juce::File& tracksDir, int turns, double listenSe
     }
     p.agent.setTurnTimeout (3600.0);
 
-    juce::AudioBuffer<float> buf (2 * im::kMaxTracks, bs);
+    juce::AudioBuffer<float> buf (2, bs);
     juce::MidiBuffer midi;
     auto runAudio = [&] (double sec) {
         const int blocks = (int) std::ceil (sec * sr / bs);

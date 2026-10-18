@@ -1,8 +1,9 @@
 // mix_final_ACTUAL.wav: a local mixing console in the browser, mixed by the user's coding agent.
 //
-//   mix-final-actual serve TRACKS_DIR [--port N] [--no-open] [--turns N] [--listen S] [--no-first-mix]
+//   mix-final-actual serve TRACKS_DIR [--port N] [--no-open] [--turns N] [--listen S] [--no-first-mix] [--new-mix]
 //       First mix (offline, N turns answered by the coding agent), then the live engine plays to the sound card and
-//       the page opens. Prints the page URL; writes the instance file the MCP front reads.
+//       the page opens. Prints the page URL; writes the instance file the MCP front reads. A saved project in the folder
+//       is reopened instead of a new first mix (--new-mix ignores it).
 //   mix-final-actual mcp
 //       MCP server on stdin/stdout for Claude Code, Codex and other coding agents (see Mcp.cpp).
 //   mix-final-actual TRACKS_DIR ...   same as serve
@@ -11,6 +12,7 @@
 #include "Instances.h"
 #include "Mcp.h"
 #include "PluginProcessor.h"
+#include "Project.h"
 #include "WebServer.h"
 #include <juce_audio_utils/juce_audio_utils.h>
 #include <atomic>
@@ -43,7 +45,7 @@ int serve (int argc, char** argv, int first)
     juce::File dir;
     int port = 0, turns = 5;
     double listen = 20.0;
-    bool open = true, firstMix = true;
+    bool open = true, firstMix = true, newMix = false;
     for (int i = first; i < argc; ++i)
     {
         const std::string a = argv[i];
@@ -52,9 +54,18 @@ int serve (int argc, char** argv, int first)
         else if (a == "--listen" && i + 1 < argc) listen = std::clamp (std::atof (argv[++i]), 4.0, 120.0);
         else if (a == "--no-open") open = false;
         else if (a == "--no-first-mix") firstMix = false;
+        else if (a == "--new-mix") newMix = true;
         else dir = juce::File::getCurrentWorkingDirectory().getChildFile (juce::String (a));
     }
     if (! dir.isDirectory()) return usage();
+    // One session per process: its track count sizes the parameter registry and every engine (no fixed limit).
+    const int nFiles = im::MultitrackPlayer::trackFiles (dir).size();
+    if (nFiles == 0)
+    {
+        std::cerr << "no audio files in " << dir.getFullPathName() << "\n";
+        return 1;
+    }
+    im::setMaxTracks (nFiles);
     if (const char* e = std::getenv ("MFA_NO_OPEN"); e != nullptr && std::string (e) == "1") open = false; // tests
 
     mfa::AppState app;
@@ -75,9 +86,12 @@ int serve (int argc, char** argv, int first)
     std::signal (SIGINT, onSignal);
     std::signal (SIGTERM, onSignal);
 
-    // 1. first mix, offline, before the page opens
+    // 1. first mix, offline, before the page opens (unless a saved project is reopened)
+    const auto project = mfa::projectFile (dir);
+    const bool reopen = project.existsAsFile() && ! newMix;
+    if (reopen) std::cout << "reopening " << project.getFullPathName() << std::endl;
     juce::MemoryBlock state;
-    if (firstMix)
+    if (firstMix && ! reopen)
     {
         std::cout << "first mix: " << turns << " turns; waiting for the coding agent (mix tools: next_turn / submit)" << std::endl;
         if (auto err = mfa::runFirstMix (dir, turns, listen, app.first, state, quit); ! err.empty())
@@ -105,6 +119,16 @@ int serve (int argc, char** argv, int first)
         mfa::removeInstance (inst);
         return 1;
     }
+    {
+        // Play at the tracks' own rate when the device has it (no conversion of the tracks).
+        auto setup = devices.getAudioDeviceSetup();
+        const double want = im::MultitrackPlayer::sessionRate (dir);
+        if (auto* dev = devices.getCurrentAudioDevice(); dev != nullptr && dev->getAvailableSampleRates().contains (want) && setup.sampleRate != want)
+        {
+            setup.sampleRate = want;
+            devices.setAudioDeviceSetup (setup, true);
+        }
+    }
     juce::AudioProcessorPlayer player;
     player.setProcessor (proc.get());
     devices.addAudioCallback (&player);
@@ -115,13 +139,25 @@ int serve (int argc, char** argv, int first)
         return 1;
     }
     if (state.getSize() > 0) proc->setStateInformation (state.getData(), (int) state.getSize());
+    if (reopen)
+        if (auto err = mfa::loadProject (*proc, project); ! err.empty()) std::cerr << "project: " << err << "\n";
     proc->player.setLooping (true);
     app.live = proc.get();
     std::cout << proc->player.numLoadedTracks() << " tracks live; page: " << url << std::endl;
     if (open) juce::URL (url).launchInDefaultBrowser();
 
     // runDispatchLoop() returns at once in a console app on macOS, so pump the message thread in slices.
-    while (! quit) juce::MessageManager::getInstance()->runDispatchLoopUntil (50);
+    // The project autosaves every 10 s when anything changed.
+    std::string saved = reopen ? mfa::projectJson (*proc) : std::string();
+    double nextSave = juce::Time::getMillisecondCounterHiRes() + 10000.0;
+    while (! quit)
+    {
+        juce::MessageManager::getInstance()->runDispatchLoopUntil (50);
+        if (juce::Time::getMillisecondCounterHiRes() < nextSave) continue;
+        nextSave += 10000.0;
+        if (auto now = mfa::projectJson (*proc); now != saved && mfa::saveProject (*proc, project)) saved = std::move (now);
+    }
+    if (auto now = mfa::projectJson (*proc); now != saved) mfa::saveProject (*proc, project);
 
     app.live = nullptr;
     proc->agent.stop();

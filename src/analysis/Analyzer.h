@@ -40,7 +40,7 @@ struct Snapshot
     double timeSec = 0;      // wall-clock (Time::getMillisecondCounterHiRes / 1000)
     double windowSec = 3.0;
     double avgSec = 0;       // audio covered by TrackSnapshot::levelAvgDb (0 = no average yet)
-    std::array<TrackSnapshot, kMaxTracks> tracks;
+    std::vector<TrackSnapshot> tracks = std::vector<TrackSnapshot> ((size_t) maxTracks());
     MasterSnapshot master;
 };
 
@@ -109,18 +109,18 @@ private:
     AnalysisTaps& taps;
     double fs = 48000.0;
     std::unique_ptr<FeatureExtractor> fx;
-    std::array<History, kMaxTracks> pre, post;
+    std::vector<History> pre = std::vector<History> ((size_t) maxTracks()), post = std::vector<History> ((size_t) maxTracks());
     History master, preMaster;
-    std::array<GrHistory, kMaxTracks> gr;
+    std::vector<GrHistory> gr = std::vector<GrHistory> ((size_t) maxTracks());
     std::vector<float> drainBuf, linL, linR;
     int64_t samplesSinceHop = 0;
     int64_t seq = 0;
-    std::atomic<TrackMask> presentMask { 0 };
+    std::atomic<TrackMask> presentMask { TrackMask {} };
     // long-term level average (energy mean over snapshots since the last parameter change)
     std::atomic<uint32_t> changeSerial { 0 };
     uint32_t seenSerial = 0;
     int skipSnaps = 0, avgCount = 0;
-    std::array<double, kMaxTracks> avgTrackPow {};
+    std::vector<double> avgTrackPow = std::vector<double> ((size_t) maxTracks());
     double avgMasterPow = 0, avgPrePow = 0;
     float ltPrePeakDb = -120;
     mutable std::mutex snapMutex;

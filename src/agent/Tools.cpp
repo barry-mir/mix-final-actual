@@ -27,7 +27,7 @@ json fn (const char* name, const char* desc, json props, std::vector<std::string
 } // namespace
 
 // Compact on purpose: the schemas are part of every prompt (cached prefix).
-// Ranges live in the descriptions; "track" = index 1..kMaxTracks or exact name.
+// Ranges live in the descriptions; "track" = index 1..maxTracks() or exact name.
 bool paperDynamics()
 {
     static const bool on = [] { const char* e = std::getenv ("IM_PAPER_DYNAMICS"); return e != nullptr && std::string (e) == "1"; }();
@@ -236,18 +236,18 @@ ParsedResponse parseChatResponse (const json& r)
 }
 
 // --------------------------------------------------------------- validation
-int resolveTrack (const json& v, const std::array<std::string, kMaxTracks>& names)
+int resolveTrack (const json& v, const std::vector<std::string>& names)
 {
     if (v.is_number_integer() || v.is_number_float())
     {
         const double d = v.get<double>();
         const int k = (int) std::lround (d);
-        return (k >= 1 && k <= kMaxTracks && std::fabs (d - k) < 1e-6) ? k - 1 : -1;
+        return (k >= 1 && k <= maxTracks() && std::fabs (d - k) < 1e-6) ? k - 1 : -1;
     }
     if (! v.is_string()) return -1;
     auto s = trim (v.get<std::string>());
     // 1. exact name
-    for (int t = 0; t < kMaxTracks; ++t)
+    for (int t = 0; t < maxTracks(); ++t)
         if (names[(size_t) t] == s) return t;
     auto lower = [] (std::string x) { for (auto& c : x) c = (char) std::tolower ((unsigned char) c); return x; };
     // 2. "N", "N name" (as written in the prompt tables), "Track N"
@@ -259,11 +259,11 @@ int resolveTrack (const json& v, const std::array<std::string, kMaxTracks>& name
     {
         const int k = std::stoi (rest.substr (0, i));
         const auto tail = trim (rest.substr (i));
-        if (k >= 1 && k <= kMaxTracks && (tail.empty() || lower (tail) == lower (names[(size_t) k - 1]))) return k - 1;
+        if (k >= 1 && k <= maxTracks() && (tail.empty() || lower (tail) == lower (names[(size_t) k - 1]))) return k - 1;
     }
     // 3. unique case-insensitive name
     int found = -1;
-    for (int t = 0; t < kMaxTracks; ++t)
+    for (int t = 0; t < maxTracks(); ++t)
         if (lower (names[(size_t) t]) == lower (s)) { if (found >= 0) return -1; found = t; }
     return found;
 }
@@ -407,7 +407,7 @@ ValidationResult validateToolCalls (const std::vector<ToolCall>& calls, const To
                 V.reject (-1, 0, "unknown track");
                 continue;
             }
-            if (! ((ctx.presentMask >> t) & 1u))
+            if (! ctx.presentMask.has (t))
             {
                 res.errors.push_back (n + ": track " + std::to_string (t + 1) + " is not active");
                 V.reject (trackParam (t, Fader), 0, "track not active");

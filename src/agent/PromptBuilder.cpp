@@ -1,4 +1,5 @@
 #include "agent/PromptBuilder.h"
+#include <mutex>
 #include "agent/MixPriors.h"
 #include <algorithm>
 #include <cmath>
@@ -23,7 +24,7 @@ std::string f1 (double v, int dec = 1)
 double r1 (double v) { return std::round (v * 10.0) / 10.0; }
 double r2 (double v) { return std::round (v * 100.0) / 100.0; }
 
-std::string trackLabel (int t, const std::array<std::string, kMaxTracks>& names)
+std::string trackLabel (int t, const std::vector<std::string>& names)
 {
     return std::to_string (t + 1) + " " + names[(size_t) t];
 }
@@ -42,7 +43,7 @@ int count (const PromptInputs& in, const std::string& s)
 const std::string& systemPromptV2()
 {
     static const std::string s =
-        "You are an experienced mixing engineer running a console plugin (up to " + std::to_string (kMaxTracks)
+        "You are an experienced mixing engineer running a console plugin (up to " + std::to_string (maxTracks())
         + " stereo tracks into one stereo mix). Each turn you see measurements of every track and the mix, diagnoses that compare them "
           "with typical finished mixes, your recent turns with their measured effect, the current settings, and what triggered this turn. "
           "Your job: make the mix sound like a finished, balanced production, and follow the user's requests.\n"
@@ -76,7 +77,7 @@ const std::string& systemPromptV3()
         auto lv = [] (int r) { const auto& l = kRoleLevels[(size_t) r]; return f1 (l.p25) + ".." + f1 (l.p75); };
         auto st = [] (int r) { return kRoleStats[(size_t) r]; };
         std::string o =
-            "You are the mixing engineer of a console plugin (up to " + std::to_string (kMaxTracks)
+            "You are the mixing engineer of a console plugin (up to " + std::to_string (maxTracks())
             + " stereo tracks into one stereo mix). Each turn you get measurements of every track, a CHECKLIST that the plugin computed by "
               "comparing every number with " + std::to_string (kPriorSongs) + " professionally finished mixes, your recent turns with their measured effect, "
               "the current settings, and what triggered this turn.\n"
@@ -116,7 +117,7 @@ const std::string& systemPromptV4()
         using namespace priors;
         auto lv = [] (int r) { const auto& l = kRoleLevels[(size_t) r]; return f1 (l.p10) + ".." + f1 (l.p90); };
         std::string o =
-            "You are the mixing engineer of a console plugin (up to " + std::to_string (kMaxTracks)
+            "You are the mixing engineer of a console plugin (up to " + std::to_string (maxTracks())
             + " stereo tracks into one stereo mix). You make the musical decisions. Each turn you get measurements of every track and of the mix, "
               "how the tracks share each frequency band, hard technical warnings, your recent turns with their measured effect, the current settings, "
               "and what triggered this turn.\n"
@@ -162,7 +163,7 @@ const std::string& systemPromptV5()
     // vocals placed in space with echo/reverb, steadier dynamics from compression, brighter focal elements.
     static const std::string s = [] {
         std::string o =
-            "You are the mixing engineer of a console plugin (up to " + std::to_string (kMaxTracks)
+            "You are the mixing engineer of a console plugin (up to " + std::to_string (maxTracks())
             + " stereo tracks, usually one per instrument or microphone, into one stereo mix). You make every musical decision; aim for a "
               "release-quality mix that a professional would sign off, not a cautious touch-up. Each turn you get measurements of every track and of "
               "the mix, how the tracks share each frequency band, hard technical warnings, your recent turns with their measured effect, the current "
@@ -273,7 +274,7 @@ const std::string& systemPrompt (int version)
     if (version >= 3) return systemPromptV3();
     if (version >= 2) return systemPromptV2();
     static const std::string s =
-        "You are a live mixing engineer running a multitrack console plugin (up to " + std::to_string (kMaxTracks)
+        "You are a live mixing engineer running a multitrack console plugin (up to " + std::to_string (maxTracks())
         + " stereo tracks into one stereo mix). "
         "Each turn you get the tracks with their stage position and current audio features, your recent turns with their measured effect, "
         "the non-default settings and what triggered this turn. Improve the mix gradually.\n"
@@ -399,9 +400,9 @@ std::string tracksSection (const PromptInputs& in)
     std::ostringstream o;
     const bool haveFeat = s != nullptr && s->seq != 0;
     o << "TRACKS\n# name pos fdr | in out pk cf sw si | sub low lmid mid umid pres bril air | gr\n";
-    for (int t = 0; t < kMaxTracks; ++t)
+    for (int t = 0; t < maxTracks(); ++t)
     {
-        if (! ((in.presentMask >> t) & 1u)) continue;
+        if (! in.presentMask.has (t)) continue;
         const auto& p = in.stage[(size_t) t];
         o << (t + 1) << " " << in.names[(size_t) t] << " " << f1 (p.x, 2) << "," << f1 (p.y, 2) << " "
           << (in.paramValue ? formatValue (spec (trackParam (t, Fader)), in.paramValue (trackParam (t, Fader)), false) : std::string ("0.0")) << " | ";
@@ -448,8 +449,31 @@ float targetLevel (const RoleLevel& r, float level)
     return level < r.p25 ? r.p25 : level > r.p75 ? r.p75 : level; // nearest edge of the typical range
 }
 
+namespace
+{
+std::mutex overrideMutex;
+std::map<std::string, int> overrides;
+} // namespace
+
+void setRoleOverride (const std::string& name, int role)
+{
+    std::lock_guard<std::mutex> lk (overrideMutex);
+    if (role == kNoOverride) overrides.erase (name);
+    else overrides[name] = std::clamp (role, -1, 4);
+}
+
+std::map<std::string, int> roleOverrides()
+{
+    std::lock_guard<std::mutex> lk (overrideMutex);
+    return overrides;
+}
+
 int roleForName (const std::string& name)
 {
+    {
+        std::lock_guard<std::mutex> lk (overrideMutex);
+        if (auto it = overrides.find (name); it != overrides.end()) return it->second;
+    }
     std::string n;
     for (char c : name.substr (0, name.find (" ("))) n += (char) std::tolower ((unsigned char) c); // label before any "(contents)"
     auto has = [&] (std::initializer_list<const char*> ks) {
@@ -523,9 +547,9 @@ std::string tracksSectionV2 (const PromptInputs& in)
     o << (tone.empty() ? " balanced" : tone) << "\n";
 
     o << "TRACKS\n# name pos fdr | level (typical) diagnosis | cf sw | sub low lmid mid umid pres bril air | gr\n";
-    for (int t = 0; t < kMaxTracks; ++t)
+    for (int t = 0; t < maxTracks(); ++t)
     {
-        if (! ((in.presentMask >> t) & 1u)) continue;
+        if (! in.presentMask.has (t)) continue;
         const auto& p = in.stage[(size_t) t];
         const float fdr = in.paramValue ? in.paramValue (trackParam (t, Fader)) : 0.0f;
         o << (t + 1) << " " << in.names[(size_t) t] << " " << f1 (p.x, 2) << "," << f1 (p.y, 2) << " "
@@ -581,9 +605,9 @@ std::vector<std::string> checklistV3 (const PromptInputs& in)
     const auto* s = in.snapshot.get();
     if (s == nullptr || s->seq == 0) return {};
     auto pv = [&] (int t, int slot) { return in.paramValue ? in.paramValue (trackParam (t, slot)) : 0.0f; };
-    for (int t = 0; t < kMaxTracks; ++t)
+    for (int t = 0; t < maxTracks(); ++t)
     {
-        if (! ((in.presentMask >> t) & 1u)) continue;
+        if (! in.presentMask.has (t)) continue;
         const auto& ts = s->tracks[(size_t) t];
         if (ts.silent || ! ts.present) continue;
         const int role = priors::roleForName (in.names[(size_t) t]);
@@ -657,9 +681,9 @@ std::string tracksSectionV3 (const PromptInputs& in)
     o << (tone.empty() ? " within the usual range" : tone) << "\n";
     o << "TRACKS (level averaged over " << f1 (s->avgSec >= 6.0 ? s->avgSec : s->windowSec, 0) << " s)\n"
       << "# name pan fdr | level (finished range) | cf | sw | sub low lmid mid umid pres bril air | gr\n";
-    for (int t = 0; t < kMaxTracks; ++t)
+    for (int t = 0; t < maxTracks(); ++t)
     {
-        if (! ((in.presentMask >> t) & 1u)) continue;
+        if (! in.presentMask.has (t)) continue;
         const float fdr = in.paramValue ? in.paramValue (trackParam (t, Fader)) : 0.0f;
         const float pan = in.paramValue ? in.paramValue (trackParam (t, Balance)) : 0.0f;
         o << (t + 1) << " " << in.names[(size_t) t] << " " << f1 (pan, 2) << " " << formatValue (spec (trackParam (t, Fader)), fdr, false) << " | ";
@@ -732,9 +756,9 @@ std::string tracksSectionV4 (const PromptInputs& in)
       << (v5 ? "# name pan fdr | level dyn | cf | sw | sub low lmid mid umid pres bril air | gr\n"
              : "# name pan fdr | level | cf | sw | sub low lmid mid umid pres bril air | gr\n");
     std::vector<int> live;
-    for (int t = 0; t < kMaxTracks; ++t)
+    for (int t = 0; t < maxTracks(); ++t)
     {
-        if (! ((in.presentMask >> t) & 1u)) continue;
+        if (! in.presentMask.has (t)) continue;
         const float fdr = in.paramValue ? in.paramValue (trackParam (t, Fader)) : 0.0f;
         const float pan = in.paramValue ? in.paramValue (trackParam (t, Balance)) : 0.0f;
         o << (t + 1) << " " << in.names[(size_t) t] << " " << f1 (pan, 2) << " " << formatValue (spec (trackParam (t, Fader)), fdr, false) << " | ";
@@ -864,7 +888,7 @@ std::string lockedSection (const PromptInputs& in)
     for (int p : in.locked)
     {
         const auto& s = spec (p);
-        if (s.track >= 0 && ! ((in.presentMask >> s.track) & 1u)) continue;
+        if (s.track >= 0 && ! in.presentMask.has (s.track)) continue;
         byTrack[s.track].push_back (s.key);
     }
     if (byTrack.empty()) return "LOCKED: none\n";
@@ -880,7 +904,7 @@ std::string lockedSection (const PromptInputs& in)
     return out + "\n";
 }
 
-std::string memorySection (const std::vector<MemoryRecord>& mem, const std::array<std::string, kMaxTracks>& names)
+std::string memorySection (const std::vector<MemoryRecord>& mem, const std::vector<std::string>& names)
 {
     if (mem.empty()) return "MEMORY: none\n";
     std::ostringstream o;
@@ -987,9 +1011,9 @@ std::string settingsSection (const PromptInputs& in)
     const auto m = line (-1);
     o << "master: " << (m.empty() ? "defaults" : m) << "\n";
     std::string defaults;
-    for (int t = 0; t < kMaxTracks; ++t)
+    for (int t = 0; t < maxTracks(); ++t)
     {
-        if (! ((in.presentMask >> t) & 1u)) continue;
+        if (! in.presentMask.has (t)) continue;
         const auto l = line (t);
         if (l.empty()) defaults += (defaults.empty() ? "" : ",") + std::to_string (t + 1);
         else o << trackLabel (t, in.names) << ": " << l << "\n";

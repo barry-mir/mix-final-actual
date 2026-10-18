@@ -54,11 +54,17 @@ Process lifetime: an MCP server over stdio dies with the agent session, but the 
    where the quietest instrument group is loudest, one gain putting the excerpt's unity sum at -23 LUFS, the excerpt
    as the default loop region. Checked against the Python maker on a 21-track song: excerpt 1 s later (frame
    alignment), gain within 0.1 dB. Silent tracks are kept (they may play outside the excerpt).
-4. **No track limit**: replace the 64-bit `TrackMask` and fixed arrays with sizes set when a session loads.
+4. **No track limit** (done): the track count is set per process from the session (`setMaxTracks`) before any engine
+   exists; every per-track array is sized from it; the present-track mask is a count (tracks 0..n-1). Tracks are not
+   loaded into RAM: WAV/AIFF are memory-mapped in place (prefetch thread ahead of the playhead), other formats/rates are
+   converted once into a cached float WAV and mapped. Checked: 105 tracks x 236 s load in 3 s with a 462 MB footprint
+   (it was ~9.5 GB), real time at 38% of the block budget; the 105-track turn is 35k characters.
 5. **Page, full**: done so far: chat with per-turn changes and undo, prompts, "Mix it", export (whole song, 24-bit WAV at
    the source rate, optional stems; checked: nulls against the raw sum to -113 dB with default settings, stems sum to the
-   mix within -88 dB). To do: A/B of a turn, loop-region editing on the timeline, rename and regroup tracks, project
-   save/open, drag-and-drop input.
+   mix within -88 dB). Also done: A/B against the agent's last turn, loop region by dragging on the timeline, rename
+   (double-click) and regroup tracks (the group follows the name and is used by the engine and the prompt), the project
+   file `mix_final_ACTUAL project.json` (autosaved every 10 s; reopened instead of a new first mix). Input is the folder
+   the agent opens (no drag-and-drop: the agent picks the folder).
 6. **Plugin packaging** (done, CI to be confirmed): skill `skills/mix/SKILL.md`; Claude Code manifest
    `.claude-plugin/plugin.json` (MCP server inline); Codex portable `plugin.json` + `mcp.json` (stdio, `./bin/...`);
    one marketplace file `.claude-plugin/marketplace.json` read by both (source: `url` + `ref: dist`, the source type both
@@ -66,5 +72,5 @@ Process lifetime: an MCP server over stdio dies with the agent session, but the 
    every platform and force-pushes plugin files + binaries to the `dist` branch. Tested: Claude Code loads the plugin and
    Sonnet made a full 5-turn first mix through it (120 changes in turn 1, 10-21 in turns 2-5). OpenAI's public directory
    takes local-MCP plugins only from allowlisted partners; installing from this repo's marketplace needs no approval.
-7. **Clean-up**: drop the plugin-host leftovers (`ReaperBridge`, VST3 extensions, the APVTS where it only served
-   hosts).
+7. **Clean-up** (mostly done): `ReaperBridge`, VST3 hooks and host input buses removed. The APVTS stays (parameter
+   storage, undo).

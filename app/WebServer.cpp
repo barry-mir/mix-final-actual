@@ -2,6 +2,7 @@
 #include "AppState.h"
 #include "BinaryData.h"
 #include "PluginProcessor.h"
+#include "agent/MixPriors.h"
 #include <httplib.h>
 #include <nlohmann/json.hpp>
 
@@ -55,8 +56,13 @@ struct WebServer::Impl
     {
         json tracks = json::array();
         const auto names = p.store.trackNames();
+        const auto ov = im::priors::roleOverrides();
         for (int t = 0; t < numTracks (p); ++t)
-            tracks.push_back ({ { "index", t }, { "name", names[(size_t) t].empty() ? "Track " + std::to_string (t + 1) : names[(size_t) t] } });
+        {
+            const auto& nm = names[(size_t) t];
+            tracks.push_back ({ { "index", t }, { "name", nm.empty() ? "Track " + std::to_string (t + 1) : nm },
+                                { "group", im::priors::roleForName (nm) }, { "group_set", ov.count (nm) > 0 } });
+        }
         json params = json::array();
         for (int i : liveParams (p))
         {
@@ -166,7 +172,7 @@ struct WebServer::Impl
             auto j = parseBody (req);
             if (j.is_discarded() || ! j.contains ("i") || ! j.contains ("v")) return reply (res, { { "error", "need i and v" } }, 400);
             const int i = j["i"].get<int>();
-            if (i < 0 || i >= im::kNumParams) return reply (res, { { "error", "bad index" } }, 400);
+            if (i < 0 || i >= im::numParams()) return reply (res, { { "error", "bad index" } }, 400);
             const float v = im::clampToSpec (im::spec (i), j["v"].get<float>());
             juce::MessageManager::callAsync ([&p, i, v] { p.setParamValue (i, v); });
             reply (res, { { "i", i }, { "v", v } });
@@ -208,6 +214,32 @@ struct WebServer::Impl
             reply (res, { { "ok", true } });
         }));
         http.Get ("/api/export", [this] (const httplib::Request&, httplib::Response& res) { reply (res, exportJson()); });
+        // Rename a track and/or set its instrument group. {"index": t, "name": "...", "group": -1..4 | null (= by name)}
+        http.Post ("/api/track", live ([] (InteractiveMixerProcessor& p, const httplib::Request& req, httplib::Response& res) {
+            auto j = parseBody (req);
+            if (j.is_discarded() || ! j.contains ("index")) return reply (res, { { "error", "need index" } }, 400);
+            const int t = j["index"].get<int>();
+            if (t < 0 || t >= p.player.numLoadedTracks()) return reply (res, { { "error", "bad index" } }, 400);
+            std::string name = j.contains ("name") && j["name"].is_string() ? j["name"].get<std::string>() : std::string();
+            const bool setGroup = j.contains ("group");
+            const int group = setGroup && j["group"].is_number_integer() ? j["group"].get<int>() : im::priors::kNoOverride;
+            juce::MessageManager::callAsync ([&p, t, name, setGroup, group] {
+                const auto old = p.store.trackName (t);
+                if (! name.empty() && name != old)
+                {
+                    const auto ov = im::priors::roleOverrides();
+                    if (auto it = ov.find (old); it != ov.end()) // the group follows the track
+                    {
+                        im::priors::setRoleOverride (old, im::priors::kNoOverride);
+                        im::priors::setRoleOverride (name, it->second);
+                    }
+                    p.store.setTrackName (t, name, im::NameSource::User);
+                }
+                if (setGroup) im::priors::setRoleOverride (p.store.trackName (t), group);
+                p.updateTrackGroups();
+            });
+            reply (res, { { "ok", true } });
+        }));
         http.Post ("/api/undo_turn", live ([] (InteractiveMixerProcessor& p, const httplib::Request& req, httplib::Response& res) {
             auto j = parseBody (req);
             if (j.is_discarded() || ! j.contains ("tick")) return reply (res, { { "error", "need tick" } }, 400);

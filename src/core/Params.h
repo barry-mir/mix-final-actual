@@ -8,15 +8,19 @@
 
 namespace im
 {
-// Max tracks: 32 (one strip per instrument of a typical multitrack; was 5 to fit the local 4B model's 3,500-token
-// prompt, a limit the API models do not have). Single source of truth: plugin inputs = 32 stereo pairs.
-// IM_MAX_TRACKS overrides it at build time (up to 64) for offline runs on larger multitracks (im_eval64).
-#ifndef IM_MAX_TRACKS
- #define IM_MAX_TRACKS 32
-#endif
-constexpr int kMaxTracks = IM_MAX_TRACKS;
-static_assert (kMaxTracks >= 1 && kMaxTracks <= 64, "track masks are 64-bit");
-using TrackMask = uint64_t; // bit t = track t present
+// Track count: no fixed limit. An app process mixes one session, so the count is set once, from the session, before
+// the parameter registry or any engine is built (setMaxTracks), and every per-track array is sized from it.
+void setMaxTracks (int n); // n >= 1; has no effect once the registry exists
+int maxTracks() noexcept;  // 32 until set
+
+// The tracks present: the loaded session's tracks are always 0 .. n-1.
+struct TrackMask
+{
+    int n = 0;
+    constexpr bool has (int t) const noexcept { return t >= 0 && t < n; }
+    constexpr int count() const noexcept { return n; }
+    constexpr bool operator== (const TrackMask&) const = default;
+};
 constexpr float kMinusInfDb = -90.0f; // values at/below this are treated as -inf (gain 0)
 
 // Per-track parameter slots. ID = "t{k}.{module}.{param}", k is 1-based.
@@ -62,10 +66,10 @@ enum GbField : int { GbOn, GbThr, GbRatio, GbAtt, GbRel, GbMakeup, GbClip, kGbSt
 static_assert (GroupBusLast - GroupBusFirst + 1 == kNumGroupBuses * kGbStride);
 inline constexpr int groupBusSlot (int g, int f) { return GroupBusFirst + g * kGbStride + f; }
 
-constexpr int kNumParams = kMaxTracks * kNumTrackParams + kNumMasterParams;
+inline int numParams() noexcept { return maxTracks() * kNumTrackParams + kNumMasterParams; }
 
-inline constexpr int trackParam (int track0, int slot) { return track0 * kNumTrackParams + slot; }
-inline constexpr int masterParam (int slot) { return kMaxTracks * kNumTrackParams + slot; }
+inline int trackParam (int track0, int slot) noexcept { return track0 * kNumTrackParams + slot; }
+inline int masterParam (int slot) noexcept { return maxTracks() * kNumTrackParams + slot; }
 
 enum class Kind { Float, Bool, Choice };
 // Ramp/interpolation domain: dB for gains, log-frequency for Hz, linear otherwise.

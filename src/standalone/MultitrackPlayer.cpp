@@ -1,23 +1,16 @@
 #include "standalone/MultitrackPlayer.h"
 #include "agent/MixPriors.h"
 #include "analysis/Loudness.h"
+#include "core/Paths.h"
 #include <map>
 
 namespace im
 {
-MultitrackPlayer::MultitrackPlayer() { retired.resize (64); }
-
-MultitrackPlayer::~MultitrackPlayer()
-{
-    collectGarbage();
-    delete pending.exchange (nullptr);
-    delete current;
-}
-
 namespace
 {
 constexpr double kExcerptSec = 30.0;
 constexpr double kTargetLufs = -23.0;
+const char* kPatterns = "*.wav;*.WAV;*.aif;*.aiff;*.AIF;*.AIFF;*.flac;*.FLAC;*.mp3;*.ogg;*.m4a";
 
 // "01 Lead_Vocal-dry.wav" -> "Lead Vocal dry": ordering number out, separators to spaces.
 juce::String trackLabel (const juce::File& f)
@@ -30,60 +23,213 @@ juce::String trackLabel (const juce::File& f)
     return nm.trim().substring (0, 40);
 }
 
-// The excerpt: 1 s frames; the 30 s window whose quietest instrument group (by name) is loudest on average, so every
-// group plays in it (as make_sessions.best_excerpt for the evaluation sessions).
-std::pair<int64_t, int64_t> bestExcerpt (const std::vector<juce::AudioBuffer<float>>& tracks, const std::vector<std::string>& names,
-                                         int64_t length, double sr)
+std::unique_ptr<juce::MemoryMappedAudioFormatReader> mapFile (const juce::File& f)
 {
-    const auto win = (int64_t) (kExcerptSec * sr);
-    if (length <= win) return { 0, length };
-    std::map<int, std::vector<double>> groupEnergy; // group -> energy per 1 s frame (mono sum)
-    const auto hop = (int64_t) sr;
-    const int frames = (int) ((length - hop) / hop);
-    std::map<int, std::vector<int>> members;
-    for (size_t t = 0; t < tracks.size(); ++t) members[priors::roleForName (names[t])].push_back ((int) t);
-    for (auto& [g, ts] : members)
+    std::unique_ptr<juce::MemoryMappedAudioFormatReader> r;
+    const auto ext = f.getFileExtension().toLowerCase();
+    if (ext == ".wav") r.reset (juce::WavAudioFormat().createMemoryMappedReader (f));
+    else if (ext == ".aif" || ext == ".aiff") r.reset (juce::AiffAudioFormat().createMemoryMappedReader (f));
+    if (r && ! r->mapEntireFile()) r.reset();
+    return r;
+}
+
+// A float WAV of `f` at `rate` (first two channels) in the app cache, converted once in chunks; reused while the source
+// file is unchanged.
+juce::File cachedCopy (const juce::File& f, double rate, juce::AudioFormatManager& fm, juce::String& error)
+{
+    const auto key = f.getFullPathName() + "|" + juce::String (f.getSize()) + "|" + juce::String (f.getLastModificationTime().toMilliseconds())
+                     + "|" + juce::String (rate);
+    auto dir = appDataDir().getChildFile ("cache");
+    dir.createDirectory();
+    auto out = dir.getChildFile (juce::String::toHexString (key.hashCode64()) + ".wav");
+    if (out.existsAsFile()) return out;
+    std::unique_ptr<juce::AudioFormatReader> r (fm.createReaderFor (f));
+    if (! r)
     {
-        auto& e = groupEnergy[g];
-        e.assign ((size_t) frames, 1e-10);
-        for (int f = 0; f < frames; ++f)
-        {
-            double acc = 0;
-            for (int64_t i = f * hop; i < (f + 1) * hop; i += 4) // every 4th sample is plenty for 1 s energies
-            {
-                double m = 0;
-                for (int t : ts) m += 0.5 * ((double) tracks[(size_t) t].getSample (0, (int) i) + tracks[(size_t) t].getSample (1, (int) i));
-                acc += m * m;
-            }
-            e[(size_t) f] += acc / (double) (hop / 4);
-        }
-        for (auto& v : e) v = std::log10 (v);
+        error = "cannot read " + f.getFileName();
+        return {};
     }
+    const int ch = (int) std::min<unsigned int> (2, r->numChannels);
+    const double ratio = r->sampleRate / rate;
+    const auto outLen = (int64_t) std::ceil ((double) r->lengthInSamples / ratio);
+    auto tmp = out.getSiblingFile (out.getFileName() + ".part");
+    tmp.deleteFile();
+    {
+        auto os = tmp.createOutputStream();
+        std::unique_ptr<juce::AudioFormatWriter> w;
+        if (os) w.reset (juce::WavAudioFormat().createWriterFor (os.get(), rate, (unsigned int) ch, 32, {}, 0));
+        if (! w)
+        {
+            error = "cannot write the cache in " + dir.getFullPathName();
+            return {};
+        }
+        os.release();
+        juce::AudioFormatReaderSource src (r.get(), false);
+        juce::ResamplingAudioSource rs (&src, false, ch);
+        rs.setResamplingRatio (ratio);
+        const int block = 32768;
+        rs.prepareToPlay (block, rate);
+        src.prepareToPlay (block, r->sampleRate);
+        juce::AudioBuffer<float> buf (std::max (ch, (int) r->numChannels), block);
+        for (int64_t done = 0; done < outLen;)
+        {
+            const int n = (int) std::min<int64_t> (block, outLen - done);
+            juce::AudioSourceChannelInfo info (&buf, 0, n);
+            if (std::abs (ratio - 1.0) < 1e-9) src.getNextAudioBlock (info); // only a format change
+            else rs.getNextAudioBlock (info);
+            w->writeFromAudioSampleBuffer (buf, 0, n);
+            done += n;
+        }
+    }
+    if (! tmp.moveFileTo (out))
+    {
+        error = "cannot write the cache in " + dir.getFullPathName();
+        return {};
+    }
+    return out;
+}
+
+// Reads frames [start, start + n) of a track as stereo into L/R (mono duplicated; past the end: silence). Real-time
+// safe: the reader copies from mapped memory and converts in place.
+void readStereo (const MultitrackPlayer::Track& t, int64_t start, int n, float* L, float* R)
+{
+    const int64_t len = t.reader->lengthInSamples;
+    if (start >= len || n <= 0)
+    {
+        std::fill (L, L + n, 0.0f);
+        std::fill (R, R + n, 0.0f);
+        return;
+    }
+    const int k = (int) std::min<int64_t> (n, len - start);
+    float* dest[2] = { L, R };
+    t.reader->read (dest, t.channels, start, k);
+    if (t.channels == 1) std::copy_n (L, k, R);
+    if (k < n)
+    {
+        std::fill (L + k, L + n, 0.0f);
+        std::fill (R + k, R + n, 0.0f);
+    }
+}
+
+// The excerpt: 1 s frames; the 30 s window whose quietest instrument group (by name) is loudest on average, so every
+// group plays in it (as make_sessions.best_excerpt for the evaluation sessions). Reads the tracks in 1 s chunks.
+std::pair<int64_t, int64_t> bestExcerpt (const MultitrackPlayer::Session& s)
+{
+    const auto win = (int64_t) (kExcerptSec * s.sampleRate);
+    if (s.length <= win) return { 0, s.length };
+    const auto hop = (int64_t) s.sampleRate;
+    const int frames = (int) ((s.length - hop) / hop);
+    std::map<int, std::vector<int>> members;
+    for (size_t t = 0; t < s.tracks.size(); ++t) members[priors::roleForName (s.names[t])].push_back ((int) t);
+    std::map<int, std::vector<double>> logE;
+    std::vector<float> L ((size_t) hop), R ((size_t) hop), m ((size_t) hop);
+    for (auto& [g, ts] : members) logE[g].assign ((size_t) frames, 0.0);
+    for (int f = 0; f < frames; ++f)
+        for (auto& [g, ts] : members)
+        {
+            std::fill (m.begin(), m.end(), 0.0f);
+            for (int t : ts)
+            {
+                readStereo (s.tracks[(size_t) t], f * hop, (int) hop, L.data(), R.data());
+                for (size_t i = 0; i < m.size(); ++i) m[i] += 0.5f * (L[i] + R[i]);
+            }
+            double acc = 0;
+            for (float v : m) acc += (double) v * v;
+            logE[g][(size_t) f] = std::log10 (acc / (double) hop + 1e-10);
+        }
     const int span = (int) kExcerptSec;
     double best = -1e9;
     int bestI = 0;
     for (int i = 0; i + span < frames; ++i)
     {
         double score = 1e9;
-        for (auto& [g, e] : groupEnergy)
+        for (auto& [g, e] : logE)
         {
-            double s = 0;
-            for (int k = i; k < i + span; ++k) s += e[(size_t) k];
-            score = std::min (score, s / span);
+            double sum = 0;
+            for (int k = i; k < i + span; ++k) sum += e[(size_t) k];
+            score = std::min (score, sum / span);
         }
-        if (score > best) { best = score; bestI = i; }
+        if (score > best)
+        {
+            best = score;
+            bestI = i;
+        }
     }
     return { bestI * hop, bestI * hop + win };
 }
 } // namespace
 
+// Touches the mapped pages ahead of the playhead (and at the loop start, which playback jumps back to), so the audio
+// thread reads memory that is already resident.
+class MultitrackPlayer::Prefetcher : private juce::Thread
+{
+public:
+    explicit Prefetcher (MultitrackPlayer& p) : juce::Thread ("track prefetch"), player (p) { startThread (juce::Thread::Priority::low); }
+    ~Prefetcher() override { stopThread (2000); }
+
+private:
+    void run() override
+    {
+        while (! threadShouldExit())
+        {
+            if (auto* s = player.active.load())
+            {
+                const auto from = (int64_t) (player.posSec.load() * s->sampleRate);
+                const auto ahead = (int64_t) (3.0 * s->sampleRate);
+                const auto loopStart = (int64_t) (player.loopA.load() * s->sampleRate);
+                for (auto& t : s->tracks)
+                {
+                    const auto step = std::max<int64_t> (1, 4096 / t.bytesPerFrame);
+                    for (auto base : { from, loopStart })
+                        for (int64_t i = std::max<int64_t> (0, base); i < base + ahead && i < t.reader->lengthInSamples; i += step)
+                            t.reader->touchSample (i);
+                }
+            }
+            wait (100);
+        }
+    }
+    MultitrackPlayer& player;
+};
+
+MultitrackPlayer::MultitrackPlayer() { prefetch = std::make_unique<Prefetcher> (*this); }
+
+MultitrackPlayer::~MultitrackPlayer()
+{
+    prefetch.reset();
+    std::lock_guard<std::mutex> lk (infoMutex);
+    owned.clear();
+}
+
+juce::Array<juce::File> MultitrackPlayer::trackFiles (const juce::File& dir)
+{
+    auto files = dir.findChildFiles (juce::File::findFiles, false, kPatterns);
+    files.removeIf ([] (const juce::File& f) { return f.getFileName().startsWith ("."); });
+    files.sort();
+    return files;
+}
+
+double MultitrackPlayer::sessionRate (const juce::File& dir)
+{
+    juce::AudioFormatManager fm;
+    fm.registerBasicFormats();
+    std::map<int, int> count;
+    for (auto& f : trackFiles (dir))
+        if (std::unique_ptr<juce::AudioFormatReader> r (fm.createReaderFor (f)); r != nullptr) ++count[(int) std::lround (r->sampleRate)];
+    int best = 48000, n = 0;
+    for (auto& [rate, c] : count)
+        if (c > n)
+        {
+            best = rate;
+            n = c;
+        }
+    return best;
+}
+
 std::unique_ptr<MultitrackPlayer::Session> MultitrackPlayer::buildSession (const juce::File& dir, double targetRate, juce::String& error) const
 {
     juce::AudioFormatManager fm;
     fm.registerBasicFormats();
-    auto files = dir.findChildFiles (juce::File::findFiles, false, "*.wav;*.WAV;*.aif;*.aiff;*.AIF;*.AIFF;*.flac;*.FLAC;*.mp3;*.ogg;*.m4a");
-    files.removeIf ([] (const juce::File& f) { return f.getFileName().startsWith ("._") || f.getFileName().startsWith ("."); });
-    files.sort();
+    const auto files = trackFiles (dir);
     if (files.isEmpty())
     {
         error = "no audio files in " + dir.getFullPathName();
@@ -94,60 +240,54 @@ std::unique_ptr<MultitrackPlayer::Session> MultitrackPlayer::buildSession (const
     s->folder = dir;
     for (auto& f : files)
     {
-        if ((int) s->tracks.size() >= kMaxTracks) break;
-        std::unique_ptr<juce::AudioFormatReader> r (fm.createReaderFor (f));
-        if (! r) continue;
-        const int srcLen = (int) r->lengthInSamples;
-        juce::AudioBuffer<float> src (2, srcLen);
-        r->read (&src, 0, srcLen, 0, true, r->numChannels > 1);
-        if (r->numChannels == 1) src.copyFrom (1, 0, src, 0, 0, srcLen); // mono -> stereo
-        if (std::abs (r->sampleRate - targetRate) > 0.5)
+        if ((int) s->tracks.size() >= maxTracks()) break;
+        Track t;
+        t.reader = mapFile (f);
+        if (t.reader && std::abs (t.reader->sampleRate - targetRate) > 0.5) t.reader.reset(); // another rate: convert
+        if (! t.reader)
         {
-            const double ratio = r->sampleRate / targetRate;
-            const int outLen = (int) std::ceil (srcLen / ratio);
-            juce::AudioBuffer<float> dst (2, outLen);
-            for (int ch = 0; ch < 2; ++ch)
+            juce::String err;
+            const auto copy = cachedCopy (f, targetRate, fm, err);
+            if (copy == juce::File())
             {
-                juce::LagrangeInterpolator li;
-                li.process (ratio, src.getReadPointer (ch), dst.getWritePointer (ch), outLen, srcLen, 0);
+                error = err;
+                return nullptr;
             }
-            src = std::move (dst);
+            t.reader = mapFile (copy);
+            if (! t.reader)
+            {
+                error = "cannot open the converted copy of " + f.getFileName();
+                return nullptr;
+            }
         }
-        s->length = std::max<int64_t> (s->length, src.getNumSamples());
-        s->tracks.push_back (std::move (src));
+        t.channels = (int) std::min<unsigned int> (2, t.reader->numChannels);
+        t.bytesPerFrame = std::max<int64_t> (1, (int64_t) t.reader->numChannels * (int64_t) t.reader->bitsPerSample / 8);
+        s->length = std::max<int64_t> (s->length, t.reader->lengthInSamples);
+        s->tracks.push_back (std::move (t));
         s->names.push_back (trackLabel (f).toStdString());
     }
-    if (s->tracks.empty())
-    {
-        error = "could not read any audio file in " + dir.getFullPathName();
-        return nullptr;
-    }
-    for (auto& t : s->tracks) // pad to common length
-        if (t.getNumSamples() < s->length)
-        {
-            const int old = t.getNumSamples();
-            t.setSize (2, (int) s->length, true, true);
-            t.clear (old, (int) s->length - old);
-        }
     // Names are how the agent addresses tracks, so they must be unique: "Guitar", "Guitar 2", ...
     {
         std::map<std::string, int> seen;
         for (auto& n : s->names)
             if (const int k = ++seen[n]; k > 1) n += " " + std::to_string (k);
     }
-    const auto [a, b] = bestExcerpt (s->tracks, s->names, s->length, targetRate);
+    const auto [a, b] = bestExcerpt (*s);
     s->excerptStart = a;
     s->excerptEnd = b;
     // One gain for every track: the unity sum of the excerpt at -23 LUFS.
     {
-        juce::AudioBuffer<float> sum (2, (int) (b - a));
+        const int n = (int) (b - a);
+        juce::AudioBuffer<float> sum (2, n), one (2, n);
         sum.clear();
         for (auto& t : s->tracks)
-            for (int ch = 0; ch < 2; ++ch) sum.addFrom (ch, 0, t, ch, (int) a, (int) (b - a));
-        const double lufs = integratedLoudness (sum.getReadPointer (0), sum.getReadPointer (1), sum.getNumSamples(), targetRate);
+        {
+            readStereo (t, a, n, one.getWritePointer (0), one.getWritePointer (1));
+            for (int ch = 0; ch < 2; ++ch) sum.addFrom (ch, 0, one, ch, 0, n);
+        }
+        const double lufs = integratedLoudness (sum.getReadPointer (0), sum.getReadPointer (1), n, targetRate);
         s->gainDb = std::isfinite (lufs) && lufs > -70.0 ? std::clamp (kTargetLufs - lufs, -40.0, 40.0) : 0.0;
-        const float g = (float) std::pow (10.0, s->gainDb / 20.0);
-        for (auto& t : s->tracks) t.applyGain (g);
+        s->gain = (float) std::pow (10.0, s->gainDb / 20.0);
     }
     return s;
 }
@@ -163,27 +303,25 @@ juce::String MultitrackPlayer::loadFolder (const juce::File& dir, double targetR
 
 void MultitrackPlayer::setSession (std::unique_ptr<Session> s)
 {
+    auto* raw = s.get();
     {
         std::lock_guard<std::mutex> lk (infoMutex);
         folder = s->folder;
         names = s->names;
+        owned.push_back (std::move (s));
     }
-    numTracks = (int) s->tracks.size();
-    lenSec = (double) s->length / s->sampleRate;
-    excA = (double) s->excerptStart / s->sampleRate;
-    excB = (double) s->excerptEnd / s->sampleRate;
-    gainDbNow = s->gainDb;
+    numTracks = (int) raw->tracks.size();
+    lenSec = (double) raw->length / raw->sampleRate;
+    excA = (double) raw->excerptStart / raw->sampleRate;
+    excB = (double) raw->excerptEnd / raw->sampleRate;
+    gainDbNow = raw->gainDb;
+    loadedRate = raw->sampleRate;
     setLoopRegion (excA.load(), excB.load()); // the excerpt is the default loop (and what the first mix hears)
-    loadedRate = s->sampleRate;
-    delete pending.exchange (s.release());
-    collectGarbage();
+    pending.store (raw);
+    active.store (raw); // the prefetcher can start on it already
 }
 
-void MultitrackPlayer::collectGarbage()
-{
-    Session* p = nullptr;
-    while (retired.pop (p)) delete p;
-}
+void MultitrackPlayer::collectGarbage() {}
 
 juce::File MultitrackPlayer::loadedFolder() const
 {
@@ -201,17 +339,15 @@ TrackMask MultitrackPlayer::fill (float* const* L, float* const* R, int n) noexc
 {
     if (auto* p = pending.exchange (nullptr))
     {
-        if (current && ! retired.push (current)) { /* retire queue full: leak rather than free on audio thread */ }
         current = p;
-        pos = 0;
+        pos = p->excerptStart; // a new session starts at its excerpt (the default loop)
     }
-    if (! current) return 0;
+    if (! current) return {};
     const double sk = seekTo.exchange (-1.0);
     if (sk >= 0) pos = std::clamp ((int64_t) (sk * current->sampleRate), (int64_t) 0, current->length);
 
     const int nt = (int) current->tracks.size();
-    TrackMask mask = 0;
-    for (int t = 0; t < nt; ++t) mask |= TrackMask (1) << t;
+    const TrackMask mask { nt };
     for (int t = 0; t < nt; ++t)
     {
         std::fill (L[t], L[t] + n, 0.0f);
@@ -219,12 +355,16 @@ TrackMask MultitrackPlayer::fill (float* const* L, float* const* R, int n) noexc
     }
     if (! playing.load()) return mask;
 
-    // Loop region (samples); end <= start means the whole file.
+    // Loop region (frames); end <= start means the whole file.
     int64_t la = (int64_t) (loopA.load (std::memory_order_relaxed) * current->sampleRate);
     int64_t lb = (int64_t) (loopB.load (std::memory_order_relaxed) * current->sampleRate);
     const bool lp = looping.load();
-    if (! lp || lb <= la || la < 0 || lb > current->length) { la = 0; lb = current->length; }
-    if (lp && (pos < la || pos >= lb)) pos = la; // a new region, or a seek outside it
+    if (! lp || lb <= la || la < 0 || lb > current->length)
+    {
+        la = 0;
+        lb = current->length;
+    }
+    if (lp && pos >= lb) pos = la; // past the region (new region, or a seek after it): back to its start
     int done = 0;
     while (done < n)
     {
@@ -240,9 +380,13 @@ TrackMask MultitrackPlayer::fill (float* const* L, float* const* R, int n) noexc
         const int k = (int) std::min<int64_t> (n - done, lb - pos);
         for (int t = 0; t < nt; ++t)
         {
-            const auto& b = current->tracks[(size_t) t];
-            std::copy_n (b.getReadPointer (0, (int) pos), k, L[t] + done);
-            std::copy_n (b.getReadPointer (1, (int) pos), k, R[t] + done);
+            readStereo (current->tracks[(size_t) t], pos, k, L[t] + done, R[t] + done);
+            if (current->gain != 1.0f)
+                for (int i = done; i < done + k; ++i)
+                {
+                    L[t][i] *= current->gain;
+                    R[t][i] *= current->gain;
+                }
         }
         pos += k;
         done += k;

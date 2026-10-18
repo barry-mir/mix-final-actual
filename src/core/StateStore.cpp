@@ -187,8 +187,8 @@ ChatEntry ChatEntry::fromJson (const json& j)
 // ---------------------------------------------------------------- store
 StateStore::StateStore()
 {
-    for (int t = 0; t < kMaxTracks; ++t) names[(size_t) t] = "Track " + std::to_string (t + 1);
-    resetStage (kMaxTracks);
+    for (int t = 0; t < maxTracks(); ++t) names[(size_t) t] = "Track " + std::to_string (t + 1);
+    resetStage (maxTracks());
     cfg.clampAll();
 }
 
@@ -212,7 +212,7 @@ NameSource StateStore::nameSource (int t) const
     return nameSrc[(size_t) t];
 }
 
-std::array<std::string, kMaxTracks> StateStore::trackNames() const
+std::vector<std::string> StateStore::trackNames() const
 {
     std::lock_guard<std::mutex> lk (m);
     return names;
@@ -232,7 +232,7 @@ void StateStore::setStagePos (int t, StagePos p)
     stage[(size_t) t] = p;
 }
 
-std::array<StagePos, kMaxTracks> StateStore::stagePositions() const
+std::vector<StagePos> StateStore::stagePositions() const
 {
     std::lock_guard<std::mutex> lk (m);
     return stage;
@@ -249,7 +249,7 @@ StagePos StateStore::defaultStagePos (int t, int numTracks)
 void StateStore::resetStage (int numTracks)
 {
     std::lock_guard<std::mutex> lk (m);
-    for (int t = 0; t < kMaxTracks; ++t) stage[(size_t) t] = defaultStagePos (t, numTracks);
+    for (int t = 0; t < maxTracks(); ++t) stage[(size_t) t] = defaultStagePos (t, numTracks);
 }
 
 void StateStore::setLocked (int param, bool l) { locks[(size_t) param].store (l); }
@@ -257,7 +257,7 @@ void StateStore::setLocked (int param, bool l) { locks[(size_t) param].store (l)
 std::vector<int> StateStore::lockedParams() const
 {
     std::vector<int> v;
-    for (int i = 0; i < kNumParams; ++i)
+    for (int i = 0; i < numParams(); ++i)
         if (locks[(size_t) i].load()) v.push_back (i);
     return v;
 }
@@ -344,7 +344,7 @@ json StateStore::toJson() const
     for (auto& p : stage) st.push_back ({ p.x, p.y });
     j["stage"] = st;
     json lk2 = json::array();
-    for (int i = 0; i < kNumParams; ++i)
+    for (int i = 0; i < numParams(); ++i)
         if (locks[(size_t) i].load()) lk2.push_back (spec (i).id);
     j["llm_locks"] = lk2;
     j["settings"] = cfg.toJson();
@@ -363,14 +363,14 @@ void StateStore::fromJson (const json& j)
     {
         std::lock_guard<std::mutex> lk (m);
         if (j.contains ("track_names"))
-            for (size_t t = 0; t < (size_t) kMaxTracks && t < j["track_names"].size(); ++t)
+            for (size_t t = 0; t < (size_t) maxTracks() && t < j["track_names"].size(); ++t)
             {
                 names[t] = j["track_names"][t].get<std::string>();
                 nameSrc[t] = j.contains ("name_sources") && t < j["name_sources"].size() ? (NameSource) j["name_sources"][t].get<int>()
                              : (names[t] == "Track " + std::to_string (t + 1) ? NameSource::Default : NameSource::User);
             }
         if (j.contains ("stage"))
-            for (size_t t = 0; t < (size_t) kMaxTracks && t < j["stage"].size(); ++t)
+            for (size_t t = 0; t < (size_t) maxTracks() && t < j["stage"].size(); ++t)
                 stage[t] = { j["stage"][t][0].get<float>(), j["stage"][t][1].get<float>() };
         if (j.contains ("settings")) cfg = Settings::fromJson (j["settings"]);
         recs.clear();

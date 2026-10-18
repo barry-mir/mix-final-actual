@@ -36,7 +36,7 @@ public:
     ParamEngine()
     {
         queue.resize (4096);
-        for (int i = 0; i < kNumParams; ++i)
+        for (int i = 0; i < numParams(); ++i)
         {
             auto& s = spec (i);
             isDiscrete[(size_t) i] = s.kind != Kind::Float;
@@ -52,7 +52,7 @@ public:
     void prepare (double sampleRate)
     {
         fs = sampleRate;
-        for (int i = 0; i < kNumParams; ++i)
+        for (int i = 0; i < numParams(); ++i)
         {
             const float v = raw[(size_t) i] ? raw[(size_t) i]->load() : spec (i).def;
             lastRaw[(size_t) i] = cur[(size_t) i] = prev[(size_t) i] = v;
@@ -81,7 +81,7 @@ public:
 
         // 2. Manual / host-automation edits.
         const int manualSamples = juce::jmax (1, (int) std::lround (kManualRampSec * fs));
-        for (size_t i = 0; i < (size_t) kNumParams; ++i)
+        for (size_t i = 0; i < (size_t) numParams(); ++i)
         {
             if (raw[i] == nullptr || llmActive[i].load (std::memory_order_relaxed) || uiAnim[i].load (std::memory_order_relaxed))
                 continue;
@@ -99,7 +99,7 @@ public:
         }
 
         // 3. Advance smoothing to the end of this block.
-        for (size_t i = 0; i < (size_t) kNumParams; ++i)
+        for (size_t i = 0; i < (size_t) numParams(); ++i)
         {
             prev[i] = cur[i];
             if (isDiscrete[i])
@@ -148,7 +148,7 @@ public:
 private:
     void applyLlm (const LlmChange& c) noexcept
     {
-        if (c.param < 0 || c.param >= kNumParams) return;
+        if (c.param < 0 || c.param >= numParams()) return;
         const auto i = (size_t) c.param;
         const int ramp = juce::jmax (1, (int) std::lround (c.rampSec * fs));
         lastRaw[i] = c.target;
@@ -193,14 +193,14 @@ private:
     int64_t blockCounter = 0;
     SpscRing<LlmChange> queue;
 
-    std::array<std::atomic<float>*, kNumParams> raw {};
-    std::array<bool, kNumParams> isDiscrete {};
-    std::array<float, kNumParams> lastRaw {}, cur {}, prev {};
-    std::array<juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear>, kNumParams> sm;
-    std::array<int, kNumParams> discreteRemaining {}, changedRamp {};
-    std::array<int64_t, kNumParams> changedBlock {}, startBlock {}, endBlock {};
-    std::array<std::atomic<bool>, kNumParams> llmActive {}, uiAnim {};
-    std::array<std::atomic<uint32_t>, kNumParams> consumed {};
-    std::array<std::atomic<float>, kNumParams> published {};
+    std::vector<std::atomic<float>*> raw = std::vector<std::atomic<float>*> ((size_t) numParams());
+    std::vector<bool> isDiscrete = std::vector<bool> ((size_t) numParams());
+    std::vector<float> lastRaw = std::vector<float> ((size_t) numParams()), cur = std::vector<float> ((size_t) numParams()), prev = std::vector<float> ((size_t) numParams());
+    std::vector<juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear>> sm = std::vector<juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear>> ((size_t) numParams());
+    std::vector<int> discreteRemaining = std::vector<int> ((size_t) numParams()), changedRamp = std::vector<int> ((size_t) numParams());
+    std::vector<int64_t> changedBlock = std::vector<int64_t> ((size_t) numParams()), startBlock = std::vector<int64_t> ((size_t) numParams()), endBlock = std::vector<int64_t> ((size_t) numParams());
+    std::vector<std::atomic<bool>> llmActive = std::vector<std::atomic<bool>> ((size_t) numParams()), uiAnim = std::vector<std::atomic<bool>> ((size_t) numParams());
+    std::vector<std::atomic<uint32_t>> consumed = std::vector<std::atomic<uint32_t>> ((size_t) numParams());
+    std::vector<std::atomic<float>> published = std::vector<std::atomic<float>> ((size_t) numParams());
 };
 } // namespace im

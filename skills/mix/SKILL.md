@@ -17,7 +17,9 @@ your moves did.
   so names like `Lead Vocal.wav`, `Kick In.wav`, `Bass DI.wav` matter. If names are cryptic (`Audio 01.wav`), ask the
   user what each track is and suggest they rename the files first.
 - Call `open_session(folder)`. The console picks a 30 s excerpt where every instrument plays and starts the first mix
-  (5 turns).
+  (5 turns). If the folder already has a saved mix (`mix_final_ACTUAL project.json`, saved automatically), it reopens
+  live as the user left it; tell the user, and only start over with `open_session(folder, new_mix=true)` if they ask
+  (close the open session first).
 
 ## 2. Answer turns
 

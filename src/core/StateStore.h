@@ -102,10 +102,10 @@ public:
     std::string trackName (int t) const;
     void setTrackName (int t, const std::string& n, NameSource src = NameSource::User);
     NameSource nameSource (int t) const;
-    std::array<std::string, kMaxTracks> trackNames() const;
+    std::vector<std::string> trackNames() const;
     StagePos stagePos (int t) const;
     void setStagePos (int t, StagePos p);
-    std::array<StagePos, kMaxTracks> stagePositions() const;
+    std::vector<StagePos> stagePositions() const;
     static StagePos defaultStagePos (int t, int numTracks);
     void resetStage (int numTracks);
 
@@ -136,10 +136,10 @@ public:
 
 private:
     mutable std::mutex m;
-    std::array<std::string, kMaxTracks> names;
-    std::array<NameSource, kMaxTracks> nameSrc {};
-    std::array<StagePos, kMaxTracks> stage;
-    std::array<std::atomic<bool>, kNumParams> locks {};
+    std::vector<std::string> names = std::vector<std::string> ((size_t) maxTracks());
+    std::vector<NameSource> nameSrc = std::vector<NameSource> ((size_t) maxTracks());
+    std::vector<StagePos> stage = std::vector<StagePos> ((size_t) maxTracks());
+    std::vector<std::atomic<bool>> locks = std::vector<std::atomic<bool>> ((size_t) numParams());
     Settings cfg;
     std::deque<MemoryRecord> recs; // full history kept for export (bounded)
     std::vector<ChatEntry> chatLog;

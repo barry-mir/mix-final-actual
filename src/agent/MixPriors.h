@@ -1,4 +1,6 @@
 #pragma once
+#include <map>
+#include <string>
 // Mix priors: what finished mixes look like on the console's own indicators, as statistics over 230 professional mixes.
 //  * per-role level of a track relative to the full mix (track energy - mix energy, dB): median, p25, p75, p10, p90
 //  * per-role crest factor, stereo width and low-end share; 8-band tone profile per role and of the mix
@@ -60,6 +62,10 @@ float flagMargin();
 // Where a flagged track is moved: nearest edge of the typical range (default) or the median (IM_FLAG_TARGET=median).
 float targetLevel (const RoleLevel& r, float level);
 
-// Role from a track name by keywords; -1 if unknown.
+// Role from a track name by keywords; -1 if unknown. A group set by the user for that name wins.
 int roleForName (const std::string& name);
+// The user's group for a track name (0 vocals .. 4 keys/other, -1 none); kNoOverride clears it. Thread-safe.
+inline constexpr int kNoOverride = -2;
+void setRoleOverride (const std::string& name, int role);
+std::map<std::string, int> roleOverrides();
 } // namespace im::priors

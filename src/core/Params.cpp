@@ -1,4 +1,5 @@
 #include "core/Params.h"
+#include <atomic>
 #include <cmath>
 #include <unordered_map>
 
@@ -167,8 +168,8 @@ struct Registry
 
     Registry()
     {
-        specs.resize ((size_t) kNumParams);
-        for (int t = 0; t < kMaxTracks; ++t)
+        specs.resize ((size_t) numParams());
+        for (int t = 0; t < maxTracks(); ++t)
             for (auto& d : trackDefs())
             {
                 auto s = makeSpec (d, t);
@@ -187,12 +188,22 @@ struct Registry
     }
 };
 
+std::atomic<int> gMaxTracks { 32 };
+std::atomic<bool> gRegistryBuilt { false };
+
 const Registry& reg()
 {
-    static const Registry r;
+    static const Registry r = [] { gRegistryBuilt = true; return Registry(); }();
     return r;
 }
 } // namespace
+
+void setMaxTracks (int n)
+{
+    if (! gRegistryBuilt.load()) gMaxTracks = std::max (1, n);
+}
+
+int maxTracks() noexcept { return gMaxTracks.load (std::memory_order_relaxed); }
 
 const std::vector<ParamSpec>& allParams() { return reg().specs; }
 const ParamSpec& spec (int index) { return reg().specs[(size_t) index]; }

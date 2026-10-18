@@ -28,7 +28,6 @@ target_include_directories(mfa_httplib SYSTEM INTERFACE ${httplib_SOURCE_DIR})
 set(MFA_ENGINE_SOURCES
     src/core/Params.cpp
     src/core/StateStore.cpp
-    src/host/ReaperBridge.cpp
     src/dsp/Filters.cpp
     src/dsp/ChannelStrip.cpp
     src/dsp/Doubler.cpp
@@ -51,11 +50,11 @@ set(MFA_ENGINE_SOURCES
 juce_add_binary_data(mfa_web SOURCES web/index.html)
 
 juce_add_console_app(mix-final-actual PRODUCT_NAME "mix-final-actual")
-target_sources(mix-final-actual PRIVATE ${MFA_ENGINE_SOURCES} app/main.cpp app/WebServer.cpp app/FirstMix.cpp app/Instances.cpp app/Mcp.cpp app/Export.cpp)
+target_sources(mix-final-actual PRIVATE ${MFA_ENGINE_SOURCES} app/main.cpp app/WebServer.cpp app/FirstMix.cpp app/Instances.cpp app/Mcp.cpp app/Export.cpp app/Project.cpp)
 target_include_directories(mix-final-actual PRIVATE ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/app)
 target_include_directories(mix-final-actual SYSTEM PRIVATE ${juce_SOURCE_DIR}/modules/juce_audio_processors_headless/format_types/VST3_SDK)
 target_compile_definitions(mix-final-actual PRIVATE
-    JUCE_STANDALONE_APPLICATION=1 IM_MAX_TRACKS=64
+    JUCE_STANDALONE_APPLICATION=1
     JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0 JUCE_VST3_CAN_REPLACE_VST2=0 JUCE_DISPLAY_SPLASH_SCREEN=0
     JUCE_MODAL_LOOPS_PERMITTED=1 CPPHTTPLIB_NO_EXCEPTIONS=0)
 target_link_libraries(mix-final-actual PRIVATE

@@ -37,8 +37,8 @@ void MixEngine::prepare (double sampleRate, int maxBlock)
     inter.assign (mb * 2, 0.0f);
 
     bool anySolo = false;
-    for (int t = 0; t < kMaxTracks; ++t) anySolo |= params.boolValue (trackParam (t, Solo));
-    for (int t = 0; t < kMaxTracks; ++t)
+    for (int t = 0; t < maxTracks(); ++t) anySolo |= params.boolValue (trackParam (t, Solo));
+    for (int t = 0; t < maxTracks(); ++t)
     {
         auto& s = strips[(size_t) t];
         s.prepare (fs, maxBlockSize);
@@ -165,13 +165,13 @@ void MixEngine::process (const float* const* inL, const float* const* inR, float
     // Solo-in-place / mute -> per-track audibility with crossfade ramps.
     bool anySolo = false;
     int soloRamp = -1;
-    for (int t = 0; t < kMaxTracks; ++t)
+    for (int t = 0; t < maxTracks(); ++t)
     {
         anySolo |= params.boolValue (trackParam (t, Solo));
         soloRamp = std::max (soloRamp, params.discreteChangeRamp (trackParam (t, Solo)));
     }
 
-    for (int t = 0; t < kMaxTracks; ++t)
+    for (int t = 0; t < maxTracks(); ++t)
     {
         const size_t ts = (size_t) t;
         auto& m = meters[ts];
@@ -428,7 +428,7 @@ void MixEngine::process (const float* const* inL, const float* const* inR, float
     for (int i = 0; i < n; ++i)
     {
         float dl = 0, dr = 0;
-        for (int t = 0; t < kMaxTracks; ++t)
+        for (int t = 0; t < maxTracks(); ++t)
             if (inL[t] != nullptr && inR[t] != nullptr) { dl += inL[t][i]; dr += inR[t][i]; }
         dryL[(size_t) dryPos] = dl;
         dryR[(size_t) dryPos] = dr;

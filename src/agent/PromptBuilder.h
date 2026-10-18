@@ -13,9 +13,9 @@ namespace im
 {
 struct PromptInputs
 {
-    std::array<std::string, kMaxTracks> names;
-    std::array<StagePos, kMaxTracks> stage;
-    TrackMask presentMask = 0;
+    std::vector<std::string> names = std::vector<std::string> ((size_t) maxTracks());
+    std::vector<StagePos> stage = std::vector<StagePos> ((size_t) maxTracks());
+    TrackMask presentMask {};
     std::vector<int> locked;
     std::vector<MemoryRecord> memory;           // last K, oldest first
     std::function<float (int)> paramValue;      // display value
@@ -74,7 +74,7 @@ std::string tracksSectionV3 (const PromptInputs& in); // plain table + CHECKLIST
 std::vector<std::string> checklistV3 (const PromptInputs& in);
 std::string tracksSectionV4 (const PromptInputs& in); // engineer prompt: table, band shares, technical warnings only
 std::string lockedSection (const PromptInputs& in);
-std::string memorySection (const std::vector<MemoryRecord>& mem, const std::array<std::string, kMaxTracks>& names);
+std::string memorySection (const std::vector<MemoryRecord>& mem, const std::vector<std::string>& names);
 std::string settingsSection (const PromptInputs& in);
 std::string triggerSection (const PromptInputs& in);
 } // namespace im

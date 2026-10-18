@@ -41,9 +41,11 @@ json toolList()
     return json::array ({
         tool ("open_session",
               "Start the console on a folder of tracks (WAV/AIFF/FLAC, one file per track, file names = track names such as "
-              "'Lead Vocal.wav'). Starts the first mix, which waits for your turns. Reuses the session if it is already open.",
+              "'Lead Vocal.wav'). Starts the first mix, which waits for your turns; a folder with a saved project reopens it "
+              "instead (live at once). Reuses the session if it is already open.",
               { { "folder", { { "type", "string" }, { "description", "Absolute path of the tracks folder." } } },
-                { "turns", { { "type", "integer" }, { "description", "Turns in the first mix (default 5)." } } } },
+                { "turns", { { "type", "integer" }, { "description", "Turns in the first mix (default 5)." } } },
+                { "new_mix", { { "type", "boolean" }, { "description", "Start over with a new first mix even if the folder has a saved project (default false: a saved project is reopened as it was)." } } } },
               json::array ({ "folder" })),
         tool ("next_turn",
               "Wait for the console's next turn and return it: a SYSTEM part (how to mix, how to answer), a USER part (this "
@@ -125,6 +127,7 @@ Result openSession (const json& args, const std::string& exe)
     {
         std::vector<std::string> a { "serve", folder };
         if (args.contains ("turns") && args["turns"].is_number_integer()) a.insert (a.end(), { "--turns", std::to_string (args["turns"].get<int>()) });
+        if (args.value ("new_mix", false)) a.push_back ("--new-mix");
         const auto log = im::appDataDir().getChildFile ("logs");
         log.createDirectory();
         if (! spawnDetached (exe, a, log.getChildFile ("serve.log").getFullPathName().toStdString()))

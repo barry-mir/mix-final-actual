@@ -3,7 +3,6 @@
 #include "analysis/Analyzer.h"
 #include "core/StateStore.h"
 #include "dsp/MixEngine.h"
-#include "host/ReaperBridge.h"
 #include "standalone/MultitrackPlayer.h"
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <deque>
@@ -50,8 +49,6 @@ public:
     const juce::String getProgramName (int) override { return {}; }
     void changeProgramName (int, const juce::String&) override {}
     void getStateInformation (juce::MemoryBlock&) override;
-    juce::VST3ClientExtensions* getVST3ClientExtensions() override { return &vst3Ext; }
-    void updateTrackProperties (const TrackProperties& props) override;
     void setStateInformation (const void*, int) override;
 
     // ---- AgentHost ----------------------------------------------------------
@@ -101,20 +98,7 @@ public:
     std::atomic<double> cpuLoad { 0.0 }; // last block time / block duration
     double currentSampleRate() const { return sampleRateNow; }
 
-    ReaperBridge reaper; // host track names (REAPER VST3); message thread only
-
 private:
-    struct Vst3Ext : juce::VST3ClientExtensions
-    {
-        InteractiveMixerProcessor& p;
-        explicit Vst3Ext (InteractiveMixerProcessor& o) : p (o) {}
-        void setIHostApplication (Steinberg::FUnknown* host) override { p.hostContext = host; }
-    } vst3Ext { *this };
-    std::atomic<Steinberg::FUnknown*> hostContext { nullptr };
-    bool reaperTried = false;
-    double nextHostPollMs = 0;
-    std::string lastHostDiag;
-    void pollHostTrackNames();
     static BusesProperties makeBuses();
     void timerCallback() override;
     void parameterValueChanged (int, float) override {}
@@ -122,19 +106,18 @@ private:
     std::vector<float> captureRaw() const;
     void restoreRaw (const std::vector<float>& v);
     void startServices();
-    TrackMask trackFromBuses (const juce::AudioBuffer<float>& buffer, const float** L, const float** R);
 
-    std::array<std::atomic<float>*, kNumParams> rawParams {};
-    std::array<juce::RangedAudioParameter*, kNumParams> paramPtrs {};
+    std::vector<std::atomic<float>*> rawParams = std::vector<std::atomic<float>*> ((size_t) numParams());
+    std::vector<juce::RangedAudioParameter*> paramPtrs = std::vector<juce::RangedAudioParameter*> ((size_t) numParams());
     double paramSig = -1.0; // weighted sum of all raw parameter values, to detect changes on the audio thread
     std::unordered_map<juce::AudioProcessorParameter*, int> paramIndexOf;
 
     // LLM animation bookkeeping (message thread)
-    std::array<float, kNumParams> animTarget {};
-    std::array<uint32_t, kNumParams> animBatch {};
-    std::array<std::atomic<float>, kNumParams> pendingTarget {};
-    std::array<std::atomic<bool>, kNumParams> hasPendingTarget {};
-    std::array<double, kNumParams> flashMs {};
+    std::vector<float> animTarget = std::vector<float> ((size_t) numParams());
+    std::vector<uint32_t> animBatch = std::vector<uint32_t> ((size_t) numParams());
+    std::vector<std::atomic<float>> pendingTarget = std::vector<std::atomic<float>> ((size_t) numParams());
+    std::vector<std::atomic<bool>> hasPendingTarget = std::vector<std::atomic<bool>> ((size_t) numParams());
+    std::vector<double> flashMs = std::vector<double> ((size_t) numParams());
     std::vector<int> animating;
     uint32_t batchCounter = 0;
 
@@ -152,7 +135,9 @@ private:
     double sampleRateNow = 48000.0;
     int maxBlock = 512;
     std::vector<std::vector<float>> playerBufL, playerBufR;
-    std::atomic<TrackMask> present { 1 };
+    std::vector<float*> fillL, fillR;             // per-track pointers into playerBuf (sized in prepareToPlay)
+    std::vector<const float*> inL, inR;           // what the engine gets: nullptr = track not present
+    std::atomic<TrackMask> present { TrackMask {} };
     bool servicesStarted = false;
     std::shared_ptr<bool> alive = std::make_shared<bool> (true);
 

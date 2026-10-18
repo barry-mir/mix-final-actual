@@ -9,16 +9,6 @@ namespace
 {
 constexpr double kTailSec = 3.0; // reverb and echo ring-out after the last note
 
-// The rate of the first readable track (the export keeps the source rate).
-double sourceRate (const juce::File& dir)
-{
-    juce::AudioFormatManager fm;
-    fm.registerBasicFormats();
-    for (auto& f : dir.findChildFiles (juce::File::findFiles, false, "*.wav;*.WAV;*.aif;*.aiff;*.AIF;*.AIFF;*.flac;*.FLAC;*.mp3;*.ogg;*.m4a"))
-        if (std::unique_ptr<juce::AudioFormatReader> r (fm.createReaderFor (f)); r != nullptr) return r->sampleRate;
-    return 48000.0;
-}
-
 bool writeWav (const juce::File& f, const juce::AudioBuffer<float>& b, double sr)
 {
     f.deleteFile();
@@ -72,7 +62,7 @@ bool Exporter::start (InteractiveMixerProcessor& live, bool stems)
     const auto tracksDir = live.player.loadedFolder();
     const auto names = live.store.trackNames();
     const int nTracks = live.player.numLoadedTracks();
-    const double sr = sourceRate (tracksDir);
+    const double sr = im::MultitrackPlayer::sessionRate (tracksDir); // export at the tracks' own rate
     const int bs = 512;
 
     const bool before = im::gDisableBackgroundServices;
@@ -101,7 +91,7 @@ bool Exporter::start (InteractiveMixerProcessor& live, bool stems)
         const int latency = p.engine.latencySamples();
         const auto total = (int64_t) ((p.player.lengthSec() + kTailSec) * sr) + latency;
         const int passes = 1 + (stems ? nTracks : 0);
-        juce::AudioBuffer<float> io (2 * im::kMaxTracks, bs);
+        juce::AudioBuffer<float> io (2, bs);
         juce::MidiBuffer midi;
 
         // One pass: everything from the top (tail included), latency removed.

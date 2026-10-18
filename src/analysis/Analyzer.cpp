@@ -82,7 +82,7 @@ void Analyzer::drain()
         }
         return frames;
     };
-    for (int t = 0; t < kMaxTracks; ++t)
+    for (int t = 0; t < maxTracks(); ++t)
     {
         drainRing (taps.pre[(size_t) t], pre[(size_t) t]);
         drainRing (taps.post[(size_t) t], post[(size_t) t]);
@@ -108,10 +108,10 @@ void Analyzer::compute()
     const TrackMask mask = presentMask.load();
     const int win = (int) std::lround (kWindowSec * fs);
 
-    for (int t = 0; t < kMaxTracks; ++t)
+    for (int t = 0; t < maxTracks(); ++t)
     {
         auto& ts = s->tracks[(size_t) t];
-        ts.present = (mask >> t) & 1u;
+        ts.present = mask.has (t);
         if (! ts.present || pre[(size_t) t].filled < FeatureExtractor::kFftSize) continue;
 
         int n = pre[(size_t) t].linearize (linL, linR);
@@ -176,7 +176,7 @@ void Analyzer::compute()
     {
         seenSerial = cs;
         avgCount = 0;
-        avgTrackPow.fill (0.0);
+        std::fill (avgTrackPow.begin(), avgTrackPow.end(), 0.0);
         avgMasterPow = 0;
         avgPrePow = 0;
         ltPrePeakDb = -120;
@@ -190,7 +190,7 @@ void Analyzer::compute()
         avgMasterPow += std::pow (10.0, s->master.f.rmsDb / 10.0);
         avgPrePow += std::pow (10.0, s->master.preRmsDb / 10.0);
         ltPrePeakDb = std::max (ltPrePeakDb, s->master.prePeakDb);
-        for (int t = 0; t < kMaxTracks; ++t)
+        for (int t = 0; t < maxTracks(); ++t)
         {
             const auto& ts = s->tracks[(size_t) t];
             if (ts.present && ! ts.silent) avgTrackPow[(size_t) t] += std::pow (10.0, ts.post.rmsDb / 10.0);
@@ -200,7 +200,7 @@ void Analyzer::compute()
     {
         s->avgSec = avgCount * kHopSec + (kWindowSec - kHopSec);
         if (avgPrePow > 0) s->master.ltCfPreDb = (float) (ltPrePeakDb - 10.0 * std::log10 (avgPrePow / avgCount));
-        for (int t = 0; t < kMaxTracks; ++t)
+        for (int t = 0; t < maxTracks(); ++t)
             if (avgTrackPow[(size_t) t] > 0)
                 s->tracks[(size_t) t].levelAvgDb = (float) (10.0 * std::log10 (avgTrackPow[(size_t) t] / avgMasterPow));
     }
