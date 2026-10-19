@@ -31,7 +31,7 @@ streaming by default), so what you hear is what Export writes. The page works li
 in the page for the list). Export asks where to save (default
 `Music/mix_final_ACTUAL/<song>/`), as 24-bit WAV or FLAC, optionally with stems.
 
-The plugin ships native binaries for macOS (universal), Linux (x64) and Windows (x64), built by CI on the
+The plugin ships native binaries for macOS (universal), Linux (x64, arm64) and Windows (x64), built by CI on the
 `dist` branch. Nothing to install besides the plugin; no API keys; everything runs locally.
 
 ## What it writes, and where

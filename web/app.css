@@ -226,3 +226,12 @@ canvas.eqbig { width: 100%; height: 130px; background: #101215; border-radius: 4
 .strip.fx { width: 100px; background: #1d2427; }
 .sepl { writing-mode: vertical-rl; transform: rotate(180deg); color: var(--dim); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; align-self: center; padding: 0 4px 0 10px; border-right: 1px solid var(--line); }
 .masterpin { position: sticky; right: 0; display: flex; padding-left: 8px; margin-left: auto; background: linear-gradient(90deg, #15171b00, var(--bg) 8px); }
+.strip.master { width: 156px; }
+.returns { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 3px 0; display: flex; flex-direction: column; gap: 3px; }
+.returns .rh { font-size: 9px; color: var(--dim); text-transform: uppercase; letter-spacing: .08em; }
+.ret { display: grid; grid-template-columns: 30px minmax(0, 1fr) 34px; grid-template-rows: auto 3px; column-gap: 4px; align-items: center; font-size: 10px; }
+.ret .rn { color: #4fd1c5; cursor: pointer; font-weight: 600; }
+.ret .rn:hover { text-decoration: underline; }
+.ret .rv { text-align: right; color: var(--dim); font-variant-numeric: tabular-nums; }
+.ret .hm { grid-column: 1 / 4; height: 3px; background: #0b0c0e; border-radius: 2px; overflow: hidden; }
+.ret .hm i { display: block; height: 100%; width: 0; background: var(--meter); }

@@ -1134,8 +1134,11 @@ function initLanes() {
     ev.preventDefault();
     const r = $("lanesWrap").getBoundingClientRect();
     if (ev.ctrlKey || ev.metaKey) { zoomAt(Math.exp(-ev.deltaY * 0.01), ev.clientX - r.left); return; }
-    let dx = ev.deltaX, dy = ev.deltaY;
-    if (ev.shiftKey && !dx) { dx = dy; dy = 0; }
+    // Over the clips a plain wheel moves along the song (a mouse has only the vertical wheel); Shift+wheel moves
+    // up and down the tracks, as does the wheel over the track names.
+    let dx, dy;
+    if (ev.shiftKey) { dx = 0; dy = ev.deltaY || ev.deltaX; }
+    else { dx = ev.deltaX + ev.deltaY; dy = 0; }
     if (dx) AR.fitted = false;
     AR.x0 += dx / AR.pps; AR.sy += dy;
     clampView(); redrawAll();
@@ -1143,6 +1146,11 @@ function initLanes() {
   $("lanesWrap").addEventListener("wheel", wheel, { passive: false });
   $("headers").addEventListener("wheel", ev => { ev.preventDefault(); AR.sy += ev.deltaY; clampView(); redrawAll(); }, { passive: false });
   $("rulerWrap").addEventListener("wheel", wheel, { passive: false });
+  $("mixer").addEventListener("wheel", ev => {
+    if (ev.defaultPrevented || ev.ctrlKey || ev.metaKey) return; // a fader or knob took the wheel
+    ev.preventDefault();
+    $("mixer").scrollLeft += ev.shiftKey ? ev.deltaY : ev.deltaX + ev.deltaY;
+  }, { passive: false });
   // ruler: click seeks, drag sets the cycle
   const ru = $("rulerWrap");
   ru.onpointerdown = ev => {
@@ -1189,7 +1197,6 @@ function buildMixer() {
   // After the tracks: the group buses and effect returns (they scroll with the tracks), then the master, pinned right.
   const sep = el("div", "sepl", "buses · returns"); sep.id = "busStart"; box.append(sep);
   BUSKEYS.forEach((_, g) => box.append(busStrip(g)));
-  box.append(fxStrip("reverb"), fxStrip("echo"));
   const pin = el("div", "masterpin"); pin.append(strip(-1)); box.append(pin);
   for (const [k, a] of Object.entries(controls)) for (let j = before.get(k) || 0; j < a.length; ++j) a[j].mix = true;
 }
@@ -1207,6 +1214,7 @@ function strip(t) {
     e.append(cv);
   }
   e.append(blockRows(t));
+  if (master) e.append(returnsBox());
   if (!master) {
     const pr = el("div", "panrow"); const pl = el("span", "", "C");
     pr.append(slider(P(t, "balance.value")), pl);
@@ -1263,7 +1271,26 @@ function busStrip(g) {
   e.onpointerdown = () => selectTrack(BUS_ID(g));
   return e;
 }
-// An effect return (reverb or echo): its return fader and level.
+// The effect returns feed the master, so they sit in its strip: return level, a meter, click for their settings.
+function returnsBox() {
+  const box = el("div", "returns");
+  box.append(el("div", "rh", "returns"));
+  for (const kind of ["reverb", "echo"]) {
+    const r = el("div", "ret"), rs = P(-1, `${kind}.return`);
+    const nm = el("span", "rn", kind === "reverb" ? "REV" : "ECHO");
+    nm.title = `${kind === "reverb" ? "Reverb" : "Echo"} return: click for its settings`;
+    nm.onclick = ev => { ev.stopPropagation(); selectTrack(kind === "reverb" ? REV_ID : ECHO_ID); };
+    const val = el("span", "rv"); bind(rs.i, v => { val.textContent = fmtDb(v, true); });
+    const mt = el("div", "hm"), bar = el("i"); mt.append(bar); mt.dataset.ret = kind;
+    const sends = S.tracks.filter((_, t) => pv(t, kind === "reverb" ? "send.gain" : "echo_send.gain") > -89.9).length;
+    r.title = `${sends} track${sends === 1 ? "" : "s"} send to the ${kind}`;
+    r.append(nm, slider(rs), val, mt);
+    r.onpointerdown = ev => ev.stopPropagation(); // using a return does not select the master
+    box.append(r);
+  }
+  return box;
+}
+// (unused) An effect return as its own strip.
 function fxStrip(kind) {
   const e = el("div", "strip fx"); e.dataset.t = kind === "reverb" ? REV_ID : ECHO_ID;
   const top = el("div", "top"), chip = el("span", "chip", kind === "reverb" ? "REV" : "ECHO"); chip.style.background = "#4fd1c5";
@@ -1295,6 +1322,10 @@ function paintMeters() {
       if (s.paint) { s.paint(); continue; }
       if (+s.dataset.t < 0) {
         const mm = ST.master || [0, 0];
+        s.querySelectorAll("[data-ret]").forEach(m => {
+          const k = m.dataset.ret, p = m.pk = Math.max(((ST.fx || {})[k] || {}).peak || 0, (m.pk || 0) * 0.86);
+          m.firstChild.style.width = `${meterH(p)}%`;
+        });
         const lu = s.querySelector("[data-lufs]");
         if (lu) lu.textContent = ST.master_lufs_m != null && ST.master_lufs_m > -70 ? `${ST.master_lufs_m.toFixed(1)} LUFS-M` : "";
         ms.forEach((q, k) => { q[1].style.height = `${meterH(mm[k])}%`; q[1].classList.toggle("hot", mm[k] >= 0.99); q[2].style.height = "0"; });
@@ -1626,7 +1657,8 @@ const KEYS = [
   ["X", "Tracks / Mixer"], ["I", "inspector on / off"], ["A", "A/B: raw tracks / your mix (level-matched)"], ["/", "type a request to the agent"],
   [`${MOD}+B`, "export"], [`${MOD}+S`, "save now (it also saves every 10 s)"],
   ["Esc", "leave a text field, close a dialog, clear the selection"], ["Alt+click", "reset a control to default; on a strip block: on / off"],
-  ["Shift-drag", "fine adjust; on clips: no snapping"], ["Drag a clip's knob", "clip gain (also Alt-drag)"], [`${MOD}+wheel / pinch`, "zoom the tracks"],
+  ["Shift-drag", "fine adjust; on clips: no snapping"], ["Drag a clip's knob", "clip gain (also Alt-drag)"], ["Wheel over clips or the mixer", "scroll left / right (Shift: up / down; over track names: up / down)"],
+  [`${MOD}+wheel / pinch`, "zoom the tracks"],
   ["Click the clock", "bars / minutes"], ["Double-click the title", "rename the project"],
 ];
 function showKeys() {

@@ -20,8 +20,8 @@ jobs:
         include:
           - { name: macos, os: macos-14, exe: mix-final-actual, archs: 'arm64;x86_64' }
           - { name: linux-x64, os: ubuntu-22.04, exe: mix-final-actual, archs: '' }
+          - { name: linux-arm64, os: ubuntu-22.04-arm, exe: mix-final-actual, archs: '' }
           - { name: windows-x64, os: windows-2022, exe: mix-final-actual.exe, archs: '' }
-          # linux-arm64 (ubuntu-22.04-arm) needs a public repo or larger runners; add it back when the repo is public
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4

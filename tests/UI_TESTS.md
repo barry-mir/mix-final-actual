@@ -73,3 +73,5 @@ submit_turn, post_note). Pass 1: 2026-10-18 (first page), all 23 pass. Pass 2 (D
 | 64 | Delete last clip | select a track's only clip, Delete | the track is empty and silent; still empty after a restart |
 | 65 | Scissors | B, click a clip twice, Esc | three clips, cuts on the grid when Snap is on |
 | 66 | Cut | select a piece, Cmd+X | removed, and on the clipboard for Cmd+V |
+| 67 | Returns in the master | X | Reverb and Echo returns (level, meter) inside the MASTER strip; REV / ECHO open their settings |
+| 68 | Wheel | wheel over clips / over track names / in the mixer / over a fader | left-right / up-down / left-right / moves the fader only |
