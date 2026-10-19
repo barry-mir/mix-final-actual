@@ -179,7 +179,7 @@ const std::string& systemPromptV5()
               "3. Balance by relationships, and check the GROUPS line every turn: nine vocal tracks each sitting at a sensible level still add up to a vocal "
               "that buries the song, so judge levels by what each instrument totals, not only track by track. The focal element clearly on top, supporting parts underneath; parts in the same register get their own space "
               "(level, EQ carve, pan, depth); kick and bass share one low-end decision. Use BAND SHARES to find masking.\n"
-              "4. User requests always win. Never touch LOCKED params. Only mute when asked (a silent or unused track can be pulled down with its fader).\n"
+              "4. User requests always win. Never touch LOCKED params. Only mute when asked. A track marked \"silent in this excerpt\" plays elsewhere in the song: leave it as it is.\n"
               "\nHow finished professional mixes are built (use the tools to get there; the numbers are typical, not targets):\n"
               "- Stereo image: wide. In finished mixes the whole mix's sw (side/centre energy) sits around 0.10 (middle half 0.06-0.15) with about 40% of "
               "the energy clearly off-centre; that comes from placing parts apart, not from widening everything. Keep kick, snare, "
@@ -386,7 +386,7 @@ json compactFeatures (const Snapshot* s, const std::vector<int>& tracks)
     {
         const auto& ts = s->tracks[(size_t) t];
         if (! ts.present) continue;
-        if (ts.silent) { tr[std::to_string (t + 1)] = "silent"; continue; }
+        if (ts.silent) { tr[std::to_string (t + 1)] = "silent in this excerpt"; continue; }
         tr[std::to_string (t + 1)] = { { "rms", r1 (ts.post.rmsDb) }, { "peak", r1 (ts.peakDb) }, { "sw", r2 (ts.post.sw) },
                                        { "si", r2 (ts.post.si) }, { "bands", bands (ts.post) }, { "comp_gr", r1 (ts.compGrMean) } };
     }
@@ -408,7 +408,7 @@ std::string tracksSection (const PromptInputs& in)
           << (in.paramValue ? formatValue (spec (trackParam (t, Fader)), in.paramValue (trackParam (t, Fader)), false) : std::string ("0.0")) << " | ";
         if (! haveFeat) { o << "(no features yet)\n"; continue; }
         const auto& ts = s->tracks[(size_t) t];
-        if (ts.silent || ! ts.present) { o << "silent\n"; continue; }
+        if (ts.silent || ! ts.present) { o << "silent in this excerpt\n"; continue; }
         o << f1 (ts.pre.rmsDb) << " " << f1 (ts.post.rmsDb) << " " << f1 (ts.peakDb) << " " << f1 (ts.post.cfDb) << " "
           << f1 (ts.post.sw, 2) << " " << f1 (ts.post.si, 2) << " |";
         for (auto b : ts.post.bands) o << " " << f1 (b, 0);
@@ -556,7 +556,7 @@ std::string tracksSectionV2 (const PromptInputs& in)
         o << (t + 1) << " " << in.names[(size_t) t] << " " << f1 (p.x, 2) << "," << f1 (p.y, 2) << " "
           << formatValue (spec (trackParam (t, Fader)), fdr, false) << " | ";
         const auto& ts = s->tracks[(size_t) t];
-        if (ts.silent || ! ts.present) { o << "silent\n"; continue; }
+        if (ts.silent || ! ts.present) { o << "silent in this excerpt\n"; continue; }
         const float level = levelVsMix (*s, t);
         o << f1 (level);
         const int role = priors::roleForName (in.names[(size_t) t]);
@@ -689,7 +689,7 @@ std::string tracksSectionV3 (const PromptInputs& in)
         const float pan = in.paramValue ? in.paramValue (trackParam (t, Balance)) : 0.0f;
         o << (t + 1) << " " << in.names[(size_t) t] << " " << f1 (pan, 2) << " " << formatValue (spec (trackParam (t, Fader)), fdr, false) << " | ";
         const auto& ts = s->tracks[(size_t) t];
-        if (ts.silent || ! ts.present) { o << "silent\n"; continue; }
+        if (ts.silent || ! ts.present) { o << "silent in this excerpt\n"; continue; }
         o << f1 (levelVsMix (*s, t));
         const int role = priors::roleForName (in.names[(size_t) t]);
         if (role >= 0) o << " (" << f1 (priors::kRoleLevels[(size_t) role].p25) << ".." << f1 (priors::kRoleLevels[(size_t) role].p75) << ")";
@@ -764,7 +764,7 @@ std::string tracksSectionV4 (const PromptInputs& in)
         const float pan = in.paramValue ? in.paramValue (trackParam (t, Balance)) : 0.0f;
         o << (t + 1) << " " << in.names[(size_t) t] << " " << f1 (pan, 2) << " " << formatValue (spec (trackParam (t, Fader)), fdr, false) << " | ";
         const auto& ts = s->tracks[(size_t) t];
-        if (ts.silent || ! ts.present) { o << "silent\n"; continue; }
+        if (ts.silent || ! ts.present) { o << "silent in this excerpt\n"; continue; }
         live.push_back (t);
         o << f1 (levelVsMix (*s, t));
         if (v5)

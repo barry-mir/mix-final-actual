@@ -407,7 +407,7 @@ function selectTrack(t, { section = null, clip = null, keepClip = false } = {}) 
     if (s) { $("inspector").hidden = false; s.scrollIntoView({ block: "nearest" }); s.classList.remove("flash"); void s.offsetWidth; s.classList.add("flash"); }
   }
   drawLanes();
-  if (t !== null && t >= 0) ensureTrackVisible(t);
+  if (t !== null && t >= 0 && view === "tracks") ensureTrackVisible(t); // the hidden Tracks view has no height to scroll by
 }
 
 // ---- inspector -----------------------------------------------------------------------------------------------------
@@ -1524,7 +1524,7 @@ function setView(v) {
   view = v;
   $("arrange").hidden = v !== "tracks"; $("mixer").hidden = v !== "mixer";
   $("vTracks").classList.toggle("on", v === "tracks"); $("vMixer").classList.toggle("on", v === "mixer");
-  if (v === "mixer") buildMixer(); else { $("mixer").replaceChildren(); for (const k of Object.keys(controls)) controls[k] = controls[k].filter(f => !f.mix); requestAnimationFrame(() => { arrSize(); redrawAll(); }); }
+  if (v === "mixer") buildMixer(); else { $("mixer").replaceChildren(); for (const k of Object.keys(controls)) controls[k] = controls[k].filter(f => !f.mix); requestAnimationFrame(() => { arrSize(); clampView(); if (sel.track !== null && sel.track >= 0) ensureTrackVisible(sel.track); redrawAll(); }); }
   if (sel.track !== null) document.querySelectorAll(".strip").forEach(h => h.classList.toggle("sel", +h.dataset.t === sel.track));
 }
 
