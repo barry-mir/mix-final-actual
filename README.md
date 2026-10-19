@@ -28,7 +28,7 @@ Then install `mix-final-actual` from the plugin list (`/plugins`).
 
 ## Demo
 
-https://github.com/user-attachments/assets/0852d14b-009e-4b7a-b9a3-f2d94510db28
+https://github.com/user-attachments/assets/383375f1-0a0a-42a0-a03a-89549ae862ad
 
 <p align="center"><sub>30 seconds, with sound: the same passage switches between the raw tracks (black and white) and
 the mix (colour), then the features. Song: Filthy Bird, "I'd Like to Know", from MedleyDB: 29 raw tracks mixed by
