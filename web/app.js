@@ -269,6 +269,8 @@ function drawCurve(c, t, { big = false } = {}) {
     for (const [f, l] of [[100, "100"], [1000, "1k"], [10000, "10k"]]) g.fillText(l, fToX(f, w) + 2, h - 3);
     for (const db of [-12, -6, 6, 12]) { const y = Math.round(yOf(db)) + .5; g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); g.fillText(`${db > 0 ? "+" : ""}${db}`, 2, y - 2); }
   }
+  if (big && SPEC.track === t && SPEC.post && SPEC.hz) drawSpectrum(g, w, h);
+  if (t < 0) return; // master: the spectrum only
   g.strokeStyle = "#3a4048"; g.beginPath(); g.moveTo(0, h / 2 + .5); g.lineTo(w, h / 2 + .5); g.stroke();
   const secs = eqSections(t), eqOn = pon(t, "eq.on");
   g.beginPath();
@@ -281,6 +283,39 @@ function drawCurve(c, t, { big = false } = {}) {
     g.beginPath(); g.arc(x, y, 6, 0, 7); g.fillStyle = BCOL[k]; g.fill(); g.strokeStyle = "#111"; g.lineWidth = 1.5; g.stroke();
     g.fillStyle = "#111"; g.font = "bold 8px sans-serif"; g.fillText(k + 1, x - 2.5, y + 3);
   });
+}
+// Live spectrum of the selected track (input as a line, output filled), drawn behind its EQ curve while playing.
+let SPEC = { track: null };
+function setScope(t) {
+  if (SPEC.track === t) return;
+  SPEC = { track: t };
+  api("scope", { track: t }).catch(() => {});
+}
+function drawSpectrum(g, w, h) {
+  // The scale follows the signal: its top sits 6 dB over the loudest band (falling slowly), 66 dB tall.
+  const peak = Math.max(...SPEC.post, ...(SPEC.pre || [-200]));
+  const want = Math.max(-80, peak + 6);
+  SPEC.top = SPEC.top === undefined || want > SPEC.top ? want : SPEC.top - Math.min(0.4, SPEC.top - want);
+  const yOf = db => h - clamp((db - (SPEC.top - 66)) / 66, 0, 1) * h;
+  const path = arr => { g.beginPath(); arr.forEach((db, k) => { const x = fToX(SPEC.hz[k], w), y = yOf(db); k ? g.lineTo(x, y) : g.moveTo(x, y); }); };
+  if (SPEC.pre) { path(SPEC.pre); g.strokeStyle = "#8d95a066"; g.lineWidth = 1; g.stroke(); }
+  path(SPEC.post); g.lineTo(w, h); g.lineTo(0, h); g.closePath(); g.fillStyle = "#6cb6ff26"; g.fill();
+  path(SPEC.post); g.strokeStyle = "#6cb6ffaa"; g.lineWidth = 1; g.stroke();
+}
+async function pollSpectrum() {
+  if (stopped) return;
+  const cs = document.querySelectorAll("#inspector canvas.eqbig");
+  if (cs.length && SPEC.track !== null && (ST.playing || SPEC.post)) {
+    try {
+      const r = await api("spectrum");
+      if (r && r.track === SPEC.track && r.post) {
+        SPEC.hz = r.hz || SPEC.hz; SPEC.pre = r.pre; SPEC.post = r.post;
+        if (!ST.playing) SPEC.post = SPEC.pre = null; // stopped: clear once
+        cs.forEach(c => drawCurve(c, +c.dataset.curve, { big: true }));
+      }
+    } catch (_) {}
+  }
+  setTimeout(pollSpectrum, 70);
 }
 // Redraw curves after EQ/filter parameters change (batched per frame).
 const curveDirty = new Set();
@@ -366,6 +401,7 @@ function updateBlocks(t) { document.querySelectorAll(`[data-blocks="${t}"]`).for
 function selectTrack(t, { section = null, clip = null, keepClip = false } = {}) {
   const changed = sel.track !== t;
   sel.track = t;
+  if (t !== null) setScope(t);
   if (!keepClip) sel.clip = clip;
   document.querySelectorAll(".th").forEach(h => h.classList.toggle("sel", +h.dataset.t === t));
   document.querySelectorAll(".strip").forEach(h => h.classList.toggle("sel", +h.dataset.t === t));
@@ -416,6 +452,13 @@ function buildInspector() {
     h.append(chip, el("span", "", S.tracks[t].name));
   } else h.append(el("span", "", "Master"));
   box.append(h);
+  if (t < 0) {
+    const sp = el("div", "sec"); sp.dataset.sec = "spectrum";
+    sp.append(el("h3", "", "spectrum: before the master chain (line), output (filled)"));
+    const c = el("canvas", "eqbig"); c.dataset.curve = -1; sp.append(c);
+    requestAnimationFrame(() => drawCurve(c, -1, { big: true }));
+    box.append(sp);
+  }
   if (t >= 0) {
     const g = el("div", "sec"); g.dataset.sec = "group";
     g.append(el("h3", "", "instrument group"));
@@ -470,7 +513,8 @@ function clipSection(t) {
     r.append(slider(spec), out);
     return r;
   };
-  const fl = trackLen(t);
+  const fl = trackLen(c.srcTrack ?? t);
+  if ((c.srcTrack ?? t) !== t) sec.append(el("div", "empty", `Audio from ${S.tracks[c.srcTrack].name}`));
   sec.append(field("position", "pos", 0, songLen(), "s", 0.01), field("start in file", "src", 0, fl, "s", 0.01), field("length", "len", 0.05, fl, "s", 0.01),
     field("clip gain", "gain", -24, 12, "dB", 0.1), field("fade in", "fadeIn", 0, Math.min(10, c.len / 2), "s", 0.01), field("fade out", "fadeOut", 0, Math.min(10, c.len / 2), "s", 0.01));
   const acts = el("div", "prow");
@@ -481,11 +525,10 @@ function clipSection(t) {
 }
 // Keep a clip consistent after one field changed (inside the file, no overlap, fades fit).
 function fixClip(t, k, key) {
-  const c = E[t][k], fl = trackLen(t), prev = E[t][k - 1], next = E[t][k + 1];
+  const c = E[t][k], fl = trackLen(c.srcTrack ?? t);
   c.src = clamp(c.src, 0, fl - 0.05);
   c.len = clamp(c.len, 0.05, fl - c.src);
-  if (key === "pos") c.pos = clamp(c.pos, prev ? prev.pos + prev.len : 0, next ? next.pos - c.len : 1e9);
-  if (next && c.pos + c.len > next.pos) c.len = Math.max(0.05, next.pos - c.pos);
+  if (key === "pos") c.pos = Math.max(0, c.pos);
   c.fadeIn = clamp(c.fadeIn, 0, c.len / 2); c.fadeOut = clamp(c.fadeOut, 0, c.len / 2);
 }
 function eqEditor(t) {
@@ -574,12 +617,115 @@ function splitAtPlayhead() {
   sel.clip = k + 1;
   postClips(t, next);
 }
+// Clipboard: Cmd+C / Cmd+X copy (cut) the selected clip; Cmd+V pastes it at the playhead (on the grid when Snap is
+// on) onto the selected track, any track. The pasted clip replaces what is under it, with short crossfades at both ends.
+let CLIPBOARD = null;
+const XF = 0.02;
+function copyClip(cut) {
+  const t = sel.track, k = sel.clip;
+  if (t === null || t < 0 || k === null || !E[t][k]) return toast("Select a clip first (click it in the Tracks view)");
+  CLIPBOARD = { ...E[t][k], srcTrack: E[t][k].srcTrack ?? t };
+  toast(cut ? "Cut" : "Copied: paste with " + MOD + "+V at the playhead");
+  if (cut) deleteClip();
+}
+function pasteClip() {
+  if (!CLIPBOARD) return toast("Nothing to paste: copy a clip first");
+  const t = sel.track;
+  if (t === null || t < 0) return toast("Select the track to paste on");
+  let p = Math.max(0, ST.pos || 0);
+  if (SNAP.on) p = Math.max(0, quantize(p));
+  const nc = { ...CLIPBOARD, pos: p, fadeIn: Math.max(CLIPBOARD.fadeIn || 0, XF), fadeOut: Math.max(CLIPBOARD.fadeOut || 0, XF) };
+  if (nc.srcTrack === t) delete nc.srcTrack;
+  const a = p, b = p + nc.len, out = [];
+  for (const c of E[t]) {
+    const ce = c.pos + c.len;
+    if (ce <= a || c.pos >= b) { out.push({ ...c }); continue; }
+    if (c.pos < a) { const L = Math.min(c.len, a + XF - c.pos); out.push({ ...c, len: L, fadeOut: Math.min(XF, L / 2) }); }
+    if (ce > b) { const st = Math.max(c.pos, b - XF); out.push({ ...c, pos: st, src: c.src + (st - c.pos), len: ce - st, fadeIn: Math.min(XF, (ce - st) / 2) }); }
+  }
+  out.push(nc);
+  out.sort((x, y) => x.pos - y.pos);
+  sel.clip = out.indexOf(nc);
+  postClips(t, out);
+  toast(`Pasted at ${fmtPos(p)}`);
+}
 function deleteClip() {
   const t = sel.track, k = sel.clip;
   if (t === null || t < 0 || k === null || !E[t][k]) return;
   postClips(t, E[t].filter((_, j) => j !== k));
   sel.clip = null;
   refreshClipSection();
+}
+
+// ---- tempo and grid ---------------------------------------------------------------------------------------------------
+let TEMPO = { bpm: 120, beats_per_bar: 4, offset_s: 0, detected: false };
+let SNAP = { on: true, grid: "beat" };
+try { Object.assign(SNAP, JSON.parse(localStorage.getItem("mfa.snap") || "{}")); } catch (_) {}
+let clockBars = true;
+try { clockBars = localStorage.getItem("mfa.clock") !== "time"; } catch (_) {}
+const beatSec = () => 60 / (TEMPO.bpm || 120);
+const barSec = () => beatSec() * (TEMPO.beats_per_bar || 4);
+const gridSec = () => SNAP.grid === "bar" ? barSec() : SNAP.grid === "beat" ? beatSec() : beatSec() * +SNAP.grid;
+function toBars(s) {
+  const b = (s - TEMPO.offset_s) / beatSec(), bpb = TEMPO.beats_per_bar || 4;
+  const bar = Math.floor(b / bpb), beat = b - bar * bpb;
+  return { bar: bar + 1, beat: Math.floor(beat) + 1, frac: beat - Math.floor(beat) };
+}
+const fmtBars = s => { const x = toBars(s); return `${x.bar}.${x.beat}.${String(Math.floor(x.frac * 100)).padStart(2, "0")}`; };
+const fmtPos = s => (clockBars ? fmtBars(s) : fmtTime(s));
+const quantize = t => TEMPO.offset_s + Math.round((t - TEMPO.offset_s) / gridSec()) * gridSec();
+async function loadTempo() {
+  try { const r = await api("tempo"); if (r && r.bpm) TEMPO = { ...TEMPO, ...r }; else if (r) TEMPO.state = r.state; } catch (_) {}
+  paintTempo(); redrawAll();
+  if (TEMPO.state === "detecting") setTimeout(loadTempo, 1000);
+}
+function setTempo(patch) {
+  TEMPO = { ...TEMPO, ...patch, detected: false };
+  paintTempo(); redrawAll();
+  api("tempo", patch).then(r => { if (r && r.bpm) { TEMPO = { ...TEMPO, ...r }; paintTempo(); redrawAll(); } }).catch(e => toast(`Tempo: ${e.message}`, true));
+}
+function paintTempo() {
+  $("bpm").textContent = TEMPO.state === "detecting" ? "…" : (+TEMPO.bpm).toFixed(1);
+  $("sig").textContent = `${TEMPO.beats_per_bar}/4`;
+  $("bpm").title = (TEMPO.detected ? `Detected from the drums${TEMPO.confidence != null ? ` (confidence ${Math.round(TEMPO.confidence * 100)}%)` : ""}. ` : "")
+    + "Click to type a tempo; press T on the beat to tap it.";
+  $("snapBtn").classList.toggle("on", SNAP.on);
+  $("gridSel").value = SNAP.grid;
+}
+function saveSnap() { try { localStorage.setItem("mfa.snap", JSON.stringify(SNAP)); } catch (_) {} paintTempo(); }
+let taps = [];
+function tapTempo() {
+  const now = performance.now();
+  taps = taps.filter(x => now - x < 2500); taps.push(now);
+  if (taps.length >= 4) { const d = (taps[taps.length - 1] - taps[0]) / (taps.length - 1); setTempo({ bpm: Math.round(600000 / d) / 10 }); toast(`Tempo ${(60000 / d).toFixed(1)} BPM`); }
+  else toast(`Tap ${4 - taps.length} more on the beat`);
+}
+function editBpm() {
+  const b = $("bpm"), inp = el("input"); inp.type = "text"; inp.value = (+TEMPO.bpm).toFixed(1);
+  b.replaceChildren(inp); inp.focus(); inp.select();
+  let done = false;
+  const fin = ok => {
+    if (done) return; done = true;
+    const v = parseFloat(inp.value);
+    if (ok && v >= 30 && v <= 300) setTempo({ bpm: v }); else paintTempo();
+  };
+  inp.onkeydown = e => { e.stopPropagation(); if (e.key === "Enter") fin(true); if (e.key === "Escape") fin(false); };
+  inp.onblur = () => fin(true);
+}
+function initTempo() {
+  $("bpm").onclick = editBpm;
+  $("sig").onclick = () => { const n = { 2: 3, 3: 4, 4: 5, 5: 6, 6: 7, 7: 2 }[TEMPO.beats_per_bar] || 4; setTempo({ beats_per_bar: n }); };
+  $("sig").title = "Beats per bar (click to change)";
+  $("snapBtn").onclick = () => { SNAP.on = !SNAP.on; saveSnap(); };
+  $("gridSel").onchange = () => { SNAP.grid = $("gridSel").value; SNAP.on = true; saveSnap(); redrawAll(); };
+  const bar1 = el("button", "", "1|"); bar1.title = "Put bar 1 at the playhead (for songs with a pickup)";
+  bar1.onclick = () => setTempo({ offset_s: Math.round((ST.pos || 0) * 1000) / 1000 });
+  const det = el("button", "", "detect"); det.title = "Detect the tempo again from the drums";
+  det.onclick = () => api("tempo", { redetect: true }).then(r => { if (r && r.bpm) { TEMPO = { ...TEMPO, ...r }; paintTempo(); redrawAll(); toast(`Tempo ${(+r.bpm).toFixed(1)} BPM`); } }).catch(e => toast(e.message, true));
+  for (const b of [bar1, det]) { b.style.padding = "0 5px"; b.style.fontSize = "11px"; }
+  $("tempoBox").append(bar1, det);
+  $("clock").onclick = () => { clockBars = !clockBars; try { localStorage.setItem("mfa.clock", clockBars ? "bars" : "time"); } catch (_) {} redrawAll(); paintTransport(); };
+  paintTempo();
 }
 
 // ---- arrangement ---------------------------------------------------------------------------------------------------------
@@ -616,16 +762,44 @@ function tickStep() {
   for (const s of [0.1, 0.25, 0.5, 1, 2, 5, 10, 15, 30, 60, 120, 300]) if (s * AR.pps >= minPx) return s;
   return 600;
 }
+// Calls fn(x, kind, bar) for the visible bar/beat lines: kind "label" (a numbered bar), "bar", or "beat".
+function forGrid(w, fn) {
+  const bs = barSec(), be = beatSec(), bpb = TEMPO.beats_per_bar || 4;
+  let every = 1;
+  while (every * bs * AR.pps < 46 && every < 256) every *= 2;
+  const showBeats = be * AR.pps >= 9;
+  const first = Math.floor((AR.x0 - TEMPO.offset_s) / bs) - 1;
+  for (let k = first; ; ++k) {
+    const t = TEMPO.offset_s + k * bs, x = Math.round(tx(t)) + .5;
+    if (x > w) break;
+    if (x >= -1) fn(x, (k % every + every) % every === 0 ? "label" : "bar", k + 1);
+    if (showBeats) for (let j = 1; j < bpb; ++j) { const xb = Math.round(tx(t + j * be)) + .5; if (xb >= 0 && xb <= w) fn(xb, "beat", k + 1); }
+  }
+}
+// What the agent's next turn analyzes: the whole song, the cycle region (>= 2 s), else the excerpt.
+function analysisRange() {
+  if (ST.analysis_range && ST.analysis_range[1] > ST.analysis_range[0]) return ST.analysis_range;
+  const c = ST.loop_region || [0, 0];
+  return c[1] - c[0] >= 2 ? c : ST.excerpt || [0, 0];
+}
 function drawRuler() {
   const c = $("ruler"), [g, w, h] = sizeCanvas(c);
   g.clearRect(0, 0, w, h);
-  const st = tickStep(), t0 = Math.floor(AR.x0 / st) * st;
   g.font = "10px -apple-system, sans-serif"; g.textBaseline = "top";
-  for (let t = t0; tx(t) < w; t += st) {
-    const x = Math.round(tx(t)) + .5;
-    g.strokeStyle = "#4a515c"; g.beginPath(); g.moveTo(x, 14); g.lineTo(x, h); g.stroke();
-    g.fillStyle = "#8d95a0"; g.fillText(st < 1 ? `${Math.floor(t / 60)}:${(t % 60).toFixed(st < 0.5 ? 2 : 1).padStart(st < 0.5 ? 5 : 4, "0")}` : fmtTime(t).replace(/\.0$/, ""), x + 3, 14);
-    for (let k = 1; k < 4; ++k) { const xx = Math.round(tx(t + st * k / 4)) + .5; g.strokeStyle = "#343a43"; g.beginPath(); g.moveTo(xx, 22); g.lineTo(xx, h); g.stroke(); }
+  if (clockBars) {
+    forGrid(w, (x, kind, bar) => {
+      if (kind === "label") { g.strokeStyle = "#4a515c"; g.beginPath(); g.moveTo(x, 13); g.lineTo(x, h); g.stroke(); g.fillStyle = "#8d95a0"; g.fillText(String(bar), x + 3, 14); }
+      else if (kind === "bar") { g.strokeStyle = "#3a414b"; g.beginPath(); g.moveTo(x, 20); g.lineTo(x, h); g.stroke(); }
+      else { g.strokeStyle = "#2c323a"; g.beginPath(); g.moveTo(x, 24); g.lineTo(x, h); g.stroke(); }
+    });
+  } else {
+    const st = tickStep(), t0 = Math.floor(AR.x0 / st) * st;
+    for (let t = t0; tx(t) < w; t += st) {
+      const x = Math.round(tx(t)) + .5;
+      g.strokeStyle = "#4a515c"; g.beginPath(); g.moveTo(x, 14); g.lineTo(x, h); g.stroke();
+      g.fillStyle = "#8d95a0"; g.fillText(st < 1 ? `${Math.floor(t / 60)}:${(t % 60).toFixed(st < 0.5 ? 2 : 1).padStart(st < 0.5 ? 5 : 4, "0")}` : fmtTime(t).replace(/\.0$/, ""), x + 3, 14);
+      for (let k = 1; k < 4; ++k) { const xx = Math.round(tx(t + st * k / 4)) + .5; g.strokeStyle = "#343a43"; g.beginPath(); g.moveTo(xx, 22); g.lineTo(xx, h); g.stroke(); }
+    }
   }
   // cycle region
   const [a, b] = AR.dragCycle || ST.loop_region || [0, 0];
@@ -636,12 +810,11 @@ function drawRuler() {
     g.fillStyle = ST.looping || AR.dragCycle ? "#f0a640" : "#8d95a0";
     g.fillRect(xa, 1, 2, 11); g.fillRect(xb - 2, 1, 2, 11);
   }
-  // the agent's excerpt
-  const ex = ST.excerpt || [0, 0];
-  if (ex[1] > ex[0]) {
-    const xa = tx(ex[0]), xb = tx(ex[1]);
-    g.strokeStyle = "#4fd1c5"; g.lineWidth = 1;
-    g.beginPath(); g.moveTo(xa + .5, 26); g.lineTo(xa + .5, 23); g.lineTo(xb - .5, 23); g.lineTo(xb - .5, 26); g.stroke();
+  // what the agent analyzes (teal band along the bottom of the ruler)
+  const ar = analysisRange();
+  if (ar[1] > ar[0]) {
+    const xa = tx(ar[0]), xb = tx(ar[1]);
+    g.fillStyle = "#4fd1c5"; g.fillRect(xa, h - 4, xb - xa, 4);
   }
   const px = tx(ST.pos || 0);
   g.fillStyle = "#e6e8eb"; g.beginPath(); g.moveTo(px - 5, 0); g.lineTo(px + 5, 0); g.lineTo(px, 7); g.fill();
@@ -657,9 +830,13 @@ function drawLanes() {
   const c = $("lanes"), [g, w, h] = sizeCanvas(c);
   g.clearRect(0, 0, w, h);
   const rate = S.rate || 48000, pb = S.peaks_block || 256;
-  const st = tickStep(), t0 = Math.floor(AR.x0 / st) * st;
-  g.strokeStyle = "#1c2026"; g.lineWidth = 1;
-  for (let t = t0; tx(t) < w; t += st) { const x = Math.round(tx(t)) + .5; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, h); g.stroke(); }
+  g.lineWidth = 1;
+  if (clockBars) forGrid(w, (x, kind) => { g.strokeStyle = kind === "beat" ? "#191c21" : "#232830"; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, h); g.stroke(); });
+  else {
+    const st = tickStep(), t0 = Math.floor(AR.x0 / st) * st;
+    g.strokeStyle = "#1c2026";
+    for (let t = t0; tx(t) < w; t += st) { const x = Math.round(tx(t)) + .5; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, h); g.stroke(); }
+  }
   const [la, lb] = AR.dragCycle || ST.loop_region || [0, 0];
   if (ST.looping && lb > la) { g.fillStyle = "#f0a6400c"; g.fillRect(tx(la), 0, tx(lb) - tx(la), h); }
   const n = nTracks(), H = AR.laneH;
@@ -670,8 +847,8 @@ function drawLanes() {
     if (t === sel.track) { g.fillStyle = "#ffffff08"; g.fillRect(0, y, w, H); }
     g.fillStyle = "#23272e"; g.fillRect(0, y + H - 1, w, 1);
     const col = gcol(S.tracks[t].group), silent = pon(t, "mute.on") || (anySolo && !pon(t, "solo.on"));
-    const peaks = PK[t];
     (E[t] || []).forEach((cl, k) => {
+      const src = cl.srcTrack ?? t, peaks = PK[src];
       const x1 = tx(cl.pos), x2 = tx(cl.pos + cl.len);
       if (x2 < 0 || x1 > w) return;
       const top = y + 2, ch = H - 5, mid = top + ch / 2, selC = t === sel.track && k === sel.clip;
@@ -710,9 +887,16 @@ function drawLanes() {
       }
       g.save(); g.beginPath(); g.rect(x1, top, x2 - x1, ch); g.clip();
       g.font = "10px -apple-system, sans-serif"; g.textBaseline = "top"; g.fillStyle = "#e6e8ebcc";
-      if (x2 - x1 > 50) g.fillText(k ? `${S.tracks[t].name} (${k + 1})` : S.tracks[t].name, Math.max(x1, 0) + 4, top + 7);
+      const label = src !== t ? `${S.tracks[src].name} (pasted)` : k ? `${S.tracks[t].name} (${k + 1})` : S.tracks[t].name;
+      if (x2 - x1 > 50) g.fillText(label, Math.max(x1, 0) + 4, top + 7);
       if (Math.abs(cl.gain || 0) >= 0.05 && x2 - x1 > 80) { const s2 = `${fmtDb(cl.gain)} dB`; g.fillText(s2, Math.min(x2, w) - g.measureText(s2).width - 5, top + 7); }
       g.restore();
+      if (H >= 40 && x2 - x1 > 24) { // clip gain: line + knob, dragged up and down
+        const kn = gainKnob(cl, y, x1, x2);
+        g.strokeStyle = Math.abs(cl.gain || 0) >= 0.05 ? "#ffd27a" : "#ffffff40"; g.lineWidth = 1;
+        g.beginPath(); g.moveTo(Math.max(x1, 0) + 2, kn.y + .5); g.lineTo(Math.min(x2, w) - 2, kn.y + .5); g.stroke();
+        g.beginPath(); g.arc(kn.x, kn.y, 4, 0, 7); g.fillStyle = Math.abs(cl.gain || 0) >= 0.05 ? "#ffd27a" : "#cfd3d9"; g.fill();
+      }
       g.globalAlpha = 1;
     });
   }
@@ -723,6 +907,13 @@ function drawOverlay() {
   g.clearRect(0, 0, w, h);
   const x = Math.round(tx(ST.pos || 0)) + .5;
   if (x >= 0 && x <= w) { g.strokeStyle = "#e6e8eb"; g.lineWidth = 1; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, h); g.stroke(); }
+  const tu = ST.turn;
+  if (tu && tu.stage === "listening") { // the agent's background analysis sweeping its range
+    const r = tu.range || analysisRange(), f = clamp((tu.listen_s || 0) / Math.max(0.1, tu.listen_need_s || r[1] - r[0]), 0, 1);
+    const xa = tx(r[0]), xb = tx(r[1]), xs = xa + (xb - xa) * f;
+    g.fillStyle = "#4fd1c51c"; g.fillRect(xa, 0, xs - xa, h);
+    g.strokeStyle = "#4fd1c5"; g.beginPath(); g.moveTo(xs + .5, 0); g.lineTo(xs + .5, h); g.stroke();
+  }
   if (AR.snapX !== undefined) { g.strokeStyle = "#4fd1c5"; g.setLineDash([3, 3]); g.beginPath(); g.moveTo(AR.snapX + .5, 0); g.lineTo(AR.snapX + .5, h); g.stroke(); g.setLineDash([]); }
 }
 // Track headers: DOM rows that scroll with the lanes.
@@ -800,9 +991,13 @@ function hitClip(x, y) {
   if (t < 0 || t >= nTracks()) return { t: -1 };
   const yIn = y + AR.sy - t * AR.laneH;
   const clips = E[t] || [];
-  for (let k = 0; k < clips.length; ++k) {
+  for (let k = clips.length - 1; k >= 0; --k) { // later clips are drawn on top
     const c = clips[k], x1 = tx(c.pos), x2 = tx(c.pos + c.len);
     if (x < x1 - EDGE || x > x2 + EDGE) continue;
+    if (AR.laneH >= 40) {
+      const kn = gainKnob(c, 0, x1, x2);
+      if (Math.abs(x - kn.x) <= 9 && Math.abs(yIn - kn.y) <= 7) return { t, k, zone: "gain" };
+    }
     if (yIn <= 10) {
       const fi = tx(c.pos + c.fadeIn), fo = tx(c.pos + c.len - c.fadeOut);
       if (Math.abs(x - fi) <= 7) return { t, k, zone: "fadeIn" };
@@ -814,8 +1009,24 @@ function hitClip(x, y) {
   }
   return { t, k: -1 };
 }
+// The clip gain handle: a line across the clip at its gain (0 dB in the middle), with a knob in the visible middle.
+function gainKnob(c, laneTop, x1, x2) {
+  const ch = AR.laneH - 5, mid = laneTop + 2 + ch / 2;
+  return { x: (Math.max(x1, 0) + Math.min(x2, AR.w)) / 2, y: mid - clamp(c.gain || 0, -24, 12) / 24 * (ch / 2 - 4) };
+}
+// Overlapping clips on one track become crossfades: each overlap is faded out on the earlier clip and in on the later.
+function crossfade(list) {
+  list.sort((a, b) => a.pos - b.pos);
+  for (let i = 0; i + 1 < list.length; ++i) {
+    const a = list[i], b = list[i + 1], o = a.pos + a.len - b.pos;
+    if (o <= 0.001 || b.pos + b.len <= a.pos + a.len) continue;
+    a.fadeOut = Math.min(o, a.len / 2); b.fadeIn = Math.min(o, b.len / 2);
+  }
+  return list;
+}
 function snapTime(time, t, k, fine) {
   if (fine) return { v: Math.round(time * 1000) / 1000 };
+  if (SNAP.on) return { v: Math.max(0, quantize(time)), grid: true };
   const cands = [ST.pos || 0, 0, ...(ST.loop_region || [])];
   E.forEach((cl, tt) => cl.forEach((c, kk) => { if (tt === t && kk === k) return; cands.push(c.pos, c.pos + c.len); }));
   let best = null, bd = 8 / AR.pps;
@@ -825,7 +1036,7 @@ function snapTime(time, t, k, fine) {
 }
 function initLanes() {
   const c = $("overlay");
-  const cursorFor = z => ({ fadeIn: "nwse-resize", fadeOut: "nesw-resize", trimL: "ew-resize", trimR: "ew-resize", move: "grab" })[z] || "text";
+  const cursorFor = z => ({ fadeIn: "nwse-resize", fadeOut: "nesw-resize", trimL: "ew-resize", trimR: "ew-resize", move: "grab", gain: "ns-resize" })[z] || "text";
   c.onpointermove = ev => { if (c.dragging) return; const r = c.getBoundingClientRect(); const h = hitClip(ev.clientX - r.left, ev.clientY - r.top); c.style.cursor = ev.altKey && h.zone === "move" ? "ns-resize" : cursorFor(h.zone); };
   c.onpointerdown = ev => {
     if (ev.button !== 0) return;
@@ -836,8 +1047,7 @@ function initLanes() {
     selectTrack(h.t, { clip: h.k });
     const t = h.t, k = h.k, before = E[t].map(x2 => ({ ...x2 })), c0 = { ...E[t][k] };
     const zone = ev.altKey && h.zone === "move" ? "gain" : h.zone;
-    const prev = E[t][k - 1], next = E[t][k + 1], fl = trackLen(t);
-    const lo = prev ? prev.pos + prev.len : 0, hi = next ? next.pos : Infinity;
+    const fl = trackLen(c0.srcTrack ?? t);
     c.setPointerCapture(ev.pointerId); c.dragging = true;
     let moved = false;
     c.onpointermove = m => {
@@ -851,24 +1061,24 @@ function initLanes() {
         let p = c0.pos + dt;
         const s1 = snapTime(p, t, k, fine), s2 = snapTime(p + c0.len, t, k, fine);
         if (s1.snapped) { p = s1.v; AR.snapX = tx(p); } else if (s2.snapped) { p = s2.v - c0.len; AR.snapX = tx(s2.v); } else p = s1.v;
-        cl.pos = clamp(p, lo, hi - c0.len);
-        showTip(m, `${fmtTime(cl.pos)}`);
+        cl.pos = Math.max(0, p);
+        showTip(m, fmtPos(cl.pos));
       } else if (zone === "trimL") {
         const s1 = snapTime(c0.pos + dt, t, k, fine); if (s1.snapped) AR.snapX = tx(s1.v);
         let d = s1.v - c0.pos;
-        d = clamp(d, Math.max(-c0.src, lo - c0.pos), c0.len - 0.05);
+        d = clamp(d, Math.max(-c0.src, -c0.pos), c0.len - 0.05);
         cl.pos = c0.pos + d; cl.src = c0.src + d; cl.len = c0.len - d;
-        showTip(m, `start ${fmtTime(cl.pos)} · ${cl.len.toFixed(2)} s`);
+        showTip(m, `start ${fmtPos(cl.pos)} · ${cl.len.toFixed(2)} s`);
       } else if (zone === "trimR") {
         const s1 = snapTime(c0.pos + c0.len + dt, t, k, fine); if (s1.snapped) AR.snapX = tx(s1.v);
-        cl.len = clamp(s1.v - c0.pos, 0.05, Math.min(fl - c0.src, hi - c0.pos));
-        showTip(m, `end ${fmtTime(cl.pos + cl.len)} · ${cl.len.toFixed(2)} s`);
+        cl.len = clamp(s1.v - c0.pos, 0.05, fl - c0.src);
+        showTip(m, `end ${fmtPos(cl.pos + cl.len)} · ${cl.len.toFixed(2)} s`);
       } else if (zone === "fadeIn") {
         cl.fadeIn = clamp(c0.fadeIn + dt, 0, cl.len / 2); showTip(m, `fade in ${cl.fadeIn.toFixed(2)} s`);
       } else if (zone === "fadeOut") {
         cl.fadeOut = clamp(c0.fadeOut - dt, 0, cl.len / 2); showTip(m, `fade out ${cl.fadeOut.toFixed(2)} s`);
       } else if (zone === "gain") {
-        cl.gain = clamp(Math.round((c0.gain - dy * (fine ? 0.02 : 0.1)) * 10) / 10, -24, 12); showTip(m, `clip gain ${fmtDb(cl.gain)} dB`);
+        cl.gain = clamp(Math.round(((c0.gain || 0) - dy * (fine ? 0.05 : 0.2)) * 10) / 10, -24, 12); showTip(m, `clip gain ${fmtDb(cl.gain)} dB`);
       }
       cl.fadeIn = Math.min(cl.fadeIn, cl.len / 2); cl.fadeOut = Math.min(cl.fadeOut, cl.len / 2);
       E[t][k] = cl;
@@ -877,8 +1087,12 @@ function initLanes() {
     c.onpointerup = () => {
       c.onpointermove = null; c.dragging = false; tip.hidden = true; AR.snapX = undefined; drawOverlay();
       c.onpointermove = initLanes.hover;
-      if (moved) postClips(t, E[t], { before });
-      else refreshClipSection();
+      if (moved) {
+        const mine = E[t][k];
+        crossfade(E[t]);
+        sel.clip = E[t].indexOf(mine);
+        postClips(t, E[t], { before });
+      } else refreshClipSection();
     };
   };
   initLanes.hover = c.onpointermove;
@@ -939,7 +1153,12 @@ function buildMixer() {
   box.replaceChildren();
   const before = new Map(Object.entries(controls).map(([k, a]) => [k, a.length]));
   S.tracks.forEach((_, t) => box.append(strip(t)));
-  box.append(strip(-1));
+  // Buses, effect returns and the master: pinned at the right, always in view while the tracks scroll.
+  const grp = el("div", "busgrp");
+  grp.append(el("span", "lbl", "buses · returns · master"));
+  BUSKEYS.forEach((_, g) => grp.append(busStrip(g)));
+  grp.append(fxStrip("reverb"), fxStrip("echo"), strip(-1));
+  box.append(grp);
   for (const [k, a] of Object.entries(controls)) for (let j = before.get(k) || 0; j < a.length; ++j) a[j].mix = true;
 }
 function strip(t) {
@@ -973,8 +1192,59 @@ function strip(t) {
   const lb = el("div", "lbls"); lb.innerHTML = master ? "<span>L</span><span>R</span>" : "<span>fdr</span><span>in</span><span>out</span><span>gr</span>";
   e.append(lb);
   const db = el("div", "db"); bind(fs.i, v => { db.textContent = `${fmtDb(v, true)} dB`; }); e.append(db);
+  if (master) { const lu = el("div", "db"); lu.dataset.lufs = "1"; e.append(lu); }
   if (!master) { const ms = el("div", "ms"); ms.append(toggle(P(t, "mute.on"), "M", "m"), toggle(P(t, "solo.on"), "S", "s")); e.append(ms); }
   e.onpointerdown = () => selectTrack(t);
+  return e;
+}
+const BUSKEYS = ["vocals", "drums", "bass", "guitars", "keys"];
+const mkMeter = cls => { const m = el("div", "mt" + (cls ? " " + cls : "")); const p = el("i"), r = el("i", "r"); m.append(r, p); return [m, p, r]; };
+// A group bus: the tracks routed to it, its compressor and peak clipper, its level and gain reduction.
+function busStrip(g) {
+  const key = BUSKEYS[g], e = el("div", "strip bus"); e.dataset.t = -1; e.dataset.bus = g;
+  const top = el("div", "top"), chip = el("span", "chip", GSHORT[g]); chip.style.background = GCOL[g];
+  top.append(chip, el("span", "nm", `${GROUPS[g]} bus`)); e.append(top);
+  const members = S.tracks.map((tr, t) => tr.group === g ? `${t + 1} ${tr.name}` : null).filter(Boolean);
+  const mem = el("div", "members", members.length ? members.join("\n") : "no tracks"); mem.style.whiteSpace = "pre"; mem.title = members.join("\n");
+  e.append(mem);
+  const on = P(-1, `bus_${key}.on`);
+  const row = (label, k) => { const r = el("div", "blk"); const i = el("i", "k"); i.style.background = "var(--comp)"; const v = el("span", "v"); r.append(i, el("span", "l", label), v); bind(P(-1, k).i, x => { v.textContent = fmt(P(-1, k), x); r.classList.toggle("off", !(V[on.i] > 0.5)); }); bind(on.i, () => r.classList.toggle("off", !(V[on.i] > 0.5))); return r; };
+  const t1 = toggle(on, "", ""); t1.style.width = "100%";
+  bind(on.i, v => { t1.textContent = v > 0.5 ? "compressor on" : "compressor off"; });
+  e.append(t1, row("thr", `bus_${key}.threshold`), row("ratio", `bus_${key}.ratio`), row("make", `bus_${key}.makeup`), row("clip", `bus_${key}.clip`));
+  const fz = el("div", "fz"), lv = mkMeter(), gr = mkMeter("gr");
+  lv[0].title = "bus level (peak / RMS)"; gr[0].title = "bus compressor gain reduction";
+  fz.append(lv[0], gr[0]); e.append(fz);
+  const lb = el("div", "lbls"); lb.innerHTML = "<span>level</span><span>gr</span>"; e.append(lb);
+  const db = el("div", "db"); e.append(db);
+  e.paint = () => {
+    const b0 = (ST.buses || [])[g] || { peak: 0, rms: 0, gr: 0 };
+    const sm = e.sm || (e.sm = { peak: 0, rms: 0, gr: 0 }); // per-block values: decay like a meter
+    for (const k of ["peak", "rms", "gr"]) sm[k] = Math.max(b0[k] || 0, sm[k] * 0.86);
+    const b = sm;
+    lv[1].style.height = `${meterH(b.peak)}%`; lv[2].style.height = `${meterH(b.rms)}%`; lv[1].classList.toggle("hot", b.peak >= 0.99);
+    gr[1].style.height = `${clamp((b.gr || 0) / 12 * 100, 0, 100)}%`;
+    db.textContent = b.gr > 0.05 ? `GR ${b.gr.toFixed(1)} dB` : "";
+  };
+  e.onpointerdown = () => selectTrack(-1, { section: `bus_${key}` });
+  return e;
+}
+// An effect return (reverb or echo): its return fader and level.
+function fxStrip(kind) {
+  const e = el("div", "strip fx"); e.dataset.t = -1;
+  const top = el("div", "top"), chip = el("span", "chip", kind === "reverb" ? "REV" : "ECHO"); chip.style.background = "#4fd1c5";
+  top.append(chip, el("span", "nm", kind === "reverb" ? "Reverb" : "Echo")); e.append(top);
+  const info = el("div", "members");
+  const upd = () => { info.textContent = kind === "reverb" ? `${pv(-1, "reverb.decay").toFixed(1)} s decay\nsize ${pv(-1, "reverb.size").toFixed(2)}\npredelay ${pv(-1, "reverb.predelay").toFixed(0)} ms` : `${pv(-1, "echo.time_l").toFixed(0)} / ${pv(-1, "echo.time_r").toFixed(0)} ms\nfeedback ${pv(-1, "echo.feedback").toFixed(2)}`; };
+  info.style.whiteSpace = "pre";
+  for (const k of kind === "reverb" ? ["reverb.decay", "reverb.size", "reverb.predelay"] : ["echo.time_l", "echo.time_r", "echo.feedback"]) bind(P(-1, k).i, upd);
+  const sends = S.tracks.filter((_, t) => pv(t, kind === "reverb" ? "send.gain" : "echo_send.gain") > -89.9).length;
+  e.append(info, el("div", "members", `${sends} track${sends === 1 ? "" : "s"} send here`));
+  const fz = el("div", "fz"), rs = P(-1, `${kind}.return`), lv = mkMeter();
+  fz.append(slider(rs, { vertical: true }), lv[0]); e.append(fz);
+  const db = el("div", "db"); bind(rs.i, v => { db.textContent = `return ${fmtDb(v, true)}`; }); e.append(db);
+  e.paint = () => { const p = e.pk = Math.max(((ST.fx || {})[kind] || {}).peak || 0, (e.pk || 0) * 0.86); lv[1].style.height = `${meterH(p)}%`; lv[2].style.height = "0"; };
+  e.onpointerdown = () => selectTrack(-1, { section: kind });
   return e;
 }
 const peakDb = x => 20 * Math.log10(Math.max(x, 1e-6));
@@ -985,11 +1255,14 @@ function paintMeters() {
     const hs = $("headersIn").children;
     for (let t = 0; t < hs.length; ++t) { const x = m[t] ? m[t].out : (ST.tracks || [])[t] || 0; if (hs[t].meter) { hs[t].meter.style.height = `${meterH(x)}%`; hs[t].meter.classList.toggle("hot", x >= 0.99); } }
   } else {
-    const strips = $("mixer").children;
+    const strips = $("mixer").querySelectorAll(".strip");
     for (let t = 0; t < strips.length; ++t) {
       const s = strips[t], ms = s.meters || [];
+      if (s.paint) { s.paint(); continue; }
       if (+s.dataset.t < 0) {
         const mm = ST.master || [0, 0];
+        const lu = s.querySelector("[data-lufs]");
+        if (lu) lu.textContent = ST.master_lufs_m != null && ST.master_lufs_m > -70 ? `${ST.master_lufs_m.toFixed(1)} LUFS-M` : "";
         ms.forEach((q, k) => { q[1].style.height = `${meterH(mm[k])}%`; q[1].classList.toggle("hot", mm[k] >= 0.99); q[2].style.height = "0"; });
         continue;
       }
@@ -1002,7 +1275,7 @@ function paintMeters() {
 }
 
 // ---- assistant ------------------------------------------------------------------------------------------------------
-let chatVersion = -1, chat = [], lastTurn = null, abState = "B";
+let chatVersion = -1, chat = [];
 const STAGES = ["listening", "waiting", "reading", "applying"];
 function paramLabel(id) {
   const m = /^t(\d+)\.(.*)$/.exec(id || "");
@@ -1013,11 +1286,7 @@ async function pollChat(version) {
   if (version === chatVersion) return;
   const c = await api("chat");
   chatVersion = c.version; chat = c.entries;
-  const turns = chat.filter(e => e.role === "agent" && !e.undone && (e.diff || []).some(d => !["rejected", "superseded", "unchanged"].includes(d.status)));
-  const lt = turns.length ? turns[turns.length - 1] : null;
-  if (!lt && lastTurn) { lastTurn = null; abState = "B"; $("ab").classList.remove("on"); $("ab").textContent = "A/B"; }
-  if (lt && (!lastTurn || lt.tick !== lastTurn.tick)) { lastTurn = { tick: lt.tick, diff: lt.diff.filter(d => d.status !== "rejected") }; abState = "B"; $("ab").classList.remove("on"); $("ab").textContent = "A/B"; }
-  $("ab").disabled = !lastTurn;
+  if (cmp && !chat.some(e => e.role === "agent" && e.tick === cmp.tick && !e.undone)) endCompare(false); // the compared turn was undone
   renderChat();
 }
 function renderChat() {
@@ -1048,7 +1317,13 @@ function renderChat() {
       for (const d of diff) ul.append(el("li", "", `${paramLabel(d.param)}: ${(+d.from).toFixed(1)} → ${(+d.to).toFixed(1)}${d.status !== "applied" ? " (" + d.status + ")" : ""}`));
       det.append(ul);
       card.append(det);
-      if (!e.undone) { const u = el("button", "undo", "Undo turn"); u.onclick = () => api("undo_turn", { tick: e.tick }).catch(showErr); ttl.append(u); }
+      if (!e.undone) {
+        const cb = el("button", "cmp" + (cmp && cmp.tick === e.tick ? " on" : ""), cmp && cmp.tick === e.tick ? "Hearing before" : "Compare");
+        cb.title = "Hear the mix before this turn; click again to come back (playback level stays the same while you compare)";
+        cb.onclick = () => (cmp && cmp.tick === e.tick ? endCompare(true) : startCompare(e.tick, diff));
+        const u = el("button", "undo", "Undo turn"); u.onclick = () => { endCompare(false); api("undo_turn", { tick: e.tick }).catch(showErr); };
+        ttl.append(cb, u);
+      }
     }
     frag.append(card);
   }
@@ -1079,11 +1354,18 @@ function fillStage(st, tu) {
   st.replaceChildren();
   const since = Math.round(tu.since_s || 0);
   if (tu.stage === "listening") {
-    st.textContent = `Listening to the loop so the measurements hear the current mix · ${(tu.listen_s || 0).toFixed(0)} / ${(tu.listen_need_s || 0).toFixed(0)} s`;
+    const r = tu.range || analysisRange();
+    st.textContent = `Analyzing ${fmtPos(r[0])}–${fmtPos(r[1])} in the background (nothing plays) · ${(tu.listen_s || 0).toFixed(0)} / ${(tu.listen_need_s || r[1] - r[0]).toFixed(0)} s`;
     const b = el("div", "bar"), i = el("i"); i.style.width = `${clamp((tu.listen_s || 0) / Math.max(1, tu.listen_need_s || 1), 0, 1) * 100}%`; b.append(i); st.append(b);
   } else if (tu.stage === "waiting") {
-    st.textContent = `Sent to your coding agent; waiting for it to pick the turn up · ${since} s`;
-    if ((ST.agent_seen_s ?? 1e9) > 60) {
+    const aa = ST.auto_agent || {};
+    if (aa.state === "starting" || aa.state === "running") st.textContent = `Starting your coding agent (${aa.cli || "agent"}) in the background · ${since} s`;
+    else st.textContent = `Sent to your coding agent; waiting for it to pick the turn up · ${since} s`;
+    if (aa.state === "unavailable") {
+      const h = el("div", "help");
+      h.textContent = `The mixer could not start a coding agent${aa.error ? ` (${aa.error})` : ""}. Open Claude Code or Codex and say "keep answering the mixer".`;
+      st.append(h);
+    } else if ((ST.agent_seen_s ?? 1e9) > 60 && !(aa.state === "starting" || aa.state === "running")) {
       const h = el("div", "help");
       h.textContent = "No coding agent is listening. In Claude Code or Codex, say \"keep answering the mixer\" (it uses the mix tools); this turn starts as soon as it connects.";
       st.append(h);
@@ -1109,17 +1391,50 @@ function ask() {
   ta.value = "";
   api("prompt", { text }).catch(showErr);
 }
-function remix() {
-  const ta = $("prompt"), goal = ta.value.trim();
-  ta.value = "";
-  api("mix", goal ? { turns: 5, goal } : { turns: 5 }).then(() => toast(goal ? `Remix ×5 with the goal: ${goal}` : "Remix ×5 started")).catch(showErr);
+// A/B in the transport: the raw tracks (summed, level-matched) against the mix. Instant: the engine crossfades.
+let rawCmp = false;
+function toggleRaw() {
+  rawCmp = !rawCmp; paintAB(); paintTransport.pending = Date.now() + 800;
+  api("compare", { raw: rawCmp }).catch(e => { rawCmp = false; paintAB(); toast(`A/B: ${e.message}`, true); });
 }
-function setAB(which) {
-  if (!lastTurn) return;
-  for (const d of lastTurn.diff) { const s = byId[d.param]; if (s) setParam(s.i, which === "A" ? +d.from : +d.to, { record: false }); }
-  abState = which;
-  $("ab").classList.toggle("on", which === "A");
-  $("ab").textContent = which === "A" ? "A (before)" : "A/B";
+function paintAB() {
+  $("ab").classList.toggle("on", rawCmp);
+  $("ab").textContent = rawCmp ? "A: raw tracks" : "A/B";
+}
+// Compare on a turn card: the parameters the turn changed go back to their values before it while held, with the
+// playback gain frozen so the level does not re-adjust in between.
+let cmp = null;
+function startCompare(tick, diff) {
+  endCompare(true);
+  cmp = { tick, diff };
+  api("loudness", { hold: true }).catch(() => {});
+  for (const d of diff) { const sp = byId[d.param]; if (sp) setParam(sp.i, +d.from, { record: false }); }
+  renderChat();
+  toast(`Hearing the mix before turn ${tick}`);
+}
+function endCompare(restore) {
+  if (!cmp) return;
+  const c = cmp; cmp = null;
+  if (restore) for (const d of c.diff) { const sp = byId[d.param]; if (sp) setParam(sp.i, +d.to, { record: false }); }
+  api("loudness", { hold: false }).catch(() => {});
+  renderChat();
+}
+// Which part of the song the agent analyzes, said where the user types (with how to change it).
+function paintRangeHint() {
+  const box = $("rangeHint"), r = analysisRange(), whole = !!ST.analysis_whole;
+  const key = `${r[0]}|${r[1]}|${whole}|${clockBars}|${songLen()}`;
+  if (box.dataset.key === key) return;
+  box.dataset.key = key;
+  box.replaceChildren();
+  const span = r[1] - r[0];
+  if (whole) box.append("Your agent analyzes ", Object.assign(el("b"), { textContent: "the whole song" }), ` (${fmtTime(songLen()).replace(/\.\d$/, "")}).`);
+  const rng = clockBars ? `bars ${toBars(r[0]).bar}–${toBars(r[1] - 0.001).bar} (${fmtTime(r[0])}–${fmtTime(r[1])})` : `${fmtTime(r[0])}–${fmtTime(r[1])}`;
+  if (!whole) box.append("Your agent analyzes only ", Object.assign(el("b"), { textContent: rng }),
+    ` (${Math.round(span)} s of ${fmtTime(songLen()).replace(/\.\d$/, "")}, the teal band on the ruler), not the whole song. Drag in the ruler to choose another part.`);
+  const b = el("button", "", whole ? "Only the selection" : "Whole song");
+  b.title = whole ? "Analyze the cycle region again" : "Analyze the whole song (each turn takes longer: about 30 s more for a 4-minute, 20-track song)";
+  b.onclick = () => api("analysis_range", { whole: !whole }).catch(e => toast(e.message, true));
+  box.append(b);
 }
 
 // ---- transport -------------------------------------------------------------------------------------------------------
@@ -1131,7 +1446,9 @@ function paintTransport() {
   const p = $("play");
   if (p.dataset.on !== String(!!ST.playing)) { p.innerHTML = ST.playing ? STOP_SVG : PLAY_SVG; p.dataset.on = String(!!ST.playing); p.classList.toggle("on", !!ST.playing); }
   $("cycle").classList.toggle("on", !!ST.looping);
-  $("clock").innerHTML = `${fmtTime(ST.pos)} <small>/ ${fmtTime(songLen())}</small>`;
+  $("clock").innerHTML = clockBars ? `${fmtBars(ST.pos || 0)} <small>${fmtTime(ST.pos)}</small>` : `${fmtTime(ST.pos)} <small>/ ${fmtTime(songLen())}</small>`;
+  if (ST.compare_raw !== undefined && ST.compare_raw !== rawCmp && Date.now() > (paintTransport.pending || 0)) { rawCmp = !!ST.compare_raw; paintAB(); }
+  paintRangeHint();
   const L = ST.loudness;
   const ls = $("loud");
   if (L && document.activeElement !== ls) ls.value = L.target == null ? "" : String(L.target);
@@ -1144,6 +1461,63 @@ function setView(v) {
   $("vTracks").classList.toggle("on", v === "tracks"); $("vMixer").classList.toggle("on", v === "mixer");
   if (v === "mixer") buildMixer(); else { $("mixer").replaceChildren(); for (const k of Object.keys(controls)) controls[k] = controls[k].filter(f => !f.mix); requestAnimationFrame(() => { arrSize(); redrawAll(); }); }
   if (sel.track !== null) document.querySelectorAll(".strip").forEach(h => h.classList.toggle("sel", +h.dataset.t === sel.track));
+}
+
+// ---- project title: click for recent projects, double-click to rename -------------------------------------------
+function projectName() { return (S && S.name) || (S && S.folder.split(/[\\/]/).filter(Boolean).pop()) || "mix_final_ACTUAL.wav"; }
+function paintTitle() {
+  $("title").textContent = projectName();
+  document.title = `${projectName()} · mix_final_ACTUAL.wav`;
+}
+function initTitle() {
+  const t = $("title");
+  paintTitle();
+  t.onclick = () => { clearTimeout(t.timer); t.timer = setTimeout(openRecent, 260); };
+  t.ondblclick = () => {
+    clearTimeout(t.timer); $("recentMenu").hidden = true;
+    const inp = el("input"); inp.type = "text"; inp.value = projectName();
+    t.replaceChildren(inp); inp.focus(); inp.select();
+    let done = false;
+    const fin = async ok => {
+      if (done) return; done = true;
+      const v = inp.value.trim();
+      if (ok && v && v !== projectName()) {
+        try { await api("project", { name: v }); S.name = v; toast(`Renamed to ${v}`); } catch (e) { toast(`Rename: ${e.message}`, true); }
+      }
+      paintTitle();
+    };
+    inp.onkeydown = e => { e.stopPropagation(); if (e.key === "Enter") fin(true); if (e.key === "Escape") fin(false); };
+    inp.onblur = () => fin(true);
+    inp.onclick = e => e.stopPropagation();
+  };
+  document.addEventListener("pointerdown", e => { if (!$("recentMenu").hidden && !$("recentMenu").contains(e.target) && e.target !== t) $("recentMenu").hidden = true; });
+}
+async function openRecent() {
+  const m = $("recentMenu"), r = $("title").getBoundingClientRect();
+  m.style.left = `${r.left}px`; m.style.top = `${r.bottom + 4}px`;
+  m.replaceChildren(el("div", "hd", "Recent projects"));
+  m.hidden = false;
+  let list = [];
+  try { const j = await api("recent"); list = j.projects || j.recent || j || []; } catch (_) {}
+  if (!list.length) m.append(el("div", "mi", "No other projects yet"));
+  for (const p of list) {
+    const it = el("div", "mi");
+    const when = p.last_opened ? new Date(p.last_opened * (p.last_opened < 1e12 ? 1000 : 1)).toLocaleString() : "";
+    it.append(el("span", "", p.name || p.folder.split(/[\\/]/).pop()), el("small", "", `${p.folder}${when ? " · " + when : ""}`));
+    it.title = p.folder;
+    if (p.current) it.append(el("small", "", "open now"));
+    if (p.exists === false) { it.style.opacity = .45; it.append(el("small", "", "folder not found")); }
+    it.onclick = async () => {
+      m.hidden = true;
+      if (p.current || (S && p.folder === S.folder)) return toast("This project is already open");
+      if (p.exists === false) return toast("That folder is gone", true);
+      toast(`Opening ${p.name || p.folder}…`);
+      try { const o = await api("open", { folder: p.folder }); if (o.url) location.href = o.url; } catch (e) { toast(`Open: ${e.message}`, true); }
+    };
+    m.append(it);
+  }
+  const hint = el("div", "hd", "Double-click the title to rename this project");
+  m.append(hint);
 }
 
 // ---- export ----------------------------------------------------------------------------------------------------------
@@ -1211,11 +1585,14 @@ const KEYS = [
   ["Space", "play / stop"], ["Return", "go to the start of the cycle"], ["Home / End", "song start / end"],
   [", .  or  ← →", "playhead back / forward 1 s (Shift: 5 s)"], ["C", "cycle (loop) on / off"], ["Shift+C", "cycle back to the agent's excerpt"],
   ["↑ ↓", "previous / next track"], ["M / S", "mute / solo the selected track"], [`${MOD}+E`, "split the clip at the playhead"],
-  ["Delete", "delete the selected clip"], [`${MOD}+Z / Shift+${MOD}+Z`, "undo / redo"], ["= / -", "zoom in / out"], ["Z", "zoom to fit"],
-  ["X", "Tracks / Mixer"], ["I", "inspector on / off"], ["A", "A/B: before / after the agent's last turn"], ["/", "type a request to the agent"],
-  [`${MOD}+Enter`, "(in the request box) Remix ×5 with this goal"], [`${MOD}+B`, "export"], [`${MOD}+S`, "save now (it also saves every 10 s)"],
+  [`${MOD}+X / ${MOD}+C / ${MOD}+V`, "cut / copy the selected clip; paste at the playhead on the selected track"],
+  ["Delete", "delete the selected clip"], [`${MOD}+Z / Shift+${MOD}+Z`, "undo / redo"], ["Q", "snap to the grid on / off"], ["T", "tap the tempo"],
+  ["= / -", "zoom in / out"], ["Z", "zoom to fit"],
+  ["X", "Tracks / Mixer"], ["I", "inspector on / off"], ["A", "A/B: raw tracks / your mix (level-matched)"], ["/", "type a request to the agent"],
+  [`${MOD}+B`, "export"], [`${MOD}+S`, "save now (it also saves every 10 s)"],
   ["Esc", "leave a text field, close a dialog, clear the selection"], ["Alt+click", "reset a control to default; on a strip block: on / off"],
-  ["Shift-drag", "fine adjust; on clips: no snapping"], ["Alt-drag a clip", "clip gain"], [`${MOD}+wheel / pinch`, "zoom the tracks"],
+  ["Shift-drag", "fine adjust; on clips: no snapping"], ["Drag a clip's knob", "clip gain (also Alt-drag)"], [`${MOD}+wheel / pinch`, "zoom the tracks"],
+  ["Click the clock", "bars / minutes"], ["Double-click the title", "rename the project"],
 ];
 function showKeys() {
   const l = $("keysList"); l.replaceChildren();
@@ -1239,6 +1616,9 @@ function onKey(e) {
     if (k === "z") return act(() => (e.shiftKey ? redo() : undo()));
     if (k === "y") return act(redo);
     if (k === "e") return act(splitAtPlayhead);
+    if (k === "c") return act(() => copyClip(false));
+    if (k === "x") return act(() => copyClip(true));
+    if (k === "v") return act(pasteClip);
     if (k === "b") return act(openExport);
     if (k === "s") return act(() => api("save", {}).then(() => toast("Saved")).catch(() => toast("The project saves itself every 10 s")));
     if (k === "=" || k === "+") return act(() => zoomAt(1.5, AR.w / 2));
@@ -1267,7 +1647,9 @@ function onKey(e) {
     case "z": return act(zoomFit);
     case "x": return act(() => setView(view === "tracks" ? "mixer" : "tracks"));
     case "i": return act(() => { $("inspector").hidden = !$("inspector").hidden; requestAnimationFrame(() => { arrSize(); redrawAll(); }); });
-    case "a": return act(() => setAB(abState === "B" ? "A" : "B"));
+    case "a": return act(toggleRaw);
+    case "q": return act(() => { SNAP.on = !SNAP.on; saveSnap(); toast(SNAP.on ? `Snap to ${$("gridSel").selectedOptions[0].text}` : "Snap off"); });
+    case "t": return act(tapTempo);
   }
 }
 
@@ -1289,14 +1671,14 @@ async function poll() {
         if (x > AR.w * 0.92 || x < 0) { AR.x0 = ST.pos - AR.w * 0.08 / AR.pps; clampView(); drawLanes(); drawHbar(); }
       }
       drawRuler(); drawOverlay();
-    }
+    } else if (ST.turn && ST.turn.stage === "listening") drawOverlay();
     // The live turn card: rebuilt when the turn or its stage changes, its timers patched in place otherwise
     // (rebuilding every second would swap the Stop button out from under the pointer).
     const live = ST.turn && ST.turn.stage && ST.turn.stage !== "done" ? ST.turn : null;
     const key = live ? `${live.tick}|${live.stage}` : "";
     if (key !== poll.key) { poll.key = key; renderChat(); }
     else if (live && liveRef && liveRef.st.isConnected) {
-      const t2 = `${Math.floor(live.since_s || 0)}|${Math.floor(live.listen_s || 0)}|${(ST.agent_seen_s ?? 1e9) > 60}`;
+      const t2 = `${Math.floor(live.since_s || 0)}|${Math.floor(live.listen_s || 0)}|${(ST.agent_seen_s ?? 1e9) > 60}|${(ST.auto_agent || {}).state}`;
       if (t2 !== poll.t2) { poll.t2 = t2; fillStage(liveRef.st, live); }
     }
     pollChat(ST.chat_version).catch(() => {});
@@ -1362,7 +1744,7 @@ async function init() {
   ST = await api("status");
   const folder = S.folder.split(/[\\/]/).filter(Boolean).pop() || "";
   $("title").textContent = folder || "mix_final_ACTUAL.wav";
-  $("title").title = `mix_final_ACTUAL.wav · ${S.folder}`;
+  $("title").title = `${S.folder}\nClick: recent projects. Double-click: rename the project.`;
   document.title = `${folder} · mix_final_ACTUAL.wav`;
   await loadClips();
   buildHeaders();
@@ -1373,21 +1755,23 @@ async function init() {
   $("cycle").onclick = toggleCycle;
   $("toStart").onclick = goStart;
   $("loud").onchange = () => api("loudness", { target: $("loud").value === "" ? null : +$("loud").value }).catch(e => toast(`Loudness: ${e.message}`, true));
-  $("ab").disabled = true;
-  $("ab").onclick = () => setAB(abState === "B" ? "A" : "B");
+  $("ab").onclick = toggleRaw;
   $("vTracks").onclick = () => setView("tracks");
   $("vMixer").onclick = () => setView("mixer");
   $("helpBtn").onclick = showKeys;
   $("keysClose").onclick = () => { $("keysDlg").hidden = true; };
   $("askBtn").onclick = ask;
-  $("remixBtn").onclick = remix;
-  $("prompt").addEventListener("keydown", e => {
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); remix(); }
-    else if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); ask(); }
-  });
+  $("prompt").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); ask(); } });
+  initTempo();
+  loadTempo();
+  initTitle();
   initExport();
   document.addEventListener("keydown", onKey);
+  const bb = el("button", "", "Buses ›"); bb.title = "Group buses, effect returns and the master (in the Mixer)";
+  bb.onclick = () => { setView("mixer"); requestAnimationFrame(() => { $("mixer").scrollLeft = 1e9; }); };
+  $("corner").insertBefore(bb, $("corner").querySelector(".spacer"));
   poll();
   pollValues();
+  pollSpectrum();
 }
 init().catch(showErr);

@@ -52,3 +52,18 @@ submit_turn, post_note). Pass 1: 2026-10-18 (first page), all 23 pass. Pass 2 (D
 | 43 | Keys | ?, Esc, Up/Down, M, C, Z, =, X, Space | as listed in the page's shortcut window |
 | 44* | First mix | start without --no-first-mix | the waiting screen as in cases 20-22 (unchanged code) |
 | 45* | Narrow window | under 1000 px wide | not designed for it yet; only the inspector can be hidden (I) |
+| 46 | Tempo | open a session | BPM detected from the drums (Pocket Knife: 84.0); ruler and clock in bars; click the clock for minutes |
+| 47 | Snap | Q, grid menu | clip moves and trims land on the grid; Shift-drag ignores it |
+| 48 | Spectrum | select a track, play | live input (line) and output (filled) spectrum behind the EQ curve, scale follows the level |
+| 49 | Buses | Buses › or X | five group bus strips (tracks, compressor, level and GR meters), reverb and echo returns, master with LUFS-M |
+| 50 | A/B | A | raw tracks vs mix at once; the playback gain does not change |
+| 51 | Turn compare | Compare on a turn card | the turn's changes revert while held ("held" loudness), and come back |
+| 52 | Paste | select a clip, Cmd+C, select another track, Cmd+V | pasted at the playhead with 20 ms crossfades; plays the source track's audio through this track's strip; Cmd+Z removes it |
+| 53 | Clip gain | drag a clip's knob | gain line moves; the waveform scales |
+| 54 | Project name | double-click the title | renamed in the page, tab title and project; export default uses it |
+| 55 | Recent | click the title | recent projects; opening one switches the page to it |
+| 56 | Silent analysis | Ask with playback stopped | stays stopped; teal sweep over the analyzed range; card says "in the background (nothing plays)" |
+| 57 | Range hint | look above the request box | says which bars/seconds the agent analyzes; "Whole song" switches it |
+| 58 | Auto agent | Ask with no agent connected | the mixer starts the coding agent (~5 s), notes stream, the turn applies; Stop kills it |
+| 59* | Auto agent, Codex | as 58 with Codex as the last agent | (checked by the backend tests, not in the page) |
+| 60* | Reopen later | close the page; `mix-final-actual open` | the session keeps running; playback stops after 20 s without a page (backend tests) |

@@ -8,20 +8,26 @@
 </head>
 <body>
 <header id="transport">
-  <h1 id="title">mix_final_ACTUAL.wav</h1>
+  <h1 id="title" title="Click: recent projects. Double-click: rename the project">mix_final_ACTUAL.wav</h1>
+  <div id="recentMenu" class="menu" hidden></div>
   <div class="grp">
     <button class="tbtn" id="toStart" title="Go to start of cycle (Return)"><svg viewBox="0 0 16 16"><path d="M3 2h2v12H3zM14 2v12L6 8z"/></svg></button>
     <button class="tbtn" id="play" title="Play / stop (Space)"><svg viewBox="0 0 16 16"><path d="M4 2l10 6-10 6z"/></svg></button>
     <button class="tbtn" id="cycle" title="Cycle: loop the region (C)"><svg viewBox="0 0 16 16"><path d="M4 5h7V3l4 3.5L11 10V8H4v3H2V7a2 2 0 0 1 2-2zm8 6H5v2l-4-3.5L5 6v2h7V5h2v4a2 2 0 0 1-2 2z"/></svg></button>
   </div>
-  <div id="clock">0:00.0 <small>/ 0:00.0</small></div>
+  <div id="clock" title="Click: switch between bars and minutes">0:00.0 <small>/ 0:00.0</small></div>
+  <div id="tempoBox" title="Tempo and grid. Click the BPM to type it; T taps it">
+    <span id="bpm">120.0</span><small>BPM</small> <span id="sig">4/4</span>
+    <button id="snapBtn" title="Snap clips to the grid (Q)">Snap</button>
+    <select id="gridSel" title="Grid size"><option value="bar">bar</option><option value="beat" selected>beat</option><option value="0.5">1/8</option><option value="0.25">1/16</option></select>
+  </div>
   <div class="sep"></div>
   <div id="loudBox" title="Loudness of playback and of the export: both use the same master gain, so you hear what you export">
     Loudness
     <select id="loud"><option value="">as mixed</option><option value="-16">-16 LUFS</option><option value="-14">-14 LUFS (streaming)</option><option value="-9">-9 LUFS (loud)</option></select>
     <span id="loudGain"></span>
   </div>
-  <button id="ab" title="Compare with the mix before the agent's last turn (A)">A/B</button>
+  <button id="ab" title="A/B: hear the raw tracks (level-matched) against your mix (A)">A/B</button>
   <div class="sep"></div>
   <div id="viewSwitch"><button id="vTracks" class="on" title="Tracks (X)">Tracks</button><button id="vMixer" title="Mixer (X)">Mixer</button></div>
   <button id="exportBtn" title="Export the mix (Cmd/Ctrl+B)">Export…</button>
@@ -46,13 +52,12 @@
     <div class="hd">Assistant <span class="spacer"></span><span id="agentState" style="font-weight:400;color:var(--dim);font-size:11px"></span></div>
     <div id="log"></div>
     <div id="ask">
+      <div id="rangeHint" class="rangehint"></div>
       <textarea id="prompt" placeholder="Ask for a change: 'vocals more upfront, less reverb on the drums'"></textarea>
       <div class="rowb">
-        <button id="askBtn" class="primary" title="One turn: the agent changes what you asked for (Enter)">Ask</button>
-        <button id="remixBtn" title="Five turns from the current mix, like the first mix; the text, if any, is the goal (Cmd/Ctrl+Enter)">Remix ×5</button>
+        <button id="askBtn" class="primary" title="Send to your coding agent (Enter)">Ask</button>
         <span class="spacer"></span>
       </div>
-      <div class="hint"><b>Ask</b>: one turn on your request. <b>Remix ×5</b>: the agent re-mixes from where you are over five turns (your text, if any, is the goal).</div>
     </div>
   </aside>
 </div>

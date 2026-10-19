@@ -194,3 +194,33 @@ canvas.eqbig { width: 100%; height: 130px; background: #101215; border-radius: 4
 #wait p { color: var(--dim); margin: 0; max-width: 60ch; text-align: center; }
 #wait .bar { width: 320px; height: 6px; background: var(--panel2); border-radius: 3px; overflow: hidden; }
 #wait .bar i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .4s; }
+
+/* ---- round 2: tempo, buses, analysis range, menus ---------------------------------------------------------- */
+#title { cursor: pointer; border-radius: 4px; padding: 2px 6px; }
+#title:hover { background: var(--panel2); }
+#title input { font: inherit; width: 220px; }
+.menu { position: fixed; z-index: 12; background: var(--panel); border: 1px solid var(--line2); border-radius: 8px; box-shadow: 0 8px 30px #000a;
+  min-width: 300px; max-width: 460px; padding: 5px; }
+.menu .mi { padding: 6px 9px; border-radius: 5px; cursor: pointer; display: flex; flex-direction: column; }
+.menu .mi:hover { background: var(--panel3); }
+.menu .mi small { color: var(--dim); font-size: 10.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.menu .hd { color: var(--dim); font-size: 10px; text-transform: uppercase; letter-spacing: .06em; padding: 4px 9px; }
+#tempoBox { display: flex; align-items: center; gap: 5px; color: var(--dim); }
+#tempoBox #bpm { color: var(--fg); font-variant-numeric: tabular-nums; cursor: text; padding: 1px 4px; border-radius: 3px; background: #0e1013; border: 1px solid var(--line); }
+#tempoBox #bpm input { width: 52px; font: inherit; }
+#tempoBox #sig { cursor: pointer; }
+#tempoBox small { font-size: 10px; }
+#tempoBox select { font-size: 11px; padding: 1px 2px; }
+#clock { cursor: pointer; }
+.rangehint { font-size: 11px; color: var(--dim); background: #4fd1c514; border: 1px solid #4fd1c540; border-radius: 6px; padding: 5px 8px; line-height: 1.4; }
+.rangehint b { color: #4fd1c5; font-weight: 600; }
+.rangehint button { padding: 0 6px; font-size: 10.5px; margin-left: 4px; }
+.card .cmp { padding: 0 6px; font-size: 10px; }
+.card .cmp.on { background: var(--warn); border-color: var(--warn); color: #111; }
+/* buses and master: pinned at the right end of the mixer */
+#mixer { padding-right: 0; }
+.busgrp { position: sticky; right: 0; display: flex; gap: 4px; padding: 0 8px 0 10px; background: linear-gradient(90deg, #15171b00, var(--bg) 10px); margin-left: auto; }
+.busgrp .lbl { writing-mode: vertical-rl; transform: rotate(180deg); color: var(--dim); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; align-self: center; }
+.strip.bus { width: 112px; background: #1f232a; }
+.strip.bus .members { font-size: 10px; color: var(--dim); line-height: 1.3; max-height: 66px; overflow: hidden; }
+.strip.fx { width: 100px; background: #1d2427; }
