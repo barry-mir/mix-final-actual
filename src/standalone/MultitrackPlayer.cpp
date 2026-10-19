@@ -322,6 +322,7 @@ std::vector<MultitrackPlayer::Regions> MultitrackPlayer::edits() const
     for (size_t t = 0; t < s->tracks.size(); ++t)
     {
         if (t < editSec.size() && ! editSec[t].empty()) out.push_back (editSec[t]);
+        else if (t < clearedSec.size() && clearedSec[t]) out.push_back ({});
         else out.push_back ({ Region { 0, 0, (double) s->tracks[t].reader->lengthInSamples / s->sampleRate, 0, 0, 0, (int) t } });
     }
     return out;
@@ -337,18 +338,22 @@ std::string MultitrackPlayer::setTrackRegions (int t, Regions r)
 {
     auto* s = active.load();
     if (! s || t < 0 || t >= (int) s->tracks.size()) return "no such track";
-    if (auto e = normaliseRegions (r, t, fileLengths (*s)); ! e.empty()) return e;
+    if (! r.empty())
+        if (auto e = normaliseRegions (r, t, fileLengths (*s)); ! e.empty()) return e;
     std::lock_guard<std::mutex> lk (infoMutex);
     if (editSec.size() < s->tracks.size()) editSec.resize (s->tracks.size());
+    if (clearedSec.size() < s->tracks.size()) clearedSec.resize (s->tracks.size(), 0);
+    clearedSec[(size_t) t] = r.empty() ? 1 : 0; // every clip deleted: silent, not back to the whole file
     editSec[(size_t) t] = std::move (r);
     publishEdits (s);
     return {};
 }
 
-void MultitrackPlayer::setAllEdits (const std::vector<Regions>& all)
+void MultitrackPlayer::setAllEdits (const std::vector<Regions>& all, const std::vector<char>& cleared)
 {
     std::lock_guard<std::mutex> lk (infoMutex);
     editSec = all;
+    clearedSec = cleared;
     if (auto* s = active.load()) publishEdits (s);
     else ++editsVer;
 }
@@ -367,7 +372,9 @@ void MultitrackPlayer::publishEdits (const Session* s)
         Regions r = t < editSec.size() ? editSec[t] : Regions {};
         if (! r.empty() && ! normaliseRegions (r, (int) t, lens).empty()) r.clear(); // not valid for this session
         if (t < editSec.size()) editSec[t] = r;
-        if (r.empty()) rt.push_back ({ 0, 0, fileLen, 0, 0, 1.0f, (int) t });
+        const bool cleared = t < clearedSec.size() && clearedSec[t] && r.empty();
+        if (r.empty() && ! cleared) rt.push_back ({ 0, 0, fileLen, 0, 0, 1.0f, (int) t });
+        if (cleared) e->identity = false;
         for (auto& x : r)
         {
             const auto srcLen = s->tracks[(size_t) x.srcTrack].reader->lengthInSamples;

@@ -93,10 +93,12 @@ function flushPosts() {
   for (const [i, v] of pendingPost) api("param", { i, v }).catch(showErr);
   pendingPost.clear();
 }
+const localSetAt = new Map(); // param -> when the page last set it
 function setParam(i, v, { record = true } = {}) {
   const from = V[i];
   if (from === v) return;
   V[i] = v;
+  localSetAt.set(i, Date.now());
   refresh(i);
   if (!pendingPost.size) requestAnimationFrame(flushPosts);
   pendingPost.set(i, v);
@@ -362,12 +364,6 @@ function trackBlocks(t) {
 function masterBlocks() {
   const t = -1, L = [];
   const add = (id, label, color, on, text, toggleKey) => L.push({ id, label, color, on, text, toggleKey });
-  add("reverb", "rev", "var(--send)", pv(t, "reverb.return") > -89.9, `${pv(t, "reverb.decay").toFixed(1)} s · ${fmtDb(pv(t, "reverb.return"), true)}`);
-  add("echo", "echo", "var(--send)", pv(t, "echo.return") > -89.9, `${pv(t, "echo.time_l").toFixed(0)}/${pv(t, "echo.time_r").toFixed(0)} ms`);
-  ["vocals", "drums", "bass", "guitars", "keys"].forEach((b, k) => {
-    const on = pon(t, `bus_${b}.on`);
-    add(`bus_${b}`, GSHORT[k].toLowerCase(), GCOL[k], on, on ? `${pv(t, `bus_${b}.ratio`).toFixed(1)}:1 · ${pv(t, `bus_${b}.threshold`).toFixed(0)}` : "off", `bus_${b}.on`);
-  });
   add("buscomp", "glue", "var(--comp)", pon(t, "buscomp.on"), pon(t, "buscomp.on") ? `${pv(t, "buscomp.ratio").toFixed(1)}:1 · ${pv(t, "buscomp.threshold").toFixed(0)} dB` : "off", "buscomp.on");
   add("limiter", "lim", "var(--hot)", pon(t, "limiter.on"), pon(t, "limiter.on") ? `${pv(t, "limiter.ceiling").toFixed(1)} dBFS` : "off", "limiter.on");
   const L2 = ST.loudness || {};
@@ -401,7 +397,7 @@ function updateBlocks(t) { document.querySelectorAll(`[data-blocks="${t}"]`).for
 function selectTrack(t, { section = null, clip = null, keepClip = false } = {}) {
   const changed = sel.track !== t;
   sel.track = t;
-  if (t !== null) setScope(t);
+  if (t !== null) setScope(t < -1 ? null : t); // spectrum: tracks and the master
   if (!keepClip) sel.clip = clip;
   document.querySelectorAll(".th").forEach(h => h.classList.toggle("sel", +h.dataset.t === t));
   document.querySelectorAll(".strip").forEach(h => h.classList.toggle("sel", +h.dataset.t === t));
@@ -433,7 +429,7 @@ const MSECTIONS = [
   ["bus_vocals", "vocal bus", ["bus_vocals"], "bus_vocals.on"], ["bus_drums", "drum bus", ["bus_drums"], "bus_drums.on"],
   ["bus_bass", "bass bus", ["bus_bass"], "bus_bass.on"], ["bus_guitars", "guitar bus", ["bus_guitars"], "bus_guitars.on"],
   ["bus_keys", "keys & other bus", ["bus_keys"], "bus_keys.on"],
-  ["buscomp", "glue compressor", ["buscomp"], "buscomp.on"], ["limiter", "limiter", ["limiter", "fader"], "limiter.on"],
+  ["buscomp", "glue compressor", ["buscomp"], "buscomp.on"], ["limiter", "master fader & limiter", ["fader", "limiter"], "limiter.on"],
 ];
 const ROWLABEL = { "hpf.on": "HPF", "hpf.freq": "HPF freq", "hpf.slope": "HPF slope", "lpf.on": "LPF", "lpf.freq": "LPF freq", "lpf.slope": "LPF slope",
   "polarity.inv_l": "invert L", "polarity.inv_r": "invert R", "strip.order": "order", "balance.value": "pan", "width.amount": "width",
@@ -450,9 +446,19 @@ function buildInspector() {
   if (t >= 0) {
     const chip = el("span", "chip", t + 1); chip.style.background = gcol(S.tracks[t].group);
     h.append(chip, el("span", "", S.tracks[t].name));
-  } else h.append(el("span", "", "Master"));
+  } else {
+    const g = -2 - t;
+    const chip = el("span", "chip", t === -1 ? "M" : t === REV_ID ? "REV" : t === ECHO_ID ? "ECHO" : GSHORT[g]);
+    chip.style.background = t === -1 ? "#e6e8eb" : t <= REV_ID ? "#4fd1c5" : GCOL[g];
+    h.append(chip, el("span", "", t === -1 ? "Master" : t === REV_ID ? "Reverb return" : t === ECHO_ID ? "Echo return" : `${GROUPS[g]} bus`));
+  }
   box.append(h);
-  if (t < 0) {
+  if (t < -1 && t > REV_ID) { // a group bus: which tracks feed it
+    const g = -2 - t, names = S.tracks.map((tr, k) => tr.group === g ? `${k + 1} ${tr.name}` : null).filter(Boolean);
+    const m = el("div", "sec"); m.append(el("h3", "", "tracks on this bus"), el("div", "empty", names.length ? names.join(", ") : "none (set a track's group in its inspector)"));
+    box.append(m);
+  }
+  if (t === -1) {
     const sp = el("div", "sec"); sp.dataset.sec = "spectrum";
     sp.append(el("h3", "", "spectrum: before the master chain (line), output (filled)"));
     const c = el("canvas", "eqbig"); c.dataset.curve = -1; sp.append(c);
@@ -472,12 +478,15 @@ function buildInspector() {
     r.append(s); g.append(r); box.append(g);
     box.append(clipSection(t));
   }
+  const pt = t < 0 ? -1 : t; // buses, returns and the master are all master-level parameters
   const mods = {};
-  for (const s of S.params) if (s.track === t) (mods[s.module] ||= []).push(s);
+  for (const s of S.params) if (s.track === pt) (mods[s.module] ||= []).push(s);
+  const only = t >= 0 ? null : t === -1 ? ["buscomp", "limiter"] : t === REV_ID ? ["reverb"] : t === ECHO_ID ? ["echo"] : [`bus_${BUSKEYS[-2 - t]}`];
   for (const [id, title, modules, powerKey] of t >= 0 ? SECTIONS : MSECTIONS) {
+    if (only && !only.includes(id)) continue;
     const sec = el("div", "sec"); sec.dataset.sec = id;
     const h3 = el("h3", "", title);
-    if (powerKey && P(t, powerKey)) { const b = withInsp(() => toggle(P(t, powerKey), "", "pw")); h3.append(b); }
+    if (powerKey && P(pt, powerKey)) { const b = withInsp(() => toggle(P(pt, powerKey), "", "pw")); h3.append(b); }
     sec.append(h3);
     if (id === "eq" && t >= 0) sec.append(eqEditor(t));
     for (const m of modules) for (const s of mods[m] || []) {
@@ -583,7 +592,7 @@ function eqEditor(t) {
 const defaultClips = t => [{ pos: 0, src: 0, len: trackLen(t), gain: 0, fadeIn: 0, fadeOut: 0 }];
 let clipsServer = true;
 async function loadClips() {
-  try { const r = await api("edits"); E = S.tracks.map((_, t) => (r.tracks && r.tracks[t] && r.tracks[t].length ? r.tracks[t] : defaultClips(t))); }
+  try { const r = await api("edits"); E = S.tracks.map((_, t) => (r.tracks && Array.isArray(r.tracks[t]) ? r.tracks[t] : defaultClips(t))); }
   catch (_) { clipsServer = false; E = S.tracks.map((_, t) => defaultClips(t)); }
 }
 async function postClips(t, regions, { record = true, before = null } = {}) {
@@ -609,13 +618,7 @@ function splitAtPlayhead() {
   const x = ST.pos, clips = E[t];
   const k = clips.findIndex(c => x > c.pos + 0.02 && x < c.pos + c.len - 0.02);
   if (k < 0) return toast("No clip under the playhead on this track");
-  const c = clips[k], d = x - c.pos;
-  const a = { ...c, len: d, fadeOut: Math.min(c.fadeOut, d / 2), fadeIn: Math.min(c.fadeIn, d / 2) };
-  const b = { ...c, pos: x, src: c.src + d, len: c.len - d, fadeIn: 0, fadeOut: Math.min(c.fadeOut, (c.len - d) / 2) };
-  a.fadeOut = 0;
-  const next = [...clips.slice(0, k), a, b, ...clips.slice(k + 1)];
-  sel.clip = k + 1;
-  postClips(t, next);
+  splitAt(t, k, x);
 }
 // Clipboard: Cmd+C / Cmd+X copy (cut) the selected clip; Cmd+V pastes it at the playhead (on the grid when Snap is
 // on) onto the selected track, any track. The pasted clip replaces what is under it, with short crossfades at both ends.
@@ -984,6 +987,24 @@ function rename(t, elx) {
   inp.onblur = () => done(true);
   inp.onpointerdown = e => e.stopPropagation();
 }
+// Tools: the pointer (move, trim, fades, gain) and the scissors (click a clip to split it there). B toggles.
+let tool = "pointer";
+function setTool(x) {
+  tool = x;
+  const b = $("scissorsBtn"); if (b) b.classList.toggle("on", tool === "scissors");
+  $("overlay").style.cursor = tool === "scissors" ? "crosshair" : "";
+  toast(tool === "scissors" ? "Scissors: click a clip to split it (B or Esc for the pointer)" : "Pointer");
+}
+function splitAt(t, k, time) {
+  const clips = E[t], c = clips[k];
+  if (!c || time <= c.pos + 0.02 || time >= c.pos + c.len - 0.02) return false;
+  const d = time - c.pos;
+  const a = { ...c, len: d, fadeIn: Math.min(c.fadeIn, d / 2), fadeOut: 0 };
+  const b = { ...c, pos: time, src: c.src + d, len: c.len - d, fadeIn: 0, fadeOut: Math.min(c.fadeOut, (c.len - d) / 2) };
+  sel.clip = k + 1;
+  postClips(t, [...clips.slice(0, k), a, b, ...clips.slice(k + 1)]);
+  return true;
+}
 // Lane interaction: move, trim, fades, clip gain; click to place the playhead.
 const EDGE = 6;
 function hitClip(x, y) {
@@ -1037,13 +1058,25 @@ function snapTime(time, t, k, fine) {
 function initLanes() {
   const c = $("overlay");
   const cursorFor = z => ({ fadeIn: "nwse-resize", fadeOut: "nesw-resize", trimL: "ew-resize", trimR: "ew-resize", move: "grab", gain: "ns-resize" })[z] || "text";
-  c.onpointermove = ev => { if (c.dragging) return; const r = c.getBoundingClientRect(); const h = hitClip(ev.clientX - r.left, ev.clientY - r.top); c.style.cursor = ev.altKey && h.zone === "move" ? "ns-resize" : cursorFor(h.zone); };
+  c.onpointermove = ev => {
+    if (c.dragging) return;
+    if (tool === "scissors") { c.style.cursor = "crosshair"; return; }
+    const r = c.getBoundingClientRect(); const h = hitClip(ev.clientX - r.left, ev.clientY - r.top);
+    c.style.cursor = ev.altKey && h.zone === "move" ? "ns-resize" : cursorFor(h.zone);
+  };
   c.onpointerdown = ev => {
     if (ev.button !== 0) return;
     const r = c.getBoundingClientRect(), x = ev.clientX - r.left, y = ev.clientY - r.top;
     const h = hitClip(x, y);
     if (h.t < 0) return;
     if (h.k < 0) { sel.clip = null; selectTrack(h.t, { keepClip: false }); seek(xt(x)); return; }
+    if (tool === "scissors") {
+      let at = xt(x);
+      if (SNAP.on && !ev.shiftKey) at = quantize(at);
+      selectTrack(h.t, { clip: h.k });
+      if (!splitAt(h.t, h.k, at)) toast("Too close to the clip's edge to split");
+      return;
+    }
     selectTrack(h.t, { clip: h.k });
     const t = h.t, k = h.k, before = E[t].map(x2 => ({ ...x2 })), c0 = { ...E[t][k] };
     const zone = ev.altKey && h.zone === "move" ? "gain" : h.zone;
@@ -1153,12 +1186,11 @@ function buildMixer() {
   box.replaceChildren();
   const before = new Map(Object.entries(controls).map(([k, a]) => [k, a.length]));
   S.tracks.forEach((_, t) => box.append(strip(t)));
-  // Buses, effect returns and the master: pinned at the right, always in view while the tracks scroll.
-  const grp = el("div", "busgrp");
-  grp.append(el("span", "lbl", "buses · returns · master"));
-  BUSKEYS.forEach((_, g) => grp.append(busStrip(g)));
-  grp.append(fxStrip("reverb"), fxStrip("echo"), strip(-1));
-  box.append(grp);
+  // After the tracks: the group buses and effect returns (they scroll with the tracks), then the master, pinned right.
+  const sep = el("div", "sepl", "buses · returns"); sep.id = "busStart"; box.append(sep);
+  BUSKEYS.forEach((_, g) => box.append(busStrip(g)));
+  box.append(fxStrip("reverb"), fxStrip("echo"));
+  const pin = el("div", "masterpin"); pin.append(strip(-1)); box.append(pin);
   for (const [k, a] of Object.entries(controls)) for (let j = before.get(k) || 0; j < a.length; ++j) a[j].mix = true;
 }
 function strip(t) {
@@ -1198,10 +1230,12 @@ function strip(t) {
   return e;
 }
 const BUSKEYS = ["vocals", "drums", "bass", "guitars", "keys"];
+// Selection ids for things that are not tracks: -1 master, -2..-6 the group buses, -7 reverb, -8 echo.
+const BUS_ID = g => -2 - g, REV_ID = -7, ECHO_ID = -8;
 const mkMeter = cls => { const m = el("div", "mt" + (cls ? " " + cls : "")); const p = el("i"), r = el("i", "r"); m.append(r, p); return [m, p, r]; };
 // A group bus: the tracks routed to it, its compressor and peak clipper, its level and gain reduction.
 function busStrip(g) {
-  const key = BUSKEYS[g], e = el("div", "strip bus"); e.dataset.t = -1; e.dataset.bus = g;
+  const key = BUSKEYS[g], e = el("div", "strip bus"); e.dataset.t = BUS_ID(g);
   const top = el("div", "top"), chip = el("span", "chip", GSHORT[g]); chip.style.background = GCOL[g];
   top.append(chip, el("span", "nm", `${GROUPS[g]} bus`)); e.append(top);
   const members = S.tracks.map((tr, t) => tr.group === g ? `${t + 1} ${tr.name}` : null).filter(Boolean);
@@ -1226,12 +1260,12 @@ function busStrip(g) {
     gr[1].style.height = `${clamp((b.gr || 0) / 12 * 100, 0, 100)}%`;
     db.textContent = b.gr > 0.05 ? `GR ${b.gr.toFixed(1)} dB` : "";
   };
-  e.onpointerdown = () => selectTrack(-1, { section: `bus_${key}` });
+  e.onpointerdown = () => selectTrack(BUS_ID(g));
   return e;
 }
 // An effect return (reverb or echo): its return fader and level.
 function fxStrip(kind) {
-  const e = el("div", "strip fx"); e.dataset.t = -1;
+  const e = el("div", "strip fx"); e.dataset.t = kind === "reverb" ? REV_ID : ECHO_ID;
   const top = el("div", "top"), chip = el("span", "chip", kind === "reverb" ? "REV" : "ECHO"); chip.style.background = "#4fd1c5";
   top.append(chip, el("span", "nm", kind === "reverb" ? "Reverb" : "Echo")); e.append(top);
   const info = el("div", "members");
@@ -1244,7 +1278,7 @@ function fxStrip(kind) {
   fz.append(slider(rs, { vertical: true }), lv[0]); e.append(fz);
   const db = el("div", "db"); bind(rs.i, v => { db.textContent = `return ${fmtDb(v, true)}`; }); e.append(db);
   e.paint = () => { const p = e.pk = Math.max(((ST.fx || {})[kind] || {}).peak || 0, (e.pk || 0) * 0.86); lv[1].style.height = `${meterH(p)}%`; lv[2].style.height = "0"; };
-  e.onpointerdown = () => selectTrack(-1, { section: kind });
+  e.onpointerdown = () => selectTrack(kind === "reverb" ? REV_ID : ECHO_ID);
   return e;
 }
 const peakDb = x => 20 * Math.log10(Math.max(x, 1e-6));
@@ -1585,6 +1619,7 @@ const KEYS = [
   ["Space", "play / stop"], ["Return", "go to the start of the cycle"], ["Home / End", "song start / end"],
   [", .  or  ← →", "playhead back / forward 1 s (Shift: 5 s)"], ["C", "cycle (loop) on / off"], ["Shift+C", "cycle back to the agent's excerpt"],
   ["↑ ↓", "previous / next track"], ["M / S", "mute / solo the selected track"], [`${MOD}+E`, "split the clip at the playhead"],
+  ["B", "scissors: click a clip to split it there (B or Esc: back to the pointer)"],
   [`${MOD}+X / ${MOD}+C / ${MOD}+V`, "cut / copy the selected clip; paste at the playhead on the selected track"],
   ["Delete", "delete the selected clip"], [`${MOD}+Z / Shift+${MOD}+Z`, "undo / redo"], ["Q", "snap to the grid on / off"], ["T", "tap the tempo"],
   ["= / -", "zoom in / out"], ["Z", "zoom to fit"],
@@ -1606,6 +1641,7 @@ function onKey(e) {
   if (e.key === "Escape") {
     if (!$("exportDlg").hidden || !$("keysDlg").hidden) { $("exportDlg").hidden = $("keysDlg").hidden = true; return; }
     if (typing) { e.target.blur(); return; }
+    if (tool === "scissors") { setTool("pointer"); return; }
     sel.clip = null; drawLanes(); refreshClipSection(); return;
   }
   if (typing) return;
@@ -1650,6 +1686,7 @@ function onKey(e) {
     case "a": return act(toggleRaw);
     case "q": return act(() => { SNAP.on = !SNAP.on; saveSnap(); toast(SNAP.on ? `Snap to ${$("gridSel").selectedOptions[0].text}` : "Snap off"); });
     case "t": return act(tapTempo);
+    case "b": return act(() => setTool(tool === "scissors" ? "pointer" : "scissors"));
   }
 }
 
@@ -1690,7 +1727,13 @@ async function pollValues() {
   if (stopped) return;
   try {
     const nv = await api("values");
-    for (const [i, v] of Object.entries(nv)) if (V[i] === undefined || Math.abs(V[i] - v) > 1e-6) { if (pendingPost.has(+i)) continue; V[i] = v; refresh(+i); }
+    for (const [i, v] of Object.entries(nv)) {
+      if (V[i] !== undefined && Math.abs(V[i] - v) <= 1e-6) continue;
+      // A read that left before our own change reached the console must not undo it on screen (and the next click
+      // would then toggle from the wrong state).
+      if (pendingPost.has(+i) || Date.now() - (localSetAt.get(+i) || 0) < 1500) continue;
+      V[i] = v; refresh(+i);
+    }
   } catch (e) { showErr(e); return; }
   setTimeout(pollValues, 500);
 }
@@ -1767,8 +1810,11 @@ async function init() {
   initTitle();
   initExport();
   document.addEventListener("keydown", onKey);
+  const sc = el("button", "", "✂"); sc.id = "scissorsBtn"; sc.title = "Scissors: click a clip to split it (B)";
+  sc.onclick = () => setTool(tool === "scissors" ? "pointer" : "scissors");
+  $("corner").insertBefore(sc, $("corner").querySelector(".spacer"));
   const bb = el("button", "", "Buses ›"); bb.title = "Group buses, effect returns and the master (in the Mixer)";
-  bb.onclick = () => { setView("mixer"); requestAnimationFrame(() => { $("mixer").scrollLeft = 1e9; }); };
+  bb.onclick = () => { setView("mixer"); requestAnimationFrame(() => { const b = $("busStart"); if (b) $("mixer").scrollLeft = b.offsetLeft - 8; }); };
   $("corner").insertBefore(bb, $("corner").querySelector(".spacer"));
   poll();
   pollValues();

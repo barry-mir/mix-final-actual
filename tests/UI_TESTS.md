@@ -67,3 +67,9 @@ submit_turn, post_note). Pass 1: 2026-10-18 (first page), all 23 pass. Pass 2 (D
 | 58 | Auto agent | Ask with no agent connected | the mixer starts the coding agent (~5 s), notes stream, the turn applies; Stop kills it |
 | 59* | Auto agent, Codex | as 58 with Codex as the last agent | (checked by the backend tests, not in the page) |
 | 60* | Reopen later | close the page; `mix-final-actual open` | the session keeps running; playback stops after 20 s without a page (backend tests) |
+| 61 | Mixer layout | X | the tracks fill the view; buses and returns follow them; only the master is pinned right |
+| 62 | Separate inspectors | click a bus, Reverb, Echo, MASTER | each shows only its own controls (a bus also lists its tracks) |
+| 63 | Rapid M/S | 12 quick clicks on M, S and names across tracks, header and mixer | the page and the engine agree at once and 2.5 s later |
+| 64 | Delete last clip | select a track's only clip, Delete | the track is empty and silent; still empty after a restart |
+| 65 | Scissors | B, click a clip twice, Esc | three clips, cuts on the grid when Snap is on |
+| 66 | Cut | select a piece, Cmd+X | removed, and on the clipboard for Cmd+V |

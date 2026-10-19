@@ -98,7 +98,8 @@ public:
     int editsVersion() const noexcept { return editsVer.load(); }
     bool editsAreIdentity() const;
     std::string setTrackRegions (int track, Regions r); // "" or the error (nothing changed then)
-    void setAllEdits (const std::vector<Regions>& all); // saved state; invalid regions dropped; empty = identity
+    // saved state; invalid regions dropped; empty = identity unless cleared[t] (every clip deleted: the track is silent)
+    void setAllEdits (const std::vector<Regions>& all, const std::vector<char>& cleared = {});
     double trackLengthSec (int track) const;            // the file's length
     // Any thread, not real time: the mono sum of some tracks' files (no edits, no session gain) over [start, start+len).
     std::vector<float> mixdown (const std::vector<int>& tracks, double startSec, double lenSec) const;
@@ -139,7 +140,8 @@ private:
     class PeakBuilder;
     std::unique_ptr<Prefetcher> prefetch;
     std::unique_ptr<PeakBuilder> peakBuilder;
-    std::vector<Regions> editSec;                   // what the user set (guarded by infoMutex); empty = identity
+    std::vector<Regions> editSec;                   // what the user set (guarded by infoMutex); empty = identity...
+    std::vector<char> clearedSec;                   // ...unless the user deleted every clip of that track (guarded by infoMutex)
     std::vector<std::unique_ptr<RtEdits>> rtOwned;  // guarded by infoMutex
     std::atomic<RtEdits*> rtEdits { nullptr };
     std::atomic<int> editsVer { 0 };

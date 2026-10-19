@@ -480,6 +480,7 @@ void InteractiveMixerProcessor::setStateInformation (const void* data, int size)
     {
         // Clip edits (none saved = every file plays whole, from 0).
         std::vector<MultitrackPlayer::Regions> all;
+        std::vector<char> cleared;
         if (auto* ed = xml->getChildByName ("EDITS"))
         {
             auto j = json::parse (ed->getAllSubText().toStdString(), nullptr, false);
@@ -488,11 +489,12 @@ void InteractiveMixerProcessor::setStateInformation (const void* data, int size)
                 {
                     MultitrackPlayer::Regions r;
                     if (! regionsFromJson (t, r).empty()) r.clear();
+                    cleared.push_back (t.is_array() && t.empty() ? 1 : 0); // saved with no clips: every clip was deleted
                     all.push_back (std::move (r));
                 }
             xml->removeChildElement (ed, true);
         }
-        player.setAllEdits (all);
+        player.setAllEdits (all, cleared);
     }
     const auto folder = xml->getStringAttribute ("sessionFolder");
     if (xml->hasTagName (apvts.state.getType())) apvts.replaceState (juce::ValueTree::fromXml (*xml));
