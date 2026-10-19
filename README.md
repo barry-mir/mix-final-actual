@@ -28,15 +28,16 @@ Then install `mix-final-actual` from the plugin list (`/plugins`).
 
 ## Demo
 
-https://github.com/user-attachments/assets/d07f6e62-7157-4913-9c5e-b476af5b7b8a
+https://github.com/user-attachments/assets/0852d14b-009e-4b7a-b9a3-f2d94510db28
 
-<p align="center"><sub>Demo, with sound: The Kitchenettes, "Alive", from MedleyDB. 13 raw tracks mixed by Claude Code
-through this plugin in about two minutes: the raw tracks, then the mix, then the features. If the player doesn't show,
+<p align="center"><sub>30 seconds, with sound: the same passage switches between the raw tracks (black and white) and
+the mix (colour), then the features. Song: Filthy Bird, "I'd Like to Know", from MedleyDB: 29 raw tracks mixed by
+Claude Code through this plugin in about three minutes. If the player doesn't show,
 <a href="docs/media/demo.mp4">open the video file</a>.</sub></p>
 
 ## Features
 
-<p align="center"><img src="docs/media/tour.gif" width="820" alt="A silent tour of the mixer page: the console, the group buses, asking the agent for a change while it analyzes in the background and posts its notes, clip editing, export"></p>
+<p align="center"><img src="docs/media/tour.gif" width="820" alt="A silent tour of the mixer page: the console with a live spectrum behind the EQ, the agent answering a request with its notes, the group buses, clip editing, export"></p>
 
 **Mixed by your agent**
 - Your agent mixes on a real DSP console, not by guessing at presets. Every turn the console analyzes the music and
@@ -70,7 +71,7 @@ through this plugin in about two minutes: the raw tracks, then the mix, then the
   default). **A/B** switches instantly between the raw tracks and your mix at matched loudness.
 - Export to 24-bit WAV or FLAC, optionally with one stem per track, wherever you choose.
 
-<p align="center"><img src="docs/media/mixer-page.png" width="900" alt="The mixer page on the demo song: the inspector with the lead vocal's EQ over its live spectrum, compressor and sends; 13 tracks with waveforms; the agent's turn-by-turn notes; the hint showing which bars the agent analyzes"></p>
+<p align="center"><img src="docs/media/mixer-page.png" width="900" alt="The mixer page on the demo song: an inspector with an EQ over its live spectrum, compressor and sends; 29 tracks with waveforms; the agent's turn-by-turn notes; the hint showing which bars the agent analyzes"></p>
 
 ## How well does it mix?
 
@@ -147,7 +148,7 @@ type still gets answered, because the console starts the agent.
 
 - **Licence:** AGPLv3. Built with [JUCE](https://juce.com) 8 (AGPLv3), [cpp-httplib](https://github.com/yhirose/cpp-httplib)
   and [nlohmann/json](https://github.com/nlohmann/json).
-- **Demo audio:** The Kitchenettes, "Alive", from [MedleyDB](https://medleydb.weebly.com/) (R. Bittner et al., ISMIR
+- **Demo audio:** Filthy Bird, "I'd Like to Know", from [MedleyDB](https://medleydb.weebly.com/) (R. Bittner et al., ISMIR
   2014 and 2016), used under its Creative Commons Attribution-NonCommercial-ShareAlike licence. The demo video and
   screenshot are shared under the same terms.
 - Another full example run, a 21-track band: [docs/examples/pocket-knife.md](docs/examples/pocket-knife.md).
