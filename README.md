@@ -7,13 +7,15 @@ Give Claude Code or Codex a folder of tracks. It mixes them on the console in fi
 measurements each turn. Then you keep going: move faders, edit clips, or type what you want changed in plain words.
 Everything runs on your machine. There are no API keys, nothing to set up, and your audio never leaves your computer.
 
-<p align="center"><a href="docs/media/demo.mp4"><img src="docs/media/demo-poster.jpg" width="820" alt="Demo video: before and after, the console, asking the agent for a change, clip editing, export"></a></p>
+https://github.com/user-attachments/assets/d07f6e62-7157-4913-9c5e-b476af5b7b8a
 
-<p align="center"><sub>Demo song: The Kitchenettes, "Alive", from MedleyDB: 13 raw tracks mixed by Claude Code through
-this plugin in about two minutes. Click for the one-minute video with sound: the raw tracks, then the mix, then the
-features.</sub></p>
+<p align="center"><sub>Demo, with sound: The Kitchenettes, "Alive", from MedleyDB. 13 raw tracks mixed by Claude Code
+through this plugin in about two minutes: the raw tracks, then the mix, then the features. If the player doesn't show,
+<a href="docs/media/demo.mp4">open the video file</a>.</sub></p>
 
 ## Features
+
+<p align="center"><img src="docs/media/tour.gif" width="820" alt="A silent tour of the mixer page: the console, the group buses, asking the agent for a change while it analyzes in the background and posts its notes, clip editing, export"></p>
 
 **Mixed by your agent**
 - Your agent mixes on a real DSP console, not by guessing at presets. Every turn the console analyzes the music and
