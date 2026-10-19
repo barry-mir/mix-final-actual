@@ -7,6 +7,27 @@ Give Claude Code or Codex a folder of tracks. It mixes them on the console in fi
 measurements each turn. Then you keep going: move faders, edit clips, or type what you want changed in plain words.
 Everything runs on your machine. There are no API keys, nothing to set up, and your audio never leaves your computer.
 
+## Install
+
+You need [Claude Code](https://claude.com/claude-code) or [Codex](https://openai.com/codex), signed in as usual.
+The plugin includes the console as a ready-made program for macOS (Apple silicon and Intel), Windows (x64) and Linux
+(x64 and arm64). There's nothing else to install.
+
+**Claude Code**: in a Claude Code session:
+```
+/plugin marketplace add barry-mir/mix-final-actual
+/plugin install mix-final-actual@mix-final-actual
+```
+Then restart Claude Code.
+
+**Codex**:
+```
+codex plugin marketplace add barry-mir/mix-final-actual
+```
+Then install `mix-final-actual` from the plugin list (`/plugins`).
+
+## Demo
+
 https://github.com/user-attachments/assets/d07f6e62-7157-4913-9c5e-b476af5b7b8a
 
 <p align="center"><sub>Demo, with sound: The Kitchenettes, "Alive", from MedleyDB. 13 raw tracks mixed by Claude Code
@@ -78,25 +99,6 @@ engineers' mixes of the same songs. Lower is closer.
   - The reference is each song's original engineered stems summed, without mastering.
   - The confidence intervals come from a bootstrap over songs.
 - The runs used the research harness with the same console, prompt and five turns, mixing a 30-second excerpt.
-
-## Install
-
-You need [Claude Code](https://claude.com/claude-code) or [Codex](https://openai.com/codex), signed in as usual.
-The plugin includes the console as a ready-made program for macOS (Apple silicon and Intel), Windows (x64) and Linux
-(x64 and arm64). There's nothing else to install.
-
-**Claude Code**: in a Claude Code session:
-```
-/plugin marketplace add barry-mir/mix-final-actual
-/plugin install mix-final-actual@mix-final-actual
-```
-Then restart Claude Code.
-
-**Codex**:
-```
-codex plugin marketplace add barry-mir/mix-final-actual
-```
-Then install `mix-final-actual` from the plugin list (`/plugins`).
 
 ## Use
 
