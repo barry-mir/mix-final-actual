@@ -60,6 +60,11 @@ public:
     // Run n turns one after another (the multi-turn method), each labelled `label` for the coding agent. A non-empty
     // goal is the user's aim for all of them (shown to the agent in every turn).
     void queueTurns (int n, const std::string& label, const std::string& goal = {});
+    // Turns still queued after the one running (a request's follow-up checks, the rest of a remix).
+    int turnsQueued() const { std::lock_guard<std::mutex> lk (m); return queued + (pending ? 1 : 0); }
+    // A request typed by the user: one turn that answers it, then this many follow-up turns that measure the result
+    // and finish the job (or change nothing when it is done).
+    static constexpr int kRequestFollowUps = 2;
 
     // Where the current (or last) turn is, for the page. Reading (the coding agent has fetched the turn) is derived
     // from the bridge by the caller.

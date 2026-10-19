@@ -35,6 +35,18 @@ std::unique_ptr<juce::MemoryMappedAudioFormatReader> mapFile (const juce::File& 
     return r;
 }
 
+// Files on a drive that can go away (USB disk, SD card, network share, any other volume than the system disk) are
+// never memory-mapped: if the drive disappears while a page is mapped, the next read kills the process (SIGBUS).
+// They are copied to the local cache instead, once. Links are followed to where the audio really is.
+bool onDetachableDrive (const juce::File& f)
+{
+    const auto real = f.isSymbolicLink() ? f.getLinkedTarget() : f;
+   #if JUCE_MAC
+    if (real.getFullPathName().startsWith ("/Volumes/")) return true;
+   #endif
+    return real.isOnRemovableDrive() || ! real.isOnHardDisk();
+}
+
 // A float WAV of `f` at `rate` (first two channels) in the app cache, converted once in chunks; reused while the source
 // file is unchanged.
 juce::File cachedCopy (const juce::File& f, double rate, juce::AudioFormatManager& fm, juce::String& error)
@@ -484,7 +496,7 @@ std::unique_ptr<MultitrackPlayer::Session> MultitrackPlayer::buildSession (const
     {
         if ((int) s->tracks.size() >= maxTracks()) break;
         Track t;
-        t.reader = mapFile (f);
+        if (! onDetachableDrive (f)) t.reader = mapFile (f);
         if (t.reader && std::abs (t.reader->sampleRate - targetRate) > 0.5) t.reader.reset(); // another rate: convert
         if (! t.reader)
         {

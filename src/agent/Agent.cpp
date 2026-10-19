@@ -82,6 +82,7 @@ void Agent::userMessage (const std::string& text)
         return;
     }
     trigger ({ "user", text });
+    queueTurns (kRequestFollowUps, "refine", text); // replaces the follow-ups of an earlier request
 }
 
 void Agent::queueTurns (int n, const std::string& label, const std::string& goal)
@@ -132,7 +133,7 @@ std::optional<Trigger> Agent::takePending()
     if (! p && queued > 0)
     {
         --queued;
-        p = Trigger { queuedGoal.empty() ? "auto" : "goal", queuedGoal, queuedLabel };
+        p = Trigger { queuedLabel == "refine" ? "refine" : queuedGoal.empty() ? "auto" : "goal", queuedGoal, queuedLabel };
     }
     return p;
 }
@@ -291,8 +292,8 @@ bool Agent::runTick (const Trigger& trig)
         ChatEntry s;
         s.role = "system";
         s.tick = tick;
-        s.text = failure == "cancelled" ? "Turn " + std::to_string (tick) + " stopped; nothing changed."
-                                        : "Turn " + std::to_string (tick) + " skipped: " + failure.substr (0, 500);
+        s.text = failure == "cancelled" ? "Stopped; nothing more was changed."
+                                        : "Skipped: " + failure.substr (0, 500);
         s.time = rec.time;
         store.addChat (s);
         setStage (Stage::Done, 0);
@@ -307,7 +308,7 @@ bool Agent::runTick (const Trigger& trig)
     ctx.currentValue = [this] (int i) { return host.paramValue (i); };
     ctx.isLocked = [this] (int i) { return store.isLocked (i); };
     ctx.settings = cfg;
-    ctx.userRequest = trig.kind == "user";
+    ctx.userRequest = trig.kind == "user" || trig.kind == "refine";
     const auto val = validateToolCalls (parsed.calls, ctx);
 
     // apply (message thread, LLM ramp)

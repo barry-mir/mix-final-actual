@@ -75,3 +75,6 @@ submit_turn, post_note). Pass 1: 2026-10-18 (first page), all 23 pass. Pass 2 (D
 | 66 | Cut | select a piece, Cmd+X | removed, and on the clipboard for Cmd+V |
 | 67 | Returns in the master | X | Reverb and Echo returns (level, meter) inside the MASTER strip; REV / ECHO open their settings |
 | 68 | Wheel | wheel over clips / over track names / in the mixer / over a fader | left-right / up-down / left-right / moves the fader only |
+| 69 | Request follow-through | Ask once, with no agent connected | one live card ("agent · working") through the answer and its checks; then one answer card with one Compare and one Undo; repeated "nothing more to change" lines show once |
+| 70 | Undo an answer | Undo on that card | every change of the answer is taken back |
+| 71 | Detachable drive | tracks on a disk image; play; force-eject it | tracks are cached locally at load; playback and the mixer keep running |

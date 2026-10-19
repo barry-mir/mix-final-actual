@@ -138,7 +138,7 @@ struct WebServer::Impl
                  { "limGr", m.limGr.load() }, { "busGr", m.busGr.load() }, { "cpu", p.cpuLoad.load() },
                  { "agent", im::Agent::stateName (p.agent.state()) }, { "thinking_s", p.agent.thinkingElapsedSec() },
                  { "agent_seen_s", std::min (im::Bridge::shared().secondsSinceAgentSeen(), 1e6) },
-                 { "chat_version", p.store.chatVersion() }, { "song_len", p.player.lengthSec() }, { "meters", meters },
+                 { "chat_version", p.store.chatVersion() }, { "turns_queued", p.agent.turnsQueued() }, { "song_len", p.player.lengthSec() }, { "meters", meters },
                  { "loudness", app.loudness.status (p) }, { "turn", turnJson (p) }, { "peaks_ready", p.player.peaksReady() },
                  { "edits_version", p.player.editsVersion() } };
     }

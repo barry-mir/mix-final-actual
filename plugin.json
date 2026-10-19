@@ -1,6 +1,6 @@
 {
   "name": "mix-final-actual",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Mix a folder of audio tracks on a real mixing console: your coding agent makes the mix from the console's measurements, then you keep tweaking it in a mixer page in your browser and hear every change at once.",
   "author": { "name": "barry-mir" },
   "homepage": "https://github.com/barry-mir/mix-final-actual",

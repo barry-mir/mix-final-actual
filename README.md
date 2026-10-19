@@ -45,9 +45,9 @@ Claude Code through this plugin in about three minutes. If the player doesn't sh
   band, and how all of that compares with finished professional mixes. Your agent answers with console moves.
 - **First mix in five turns.** Turn 1 builds the whole mix; turns 2 to 5 read what the earlier moves did and fix what
   the measurements flag.
-- **Ask in plain words**, from the page or the chat: "vocals more upfront", "less reverb on the drums". Each answer
-  shows the agent's notes while it works, its reply, and every change it made, with **Compare** (hear the mix before
-  that turn) and **Undo turn**.
+- **Ask in plain words**, from the page or the chat: "vocals more upfront", "less reverb on the drums". The agent makes
+  the change, then measures the result and finishes the job. Each answer shows the agent's notes while it works, its
+  reply, and every change it made, with **Compare** (hear the mix from before it) and **Undo**.
 - **No agent open? It starts one.** If you type a request while your agent is closed or busy, the console starts your
   Claude Code or Codex in the background with only the mixing tools, on your own login.
 - **It analyzes silently, and you choose what it hears.** The agent analyzes the bars you select, marked in teal on the
@@ -129,7 +129,7 @@ type still gets answered, because the console starts the agent.
   measurement reports, your track names and your requests, never audio.
 - **The agent analyzes a section, not always the whole song.** By default that's a 30-second excerpt where every
   instrument plays, shown in teal on the ruler. Choose the section that matters, or **Whole song** (slower turns).
-- **Stop** on a running turn ends it with nothing changed. **Undo turn** takes back any finished turn.
+- **Stop** on a running answer ends it; nothing more is changed. **Undo** takes back everything an answer changed.
 - **Files** (per user: `~/Library/Application Support/mix-final-actual` on macOS, `~/.config/mix-final-actual` on
   Linux, `%APPDATA%\mix-final-actual` on Windows):
   - `logs/`: the console's log, and the logs of any agent it started.

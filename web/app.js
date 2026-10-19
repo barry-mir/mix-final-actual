@@ -1354,63 +1354,119 @@ async function pollChat(version) {
   if (cmp && !chat.some(e => e.role === "agent" && e.tick === cmp.tick && !e.undone)) endCompare(false); // the compared turn was undone
   renderChat();
 }
+// The chat as answers: a request and every agent turn that answered it (the first answer, then the follow-up checks)
+// form one card, with one Compare and one Undo. Agent turns before any request are the first mix.
+function chatGroups() {
+  const groups = [];
+  let cur = null;
+  for (const e of chat) {
+    if (e.role === "note") continue;
+    if (e.role === "user") { cur = { user: e, passes: [], info: [] }; groups.push(cur); continue; }
+    if (e.role === "system") {
+      if (/^Waiting for your coding agent/.test(e.text)) continue; // the live card says this
+      if (cur) cur.info.push(e.text); else groups.push({ system: e.text });
+      continue;
+    }
+    if (!cur) { cur = { user: null, passes: [], info: [] }; groups.push(cur); }
+    cur.passes.push(e);
+  }
+  return groups;
+}
+// Each parameter's value before the first live pass and after the last one.
+function mergedDiff(passes) {
+  const by = new Map();
+  for (const e of passes) {
+    if (e.undone) continue;
+    for (const d of e.diff || []) {
+      if (["rejected", "superseded", "unchanged"].includes(d.status)) continue;
+      const m = by.get(d.param);
+      if (m) m.to = d.to; else by.set(d.param, { param: d.param, from: d.from, to: d.to });
+    }
+  }
+  return [...by.values()].filter(d => Math.abs(+d.to - +d.from) > 1e-6);
+}
+const liveNow = () => (ST.turn && ST.turn.stage && ST.turn.stage !== "done") || (ST.turns_queued || 0) > 0;
 function renderChat() {
   const log = $("log");
   const atBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 40;
   const notes = {};
   for (const e of chat) if (e.role === "note") (notes[e.tick] ||= []).push(e.text);
   const frag = document.createDocumentFragment();
-  const live = ST.turn && ST.turn.stage && ST.turn.stage !== "done" ? ST.turn : null;
-  for (const e of chat) {
-    if (e.role === "note") continue;
-    if (e.role === "user") { const m = el("div", "msg user"); m.append(el("span", "who", "you"), el("span", "", e.text)); frag.append(m); continue; }
-    if (e.role === "system") {
-      if (/^Waiting for your coding agent/.test(e.text)) continue; // the turn card says this, live
-      frag.append(el("div", "msg system", e.text)); continue;
+  const groups = chatGroups(), live = liveNow();
+  const lastReq = groups.length && groups[groups.length - 1].passes ? groups[groups.length - 1] : null;
+  groups.forEach(g => {
+    if (g.system) { frag.append(el("div", "msg system", g.system)); return; }
+    if (g.user) { const m = el("div", "msg user"); m.append(el("span", "who", "you"), el("span", "", g.user.text)); frag.append(m); }
+    if (live && g === lastReq) { // the answer in progress: one live card for all its turns
+      const n = g.passes.flatMap(p => notes[p.tick] || []);
+      if (ST.turn && !g.passes.some(p => p.tick === ST.turn.tick)) n.push(...(notes[ST.turn.tick] || []));
+      frag.append(liveCard(ST.turn || {}, n));
+      return;
     }
-    const card = el("div", "card");
-    const ttl = el("div", "ttl"); ttl.append(el("span", "", `agent · turn ${e.tick}`));
-    card.append(ttl);
-    if (notes[e.tick]) { const ul = el("ul", "notes"); notes[e.tick].forEach(n => ul.append(el("li", "", n))); card.append(ul); }
-    card.append(el("div", "txt", e.text));
-    const diff = (e.diff || []).filter(d => d.status !== "rejected");
-    if (diff.length) {
-      const det = el("details"), sum = el("summary");
-      sum.textContent = `${diff.length} change${diff.length === 1 ? "" : "s"}` + (e.undone ? " (undone)" : "");
-      det.append(sum);
-      const ul = el("ul");
-      for (const d of diff) ul.append(el("li", "", `${paramLabel(d.param)}: ${(+d.from).toFixed(1)} → ${(+d.to).toFixed(1)}${d.status !== "applied" ? " (" + d.status + ")" : ""}`));
-      det.append(ul);
-      card.append(det);
-      if (!e.undone) {
-        const cb = el("button", "cmp" + (cmp && cmp.tick === e.tick ? " on" : ""), cmp && cmp.tick === e.tick ? "Hearing before" : "Compare");
-        cb.title = "Hear the mix before this turn; click again to come back (playback level stays the same while you compare)";
-        cb.onclick = () => (cmp && cmp.tick === e.tick ? endCompare(true) : startCompare(e.tick, diff));
-        const u = el("button", "undo", "Undo turn"); u.onclick = () => { endCompare(false); api("undo_turn", { tick: e.tick }).catch(showErr); };
-        ttl.append(cb, u);
-      }
-    }
-    frag.append(card);
-  }
-  if (live) frag.append(liveCard(live, notes[live.tick] || []));
+    if (!g.passes.length) { g.info.forEach(t => frag.append(el("div", "msg system", t))); return; }
+    frag.append(answerCard(g, notes));
+  });
+  if (live && !lastReq) frag.append(liveCard(ST.turn || {}, ST.turn ? notes[ST.turn.tick] || [] : []));
   log.replaceChildren(frag);
   if (atBottom || live) log.scrollTop = log.scrollHeight;
 }
+const isChange = d => !["rejected", "superseded", "unchanged"].includes(d.status);
+function answerCard(g, notes) {
+  const card = el("div", "card"), first = g.passes[0], key = first.tick;
+  const ttl = el("div", "ttl"); ttl.append(el("span", "", g.user ? "agent" : "agent · first mix"));
+  card.append(ttl);
+  const n = notes[first.tick] || [];
+  if (n.length) { const ul = el("ul", "notes"); n.forEach(x => ul.append(el("li", "", x))); card.append(ul); }
+  card.append(el("div", "txt", first.text));
+  const sub = t => { const x = el("div", "txt", t); x.style.cssText = "color: var(--dim); font-size: 12px; margin-top: 4px"; card.append(x); };
+  let prev = "";
+  for (const p of g.passes.slice(1)) {
+    const t = (p.diff || []).some(isChange) ? `Then: ${p.text}` : "Checked the result: nothing more to change.";
+    if (t !== prev) sub(t); // follow-up checks that found nothing read as one line
+    prev = t;
+  }
+  g.info.forEach(sub);
+  const diff = mergedDiff(g.passes);
+  const undone = g.passes.some(p => p.undone) && !diff.length;
+  if (diff.length || undone) {
+    const det = el("details"), sm = el("summary");
+    sm.textContent = diff.length ? `${diff.length} change${diff.length === 1 ? "" : "s"}` : "changes undone";
+    det.append(sm);
+    const ul = el("ul");
+    for (const d of diff) ul.append(el("li", "", `${paramLabel(d.param)}: ${(+d.from).toFixed(1)} → ${(+d.to).toFixed(1)}`));
+    det.append(ul); card.append(det);
+  }
+  if (diff.length) {
+    const on = cmp && cmp.tick === key;
+    const cb = el("button", "cmp" + (on ? " on" : ""), on ? "Hearing before" : "Compare");
+    cb.title = "Hear the mix from before this answer; click again to come back (playback level stays the same while you compare)";
+    cb.onclick = () => (on ? endCompare(true) : startCompare(key, diff));
+    const u = el("button", "undo", "Undo");
+    u.title = "Take back everything this answer changed";
+    u.onclick = async () => {
+      endCompare(false); u.disabled = true;
+      for (const p of [...g.passes].reverse()) if (!p.undone && (p.diff || []).some(isChange)) await api("undo_turn", { tick: p.tick }).catch(showErr);
+    };
+    ttl.append(cb, u);
+  }
+  return card;
+}
 function liveCard(tu, notes) {
   const card = el("div", "card live");
-  const ttl = el("div", "ttl"); ttl.append(el("span", "", `turn ${tu.tick || ""} · in progress`));
+  const ttl = el("div", "ttl"); ttl.append(el("span", "", "agent · working"));
   const stop = el("button", "undo", "Stop");
-  stop.title = "Stop the agent: this turn ends with nothing changed, and the rest of a remix is dropped";
+  stop.title = "Stop the agent: nothing more is changed (what it already changed stays; Undo takes it back)";
   stop.onclick = () => { stop.disabled = true; api("stop_turns", {}).then(() => toast("Stopped")).catch(e => toast(e.message, true)); };
   ttl.append(stop);
   card.append(ttl);
-  const steps = el("div", "steps"), k = STAGES.indexOf(tu.stage);
-  STAGES.forEach((_, j) => steps.append(el("i", j < k ? "done" : j === k ? "now" : "")));
+  const stage = tu.stage && tu.stage !== "done" ? tu.stage : "checking";
+  const steps = el("div", "steps"), k = STAGES.indexOf(stage);
+  STAGES.forEach((_, j) => steps.append(el("i", k < 0 ? "" : j < k ? "done" : j === k ? "now" : "")));
   card.append(steps);
   const st = el("div", "stage");
-  fillStage(st, tu);
+  fillStage(st, { ...tu, stage });
   card.append(st);
-  liveRef = { tick: tu.tick, stage: tu.stage, notes: notes.length, st };
+  liveRef = { tick: tu.tick, stage, notes: notes.length, st };
   if (notes.length) { const ul = el("ul", "notes"); notes.forEach(n => ul.append(el("li", "", n))); card.append(ul); }
   return card;
 }
@@ -1432,10 +1488,11 @@ function fillStage(st, tu) {
       st.append(h);
     } else if ((ST.agent_seen_s ?? 1e9) > 60 && !(aa.state === "starting" || aa.state === "running")) {
       const h = el("div", "help");
-      h.textContent = "No coding agent is listening. In Claude Code or Codex, say \"keep answering the mixer\" (it uses the mix tools); this turn starts as soon as it connects.";
+      h.textContent = "No coding agent is listening. In Claude Code or Codex, say \"keep answering the mixer\" (it uses the mix tools); it starts as soon as one connects.";
       st.append(h);
     }
-  } else if (tu.stage === "reading") st.textContent = `Your agent is reading the measurements and working · ${since} s`;
+  } else if (tu.stage === "checking") st.textContent = "Checking the result…";
+  else if (tu.stage === "reading") st.textContent = `Your agent is reading the measurements and working · ${since} s`;
   else if (tu.stage === "applying") st.textContent = `Applying ${tu.changes || ""} changes`;
 }
 function showAgent() {
@@ -1743,8 +1800,8 @@ async function poll() {
     } else if (ST.turn && ST.turn.stage === "listening") drawOverlay();
     // The live turn card: rebuilt when the turn or its stage changes, its timers patched in place otherwise
     // (rebuilding every second would swap the Stop button out from under the pointer).
-    const live = ST.turn && ST.turn.stage && ST.turn.stage !== "done" ? ST.turn : null;
-    const key = live ? `${live.tick}|${live.stage}` : "";
+    const live = liveNow() ? (ST.turn || {}) : null;
+    const key = live ? `${live.tick}|${live.stage}|${ST.turns_queued || 0}` : "";
     if (key !== poll.key) { poll.key = key; renderChat(); }
     else if (live && liveRef && liveRef.st.isConnected) {
       const t2 = `${Math.floor(live.since_s || 0)}|${Math.floor(live.listen_s || 0)}|${(ST.agent_seen_s ?? 1e9) > 60}|${(ST.auto_agent || {}).state}`;
