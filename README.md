@@ -45,6 +45,19 @@ The plugin ships native binaries for macOS (universal), Linux (x64) and Windows 
   rate; safe to delete).
 - Nothing leaves your machine. The page and the agent tools only answer on 127.0.0.1, with a random token per session.
 
+## Coming back to a mix later
+
+The console keeps running when you close the page or your agent exits; open the page again from the link your agent
+gave you. After a restart, reopen a mix in either of these ways (a saved project opens exactly as you left it):
+
+- ask your agent: "open my Pocket Knife mix again" (it lists earlier mixes with `list_projects`), or
+- run `mix-final-actual open` (the latest mix) or `mix-final-actual open ~/Music/my-song`; in the plugin folder the program
+  is `bin/mix-final-actual`.
+
+Requests you type in the page need a coding agent to answer them. If none is connected (it exited, or it is busy with
+something else), the console starts your agent itself in the background: `claude -p` or `codex exec`, whichever you
+used, with only the mix tools, on your own login. Set `MFA_AUTO_AGENT=0` in the environment to turn that off.
+
 ## Troubleshooting
 
 - **The page says "waiting for your coding agent"**: ask your agent to continue the mix (it answers turns with the

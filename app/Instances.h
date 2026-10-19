@@ -25,4 +25,8 @@ int currentPid();
 // Starts `exe args...` detached from this process (own session, no inherited stdio; output to logFile).
 bool spawnDetached (const std::string& exe, const std::vector<std::string>& args, const std::string& logFile);
 std::string normaliseFolder (const std::string& folder);
+// The instance mixing `folder`: the running one, else `exe serve folder extraArgs...` started detached (output to
+// <appdata>/logs/serve.log), waiting up to waitSec for it to come up. nullopt + error if it does not.
+std::optional<Instance> startOrAttach (const std::string& exe, const std::string& folder, const std::vector<std::string>& extraArgs,
+                                       double waitSec, std::string& error);
 } // namespace mfa

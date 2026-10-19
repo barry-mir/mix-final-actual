@@ -41,8 +41,9 @@ public:
     std::string error() const;
     double resultLufs() const { return lufsOut.load(); } // the mix file's integrated loudness
 
-    // The default file for a tracks folder: <last export folder or Music/mix_final_ACTUAL/<name>>/<name>.wav.
-    static juce::File defaultFile (const juce::File& tracksDir);
+    // The default file for a project: <last export folder or Music/mix_final_ACTUAL/<name>>/<name>.wav, name = the
+    // project's name (empty: the tracks folder's name).
+    static juce::File defaultFile (const juce::File& tracksDir, const std::string& projectName = {});
     static void rememberFolder (const juce::File& dir); // <appdata>/settings.json
 
 private:

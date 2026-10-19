@@ -192,3 +192,117 @@ Differences from the plan above, found while building and testing:
   0.4 LU short at -9 LUFS).
 - The timeline shows 14 px before 0:00 so a clip that starts at the top can be grabbed by its left edge.
 - Mixer strips are 138 px wide so the block summaries fit.
+
+## Round 2 (backend, 2026-10-18)
+
+From the second round of user feedback. What the server does now, and its API as built.
+
+### Offline listening (no sound)
+
+Live agent turns no longer start playback or wait for played audio. Before each turn the console renders the
+**analysis range** offline in a second engine (built once, tracks memory-mapped, reused; the live settings, clip edits,
+names and groups are copied into it each turn; solos are cleared, so the agent measures the mix), faster than real time,
+and the agent's measurements come from that render, including the group-bus readings and the previous turn's
+"features after". The range is the cycle (loop) region when it is at least 2 s, else the excerpt, or the whole song
+when the page asks for it. The render plays the last 3 s of the range first (fills the 3 s analysis window), then the
+whole range once, so the long-term averages cover the range and the short-window features its end. A whole-song render
+closes with 3 s of the excerpt instead (songs end in silence, which made the agent read "silent"). The first mix is
+unchanged. Cost on 21 tracks x 4 min: about 6 s for a 30 s range (the first one includes building the engine), about
+35 s for the whole song (mostly the analyzer's per-second features, not the audio).
+
+- `POST analysis_range {"whole": bool}` -> `{analysis_whole, analysis_range: [a, b]}`; saved in the project.
+- `GET status`: `analysis_range: [a, b]` (what the next turn analyzes), `analysis_whole`; while listening,
+  `turn: {stage: "listening", listen_s (rendered seconds of the range), listen_need_s (range length), range: [a, b]}`
+  (`range` is the last turn's range at other stages).
+
+### The console starts the coding agent
+
+When a turn has waited 5 s unanswered and no agent has polled in 60 s (or the last one seen was an agent the console
+started, which has exited), the console starts one headless, one at a time:
+
+- Claude Code: `claude -p "<prompt>" --mcp-config <appdata>/agent-mcp.json --strict-mcp-config --allowedTools
+  mcp__mix-final-actual__{open_session,next_turn,submit_turn,post_note,session_status}`.
+- Codex: `codex exec --ephemeral --skip-git-repo-check -s read-only -c mcp_servers.mix-final-actual.command=... -c
+  ...args=["mcp"] -c ...tool_timeout_sec=120 -c ...default_tools_approval_mode="approve" "<prompt>"`. (Not
+  `--approve-for-me`: it writes a trust entry for the work folder into the user's `~/.codex/config.toml`.)
+- Which: the kind of the agent that talks to this console (the MCP front sends `POST agent/hello {client, path}` with
+  its `clientInfo.name` and PATH), else the last agent that used the mix tools (`<appdata>/agent.json`, written at MCP
+  initialize), else `claude`, else `codex`; looked up on that agent's PATH, this PATH, `~/.local/bin`,
+  `/opt/homebrew/bin`, `/usr/local/bin`, `~/.npm-global/bin`, `~/.claude/local`, `~/.bun/bin`, `%APPDATA%\npm`.
+  The child runs with that PATH plus the system folders (Claude Code needs `/usr/bin/security` for its login).
+- The prompt: answer the waiting turns for the folder as the skill's section 2 says (1-3 notes, one submit per turn),
+  until `next_turn` says no turn twice. Runs in `<appdata>/agent-work`, output to `<appdata>/logs/agent-<time>.log`
+  (first line: the exact command). `MFA_AGENT_MODEL` picks a model (tests); `MFA_AUTO_AGENT=0` turns the feature off.
+- `POST stop_turns` also kills it (its process group, so its MCP child goes too).
+- If it exits without answering, the turn ends with its last words, e.g. "Turn 10 skipped: the coding agent (claude)
+  exited without answering this turn (it said: Not logged in · Please run /login); log: ...".
+- If no CLI is found: after 30 s the turn ends with "no coding agent is connected, and Claude Code or Codex could not be
+  found to start one. In Claude Code or Codex, ask it to answer the mixer ...". The "Waiting for your coding agent" chat
+  line is only added when no agent can be started.
+- `GET status`: `auto_agent: {state: none|starting|running|exited|unavailable, cli, exe, since_s, error, log}`.
+- The default turn timeout is 600 s (was 1800).
+
+Tested: Claude Code (sonnet) and Codex each answered a page request end to end (notes, then changes) with no agent
+connected; Stop killed a running one; a not-logged-in run and the no-CLI case end the turn with the reasons above;
+`~/.codex/config.toml` unchanged.
+
+### Tempo
+
+At load (or when a project without a saved tempo opens), in the background: spectral-flux onsets of the drum tracks
+(else all tracks) over 60 s around the excerpt; the strongest periodicity over 60-200 BPM, then a comb search (+-4%,
+0.02 BPM) for the exact period and beat phase; its octaves compete on the comb score and one inside 90-160 BPM wins only
+when it is nearly as strong (a 4/3 shuffle period never competes); bar 1 = the beat with the most energy just after it.
+Pocket Knife reads 83.96 BPM (a precise comb on the snare alone: 84.0; librosa's quantized estimate: 83.4).
+
+- `GET tempo` and `session.tempo`: `{bpm, beats_per_bar, offset_s (bar 1, seconds from the song's start), detected,
+  confidence, state: detecting|ready|none}`.
+- `POST tempo {bpm? (20..400), beats_per_bar? (1..16), offset_s? (>= 0)}` (detected becomes false) or `{"redetect": true}`.
+  Saved in the project.
+
+### Clips: overlaps, crossfades, pasting across tracks
+
+Overlapping clips on a track are kept and sum, each with its own (equal-power) fades: the page makes a crossfade by
+overlapping two clips with fades over the overlap. A clip has `srcTrack` (whose file it plays; default its own track),
+so a clip can be pasted on any track and goes through that track's strip. Validation: `srcTrack` must be a track of the
+session and `src + len` must fit that track's file; up to 512 clips per track. `GET/POST edits` regions carry
+`srcTrack` (always, resolved).
+
+### Spectrum (EQ view)
+
+- `POST scope {"track": t | -1 (master) | null}`: the engine copies only that track's input and output (master: the mix
+  before the glue compressor and limiter, and the output) into two lock-free rings.
+- `GET spectrum` -> `{track, hz: [120 band centres, 20 Hz .. 19.4 kHz, 1/12 octave], pre: [dB], post: [dB]}`: 4096-point
+  Hann FFT, each band's strongest bin, 0 dB = a full-scale sine; rises at once, falls with a 300 ms time constant
+  between requests; floor -120 (also when stopped).
+
+### Meters
+
+`GET status` adds `buses: [{peak, rms, gr}]` for the five group buses (vocals, drums, bass, guitars, keys; linear
+output, this block), `fx: {reverb: {peak}, echo: {peak}}`, `master_lufs_m` (momentary loudness of what plays, 400 ms).
+
+### Project name, reopening later
+
+- `session.name` (default: the folder name); `POST project {"name"}` (trimmed, non-empty, up to 120 chars). Saved in the
+  project; the export default file uses it; the recent list shows it.
+- `<appdata>/recent.json` (newest first, 20): `GET recent` -> `[{folder, name, last_opened, url (if running), current,
+  exists}]`; `POST open {"folder"}` -> `{url, folder}` (its running console, else a new one started with `--no-open`;
+  waits up to 30 s).
+- `mix-final-actual open [folder]` (no folder = the latest mix): attaches or starts, prints and opens the page.
+- MCP: `list_projects`; `open_session` reopens a saved project as it was.
+- The console keeps running when the page closes or the agent exits. Playback stops when no page has polled
+  `GET status` for 20 s.
+
+### A/B
+
+- `POST compare {"raw": bool}`: plays the unprocessed sum of the tracks, level-matched to the mix (up to +-20 dB now,
+  for playback at a delivery loudness), 20 ms crossfade. The analysis tap and the loudness gain are unaffected.
+  `status.compare_raw`.
+- Loudness: the settings key now hashes the clip edits' content (not their version), and the last 8 measurements are
+  cached by settings: returning to a measured state (undo, A/B of a turn) applies its gain at once.
+- `POST loudness {"hold": bool}` (target optional now): while held, no re-measuring and no cached jumps;
+  `loudness.state = "held"`, `loudness.held`.
+
+### Removed
+
+The live "wait for fresh played audio" path and its auto-play (`waitForFreshAudio`), and the `setPlaying(true)` in
+`POST prompt` / `POST mix`.

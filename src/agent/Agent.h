@@ -31,8 +31,9 @@ public:
     virtual float groupBusGainDb (int /*group*/) const { return 0.0f; } // group bus output vs input level, dB
     // Thread-safe: called from the worker; must hop to the message thread itself.
     virtual void applyAgentChanges (int tick, const std::vector<ParamTarget>& targets, double rampSec) = 0;
-    // Before measuring: let `needSec` of audio play since the last change (live engines). Default: no wait.
-    virtual void waitForFreshAudio (double /*needSec*/, const std::function<bool()>& /*stop*/) {}
+    // Before measuring (worker thread): make the measurements describe the mix as it is now. Live engines render the
+    // analysis range offline (no sound); offline engines play their own audio and need nothing. stop() = give up.
+    virtual void listen (const std::function<bool()>& /*stop*/) {}
 };
 
 struct Trigger
@@ -72,9 +73,9 @@ public:
     };
     TurnStatus turnStatus() const;
     static const char* stageName (Stage s);
-    // Seconds of fresh audio a live turn waits for before measuring (the offline first mix plays its own windows).
-    void setListenSeconds (double s) { listenSec = s; }
-    double listenSeconds() const { return listenSec.load(); }
+    // Set by the app: true when a coding agent can be started automatically for a waiting turn (then the "waiting for
+    // your coding agent" chat line is left out; the page shows the agent starting).
+    std::function<bool()> autoAgentAvailable;
 
     State state() const noexcept { return st.load(); }
     static const char* stateName (State s);
@@ -114,8 +115,8 @@ private:
     std::string queuedLabel, queuedGoal;
     void setStage (Stage s, int changes = 0);
     std::atomic<int> stageTick { -1 }, stageNow { 0 }, stageChanges { 0 };
-    std::atomic<double> stageSinceMs { 0 }, listenSec { 8.0 };
-    std::atomic<double> turnTimeoutS { 1800.0 };
+    std::atomic<double> stageSinceMs { 0 };
+    std::atomic<double> turnTimeoutS { 600.0 };
     std::atomic<State> st { State::Idle };
     std::atomic<double> thinkingSince { 0 };
     std::atomic<int> completed { 0 };

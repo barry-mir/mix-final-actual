@@ -38,6 +38,8 @@ set(MFA_ENGINE_SOURCES
     src/analysis/Features.cpp
     src/analysis/Loudness.cpp
     src/analysis/Analyzer.cpp
+    src/analysis/Spectrum.cpp
+    src/analysis/Tempo.cpp
     src/agent/Tools.cpp
     src/agent/PromptBuilder.cpp
     src/agent/Bridge.cpp
@@ -66,11 +68,11 @@ endfunction()
 
 juce_add_console_app(mix-final-actual PRODUCT_NAME "mix-final-actual")
 target_sources(mix-final-actual PRIVATE ${MFA_ENGINE_SOURCES} app/main.cpp app/WebServer.cpp app/FirstMix.cpp app/Instances.cpp app/Mcp.cpp app/Export.cpp app/Project.cpp
-    app/Render.cpp app/LiveLoudness.cpp app/SaveDialog.cpp)
+    app/Render.cpp app/LiveLoudness.cpp app/SaveDialog.cpp app/Recent.cpp app/AutoAgent.cpp app/Listener.cpp app/SongTempo.cpp)
 mfa_configure(mix-final-actual)
 target_link_libraries(mix-final-actual PRIVATE mfa_web)
 
 # Native checks (tests/tests.cpp): run by CI on every platform.
 juce_add_console_app(mfa-tests PRODUCT_NAME "mfa-tests")
-target_sources(mfa-tests PRIVATE ${MFA_ENGINE_SOURCES} app/Render.cpp tests/tests.cpp)
+target_sources(mfa-tests PRIVATE ${MFA_ENGINE_SOURCES} app/Render.cpp app/Recent.cpp tests/tests.cpp)
 mfa_configure(mfa-tests)

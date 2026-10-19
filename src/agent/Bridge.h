@@ -42,7 +42,9 @@ public:
     Result ask (const nlohmann::json& request, const std::string& trigger, const std::string& userMsg, double timeoutSec,
                 NoteFn onNote = {});
     void cancel();       // aborts a waiting ask() and every later one (app shutdown)
-    void abortPending(); // aborts only the ask() waiting now (e.g. the user skipped the first mix)
+    // Aborts only the ask() waiting now (e.g. the user skipped the first mix). Its error is `reason` ("cancelled" =
+    // the user stopped it).
+    void abortPending (const std::string& reason = "cancelled");
 
     // Coding-agent side (MCP / HTTP threads).
     // The pending turn, waiting up to waitSec for one. The same turn is offered again until it is answered, so an
@@ -76,6 +78,7 @@ private:
     int nextId = 1;
     bool cancelled = false;
     bool aborted = false;
+    std::string abortReason = "cancelled";
     std::atomic<double> lastSeenMs { -1.0 };
 };
 } // namespace im

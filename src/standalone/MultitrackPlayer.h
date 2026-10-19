@@ -43,19 +43,22 @@ public:
         float gain = 1.0f;
     };
 
-    // A clip on the timeline (seconds): `len` seconds of the file from `src`, starting at `pos`; gain in dB; equal-power
-    // fades in seconds. A track's regions never overlap. The default edit (identity) is one region per track covering
-    // its whole file at 0, which plays exactly like the file.
+    // A clip on the timeline (seconds): `len` seconds of a file from `src`, starting at `pos`; gain in dB; equal-power
+    // fades in seconds. The file is the clip's track's own unless `srcTrack` names another track (a clip pasted onto
+    // another track plays that track's audio through this track's strip). Clips on a track may overlap: they sum, each
+    // with its own fades (a crossfade is two overlapping clips whose fades span the overlap). The default edit
+    // (identity) is one region per track covering its whole file at 0, which plays exactly like the file.
     struct Region
     {
         double pos = 0, src = 0, len = 0, gainDb = 0, fadeIn = 0, fadeOut = 0;
+        int srcTrack = -1; // -1 = the track the clip is on
         bool operator== (const Region&) const = default;
     };
     using Regions = std::vector<Region>;
-    static constexpr int kMaxRegions = 256;
-    // Checks and tidies one track's regions against its file length: "" when valid (then `r` is sorted, overlaps cut
-    // with later regions in the list winning, fades clamped to half the region), else what is wrong.
-    static std::string normaliseRegions (Regions& r, double fileLenSec);
+    static constexpr int kMaxRegions = 512;
+    // Checks and tidies one track's regions: "" when valid (then `r` is sorted by position, srcTrack resolved to a track
+    // index, fades clamped to half the region), else what is wrong. fileLenSec[k] = track k's file length.
+    static std::string normaliseRegions (Regions& r, int ownTrack, const std::vector<double>& fileLenSec);
 
     MultitrackPlayer();
     ~MultitrackPlayer();
@@ -97,6 +100,8 @@ public:
     std::string setTrackRegions (int track, Regions r); // "" or the error (nothing changed then)
     void setAllEdits (const std::vector<Regions>& all); // saved state; invalid regions dropped; empty = identity
     double trackLengthSec (int track) const;            // the file's length
+    // Any thread, not real time: the mono sum of some tracks' files (no edits, no session gain) over [start, start+len).
+    std::vector<float> mixdown (const std::vector<int>& tracks, double startSec, double lenSec) const;
 
     // ---- waveform overview (any thread) ----
     // One value per peaksBlock() frames: round(255 * sqrt(max |sample| of both channels)). Built once per session in
@@ -114,6 +119,7 @@ private:
     {
         int64_t pos, src, len, fadeIn, fadeOut;
         float gain;
+        int srcTrack;
     };
     struct RtEdits // immutable once published; kept alive until the player is destroyed
     {
@@ -123,7 +129,11 @@ private:
         std::vector<std::vector<RtRegion>> tracks;
     };
     void publishEdits (const Session* s); // message thread, infoMutex held
-    static void renderRegions (const Track& trk, const std::vector<RtRegion>& regs, int64_t start, int n, float* L, float* R) noexcept;
+    static std::vector<double> fileLengths (const Session& s);
+    // Audio thread: the clips of one track over [start, start + n), summed (uses the scratch buffers).
+    void renderRegions (const Session& s, const std::vector<RtRegion>& regs, int64_t start, int n, float* L, float* R) noexcept;
+    static constexpr int kScratch = 4096;
+    std::vector<float> scratchL = std::vector<float> (kScratch), scratchR = std::vector<float> (kScratch);
 
     class Prefetcher;
     class PeakBuilder;

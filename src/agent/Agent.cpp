@@ -178,10 +178,10 @@ bool Agent::runTick (const Trigger& trig)
     stageTick = tick;
     stopRequested = false;
 
-    // 1. listen: the measurements must describe the mix as it is now (live: wait for fresh audio after any change)
+    // 1. listen: the measurements must describe the mix as it is now (live: an offline render of the analysis range)
     setStage (Stage::Listening);
-    host.waitForFreshAudio (listenSec.load(), [this] { return threadShouldExit() || stopRequested.load(); });
-    if (bridge.secondsSinceAgentSeen() > 60.0)
+    host.listen ([this] { return threadShouldExit() || stopRequested.load(); });
+    if (bridge.secondsSinceAgentSeen() > 60.0 && ! (autoAgentAvailable && autoAgentAvailable()))
     {
         ChatEntry s;
         s.role = "system";
@@ -292,7 +292,7 @@ bool Agent::runTick (const Trigger& trig)
         s.role = "system";
         s.tick = tick;
         s.text = failure == "cancelled" ? "Turn " + std::to_string (tick) + " stopped; nothing changed."
-                                        : "Turn " + std::to_string (tick) + " skipped: " + failure.substr (0, 200);
+                                        : "Turn " + std::to_string (tick) + " skipped: " + failure.substr (0, 500);
         s.time = rec.time;
         store.addChat (s);
         setStage (Stage::Done, 0);

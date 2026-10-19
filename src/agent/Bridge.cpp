@@ -62,7 +62,7 @@ Bridge::Result Bridge::ask (const json& request, const std::string& trigger, con
                        { "usage", { { "prompt_tokens", 0 }, { "completion_tokens", 0 } } } };
     }
     else
-        r.error = cancelled || aborted ? "cancelled" : "no answer from the coding agent within " + std::to_string ((int) timeoutSec) + " s";
+        r.error = cancelled ? "cancelled" : aborted ? abortReason : "no answer from the coding agent within " + std::to_string ((int) timeoutSec) + " s";
     aborted = false;
     pending.reset();
     reply.reset();
@@ -78,10 +78,14 @@ void Bridge::cancel()
     cv.notify_all();
 }
 
-void Bridge::abortPending()
+void Bridge::abortPending (const std::string& reason)
 {
     std::lock_guard<std::mutex> lk (m);
-    if (pending && ! reply) aborted = true;
+    if (pending && ! reply)
+    {
+        aborted = true;
+        abortReason = reason;
+    }
     cv.notify_all();
 }
 

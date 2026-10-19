@@ -1,10 +1,13 @@
 #include "Mcp.h"
+#include "AutoAgent.h"
 #include "Instances.h"
+#include "Recent.h"
 #include "core/Paths.h"
 #include <httplib.h>
 #include <nlohmann/json.hpp>
 #include <chrono>
 #include <iostream>
+#include <set>
 #include <string>
 #include <thread>
 #if JUCE_WINDOWS
@@ -31,8 +34,8 @@ const char* kInstructions =
     "TOOLS) -> post_note 2-4 short notes while you work (what you read in the measurements, then your plan; the user "
     "watches them live in the mixer page) -> submit_turn with ALL of the turn's tool calls in one call. The first mix is "
     "5 turns; then the mixer page opens in the user's browser. After that, keep calling next_turn: requests the user "
-    "types in the page (Ask = one turn, Remix = five turns toward a goal) arrive as new turns. Stop when the user says "
-    "they are done (close_session ends the console).";
+    "types in the page arrive as new turns. Stop when the user says they are done (close_session ends the console). "
+    "The console keeps running when you stop; list_projects shows earlier mixes, and open_session reopens one as it was.";
 
 json tool (const char* name, const char* desc, json props, json required)
 {
@@ -78,6 +81,10 @@ json toolList()
                 { "text", { { "type", "string" }, { "description", "The note (plain text, up to 2000 characters)." } } } },
               json::array ({ "turn", "text" })),
         tool ("session_status", "Where the session is: first mix (turn k of n), or live with the page URL.", { { "folder", folder } }, json::array()),
+        tool ("list_projects",
+              "The mixes opened lately (newest first): folder, name, when, and the page URL if its console is running. To work "
+              "on one again, call open_session with its folder (a saved project reopens as it was).",
+              json::object(), json::array()),
         tool ("close_session", "Stop the console for a folder (the page stops working).", { { "folder", folder } }, json::array()),
     });
 }
@@ -91,6 +98,19 @@ struct Result
 Result err (const std::string& s) { return { s, true }; }
 
 std::string lastOpened; // the folder this MCP process last opened: the default when a call names none
+std::string clientName; // the coding agent on the other end (MCP initialize clientInfo.name)
+std::set<int> greeted;  // consoles (ports) told which agent this is
+
+httplib::Result call (const Instance& i, const std::string& method, const std::string& path, const json& body = {}, int timeoutS = 10);
+
+// Tells a console which coding agent uses it (and its PATH), once per console: so it can start the same agent for a
+// turn later when nobody answers.
+void hello (const Instance& i)
+{
+    if (! greeted.insert (i.port).second) return;
+    const char* path = std::getenv ("PATH");
+    call (i, "POST", "/api/agent/hello", { { "client", clientName }, { "path", path ? path : "" } }, 3);
+}
 
 // The instance for args.folder, else the one this process opened last, else the only open one.
 std::optional<Instance> resolve (const json& args, std::string& why)
@@ -99,17 +119,26 @@ std::optional<Instance> resolve (const json& args, std::string& why)
     {
         auto i = instanceFor (args["folder"].get<std::string>());
         if (! i) why = "no open session for " + args["folder"].get<std::string>() + "; call open_session first";
+        else hello (*i);
         return i;
     }
     if (! lastOpened.empty())
-        if (auto i = instanceFor (lastOpened)) return i;
+        if (auto i = instanceFor (lastOpened))
+        {
+            hello (*i);
+            return i;
+        }
     auto all = liveInstances();
-    if (all.size() == 1) return all[0];
+    if (all.size() == 1)
+    {
+        hello (all[0]);
+        return all[0];
+    }
     why = all.empty() ? "no open session; call open_session(folder) first" : "several sessions are open; pass folder";
     return std::nullopt;
 }
 
-httplib::Result call (const Instance& i, const std::string& method, const std::string& path, const json& body = {}, int timeoutS = 10)
+httplib::Result call (const Instance& i, const std::string& method, const std::string& path, const json& body, int timeoutS)
 {
     httplib::Client c ("127.0.0.1", i.port);
     c.set_connection_timeout (3, 0);
@@ -139,23 +168,13 @@ Result openSession (const json& args, const std::string& exe)
     if (! args.contains ("folder") || ! args["folder"].is_string()) return err ("folder is required");
     const auto folder = normaliseFolder (args["folder"].get<std::string>());
     if (! juce::File (juce::String (folder)).isDirectory()) return err ("not a folder: " + folder);
-    auto inst = instanceFor (folder);
-    if (! inst)
-    {
-        std::vector<std::string> a { "serve", folder };
-        if (args.contains ("turns") && args["turns"].is_number_integer()) a.insert (a.end(), { "--turns", std::to_string (args["turns"].get<int>()) });
-        if (args.value ("new_mix", false)) a.push_back ("--new-mix");
-        const auto log = im::appDataDir().getChildFile ("logs");
-        log.createDirectory();
-        if (! spawnDetached (exe, a, log.getChildFile ("serve.log").getFullPathName().toStdString()))
-            return err ("could not start the console (" + exe + ")");
-        for (int k = 0; k < 150 && ! inst; ++k) // up to 15 s for the instance file
-        {
-            std::this_thread::sleep_for (std::chrono::milliseconds (100));
-            inst = instanceFor (folder);
-        }
-        if (! inst) return err ("the console did not start; see " + log.getChildFile ("serve.log").getFullPathName().toStdString());
-    }
+    std::vector<std::string> a;
+    if (args.contains ("turns") && args["turns"].is_number_integer()) a.insert (a.end(), { "--turns", std::to_string (args["turns"].get<int>()) });
+    if (args.value ("new_mix", false)) a.push_back ("--new-mix");
+    std::string why;
+    auto inst = startOrAttach (exe, folder, a, 15.0, why);
+    if (! inst) return err (why);
+    hello (*inst);
     auto r = call (*inst, "GET", "/api/state");
     if (! r || r->status != 200) return err ("the console does not answer");
     lastOpened = folder;
@@ -231,6 +250,21 @@ Result status (const json& args)
     return { describeState (json::parse (r->body), *inst) };
 }
 
+Result listProjects()
+{
+    const auto recent = loadRecent();
+    if (recent.empty()) return { "No mixes yet. open_session(folder) starts one." };
+    std::string out = "Mixes opened lately (newest first):\n";
+    for (auto& r : recent)
+    {
+        auto inst = instanceFor (r.folder);
+        const auto when = juce::Time ((juce::int64) (r.lastOpened * 1000.0)).formatted ("%Y-%m-%d %H:%M");
+        out += "- " + (r.name.empty() ? juce::File (juce::String (r.folder)).getFileName().toStdString() : r.name) + " (" + r.folder + "), "
+               + when.toStdString() + (inst ? ", running: " + inst->url : std::string (", not running")) + "\n";
+    }
+    return { out + "open_session(folder) reopens one as it was saved." };
+}
+
 Result closeSession (const json& args)
 {
     std::string why;
@@ -274,6 +308,9 @@ int runMcp (const char* argv0)
         auto ok = [&] (json result) { send ({ { "jsonrpc", "2.0" }, { "id", id }, { "result", std::move (result) } }); };
         if (method == "initialize")
         {
+            clientName = params.value ("clientInfo", json::object()).value ("name", std::string());
+            const char* path = std::getenv ("PATH");
+            AutoAgent::rememberAgent (clientName, path ? path : "");
             const auto want = params.value ("protocolVersion", std::string ("2025-06-18"));
             ok ({ { "protocolVersion", want }, { "capabilities", { { "tools", json::object() } } },
                   { "serverInfo", { { "name", "mix-final-actual" }, { "version", kVersion } } }, { "instructions", kInstructions } });
@@ -295,6 +332,7 @@ int runMcp (const char* argv0)
                 else if (name == "post_note") r = postNote (args);
                 else if (name == "session_status") r = status (args);
                 else if (name == "close_session") r = closeSession (args);
+                else if (name == "list_projects") r = listProjects();
                 else r = err ("unknown tool " + name);
             }
             catch (const std::exception& e)

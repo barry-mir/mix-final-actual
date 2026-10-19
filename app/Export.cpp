@@ -57,9 +57,11 @@ std::string Exporter::error() const
     return err;
 }
 
-juce::File Exporter::defaultFile (const juce::File& tracksDir)
+juce::File Exporter::defaultFile (const juce::File& tracksDir, const std::string& projectName)
 {
-    const auto name = juce::File::createLegalFileName (tracksDir.getFileName().isNotEmpty() ? tracksDir.getFileName() : juce::String ("mix"));
+    const auto base = ! juce::String (projectName).trim().isEmpty() ? juce::String (projectName).trim()
+                      : tracksDir.getFileName().isNotEmpty() ? tracksDir.getFileName() : juce::String ("mix");
+    const auto name = juce::File::createLegalFileName (base);
     juce::File dir;
     auto j = nlohmann::json::parse (settingsFile().loadFileAsString().toStdString(), nullptr, false);
     if (j.is_object() && j.contains ("export_dir") && j["export_dir"].is_string())

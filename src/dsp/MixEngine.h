@@ -3,6 +3,7 @@
 // compressor, master fader and true-peak limiter. Owns the ParamEngine.
 // Audio thread only: no allocation, no locks, no I/O (all buffers preallocated
 // in prepare() for maxTracks() tracks).
+#include "analysis/Loudness.h"
 #include "analysis/Taps.h"
 #include "dsp/ChannelStrip.h"
 #include "dsp/Echo.h"
@@ -25,6 +26,30 @@ struct MasterMeters
     std::atomic<float> peakL { 0 }, peakR { 0 }, rms { 0 }, busGr { 0 }, limGr { 0 };
     std::array<std::atomic<float>, kNumGroupBuses> groupGr {}; // instrument-group bus compressors, max per block
     std::array<std::atomic<float>, kNumGroupBuses> groupGainDb {}; // bus output vs input energy, ~3 s average (comp + makeup + clip)
+    std::array<std::atomic<float>, kNumGroupBuses> groupPeak {}, groupRms {}; // bus output, this block (linear)
+    std::atomic<float> reverbPeak { 0 }, echoPeak { 0 };                  // FX returns, this block (linear)
+    std::atomic<float> lufsM { -120 };                                     // momentary loudness of the output (what plays)
+};
+
+// The last kSize samples of one mono signal, written by the audio thread and read by another thread (the page's
+// spectrum view). A read can see a few samples from two different blocks; for a display that is fine.
+struct ScopeRing
+{
+    static constexpr int kSize = 8192;
+    std::vector<std::atomic<float>> buf = std::vector<std::atomic<float>> ((size_t) kSize);
+    std::atomic<uint32_t> written { 0 };
+    void push (const float* l, const float* r, int n) noexcept
+    {
+        uint32_t w = written.load (std::memory_order_relaxed);
+        for (int i = 0; i < n; ++i, ++w) buf[w & (kSize - 1)].store (0.5f * (l[i] + r[i]), std::memory_order_relaxed);
+        written.store (w, std::memory_order_release);
+    }
+    // The newest n (<= kSize) samples, oldest first.
+    void latest (float* out, int n) const noexcept
+    {
+        const uint32_t w = written.load (std::memory_order_acquire);
+        for (int i = 0; i < n; ++i) out[i] = buf[(w - (uint32_t) n + (uint32_t) i) & (kSize - 1)].load (std::memory_order_relaxed);
+    }
 };
 
 class MixEngine
@@ -47,6 +72,10 @@ public:
     // Live playback with a delivery gain: the analysis tap gets the mix as mixed (no delivery gain, the limiter as its
     // parameter says) through a second limiter, so the agent's measurements do not depend on the playback loudness.
     std::atomic<bool> separateAnalysis { false };
+    // The page's spectrum view: the track (0..) or the master (-1) whose input (pre) and output (post) are copied to
+    // the scope rings; -2 = none. Master: pre = the mix before the glue compressor and limiter, post = the output.
+    std::atomic<int> scopeTrack { -2 };
+    ScopeRing scopePre, scopePost;
 
     void prepare (double sampleRate, int maxBlockSize);
     int maxBlock() const noexcept { return maxBlockSize; }
@@ -93,6 +122,7 @@ private:
     Limiter limiter, analysisLimiter;
     juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear> deliverySm, anaLimOn;
     std::vector<float> anaL, anaR, anaW;
+    MomentaryLoudness momentary;
 
     std::atomic<bool> bypass { false }, levelMatch { true };
     juce::SmoothedValue<float, juce::ValueSmoothingTypes::Linear> bypassW;

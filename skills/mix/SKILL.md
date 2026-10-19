@@ -48,16 +48,19 @@ does (a sentence or two from your turns).
 ## 3. Stay with the user
 
 The user can now play the mix, change any control, edit clips, loop another part of the song, and type requests in
-the page: **Ask** ("vocals more upfront", "less reverb on the drums") runs one turn on that request; **Remix** runs another
-full 5-turn pass, toward the text in the box if there is any (the turns show it as the user's goal). Each of those
-arrives as a turn through `next_turn`. Before a live turn the console plays a few seconds of the loop, so the
-measurements describe the mix as it is now. Keep calling `next_turn` (it waits up to 45 s each call, then returns
-"No turn waiting") and answer every turn as above, until the user tells you they are done. Requests may also come to
-you directly in this conversation: pass them on by answering the next turn with that in mind, or tell the user to type
-it in the page.
+the page ("vocals more upfront", "less reverb on the drums"): each request runs one turn on it. Each arrives as a turn
+through `next_turn`. Before a live turn the console renders the part of the song the user selected (the cycle region,
+or the whole song) offline, without playing it, so the measurements describe the mix as it is now, on that range.
+Keep calling `next_turn` (it waits up to 45 s each call, then returns "No turn waiting") and answer every turn as above,
+until the user tells you they are done. Requests may also come to you directly in this conversation: pass them on by
+answering the next turn with that in mind, or tell the user to type it in the page.
+
+If you stop answering (you exit, or you are busy with other work), the console starts a fresh headless copy of you
+(the same CLI, only the mix tools) for requests the user types in the page; it exits when no turn comes for a while.
 
 `session_status` tells you where the session is; `close_session` stops the console (the page stops working), only when
-the user asks.
+the user asks. The console keeps running when you stop; `list_projects` lists earlier mixes, and `open_session` on one
+of their folders reopens it as it was (also later, in a new conversation).
 
 ## Notes
 

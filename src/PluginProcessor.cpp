@@ -131,10 +131,7 @@ void InteractiveMixerProcessor::processBlock (juce::AudioBuffer<float>& buffer, 
         seenEditsVer = ev;
         seenGroupSig = gsig;
         analyzer.noteParamChange();
-        freshSamples.store (0, std::memory_order_relaxed);
     }
-    else if (player.isPlaying())
-        freshSamples.fetch_add (n, std::memory_order_relaxed);
 
     TrackMask mask {};
     float* outL = buffer.getWritePointer (0);
@@ -180,36 +177,50 @@ void InteractiveMixerProcessor::applyAgentChanges (int tick, const std::vector<P
     });
 }
 
-void InteractiveMixerProcessor::waitForFreshAudio (double needSec, const std::function<bool()>& stop)
+void InteractiveMixerProcessor::listen (const std::function<bool()>& stop)
 {
-    if (! servicesStarted || needSec <= 0) return; // offline engines (first mix, export) drive their own audio
-    listenNeed = needSec;
-    const double t0 = nowMs(), limitMs = (needSec * 4.0 + 20.0) * 1000.0; // a stalled audio device must not hang the turn
-    for (;;)
+    if (! offlineListener) return; // offline engines play their own audio
+    Listened l;
+    const bool ok = offlineListener (stop, l);
+    std::lock_guard<std::mutex> lk (listenedMutex);
+    if (ok && l.snap) listened = std::move (l);
+}
+
+std::shared_ptr<const Snapshot> InteractiveMixerProcessor::snapshot() const
+{
     {
-        const double have = freshAudioSec();
-        listenHave = std::min (have, needSec);
-        if (have >= needSec || (stop && stop()) || nowMs() - t0 > limitMs) break;
-        if (! player.isPlaying())
-        {
-            if (! player.isLooping() && player.positionSec() >= player.lengthSec() - 0.05) player.seek (0.0);
-            player.setPlaying (true);
-        }
-        juce::Thread::sleep (50);
+        std::lock_guard<std::mutex> lk (listenedMutex);
+        if (listened) return listened->snap;
     }
-    listenNeed = 0.0;
-    listenHave = 0.0;
+    return analyzer.latest();
+}
+
+float InteractiveMixerProcessor::groupBusGrDb (int g) const
+{
+    if (g < 0 || g >= kNumGroupBuses) return 0.0f;
+    std::lock_guard<std::mutex> lk (listenedMutex);
+    return listened ? listened->busGr[(size_t) g] : engine.masterMeters.groupGr[(size_t) g].load();
+}
+
+float InteractiveMixerProcessor::groupBusGainDb (int g) const
+{
+    if (g < 0 || g >= kNumGroupBuses) return 0.0f;
+    std::lock_guard<std::mutex> lk (listenedMutex);
+    return listened ? listened->busGain[(size_t) g] : engine.masterMeters.groupGainDb[(size_t) g].load();
 }
 
 json InteractiveMixerProcessor::editsJson() const
 {
     json tracks = json::array();
+    int t = 0;
     for (auto& rs : player.edits())
     {
         json a = json::array();
         for (auto& r : rs)
-            a.push_back ({ { "pos", r.pos }, { "src", r.src }, { "len", r.len }, { "gain", r.gainDb }, { "fadeIn", r.fadeIn }, { "fadeOut", r.fadeOut } });
+            a.push_back ({ { "pos", r.pos }, { "src", r.src }, { "len", r.len }, { "gain", r.gainDb }, { "fadeIn", r.fadeIn }, { "fadeOut", r.fadeOut },
+                           { "srcTrack", r.srcTrack >= 0 ? r.srcTrack : t } });
         tracks.push_back (a);
+        ++t;
     }
     return { { "version", player.editsVersion() }, { "tracks", tracks } };
 }
@@ -232,6 +243,12 @@ std::string InteractiveMixerProcessor::regionsFromJson (const json& arr, Multitr
         if (! num ("pos", 0, true, r.pos) || ! num ("src", 0, true, r.src) || ! num ("len", 0, true, r.len) || ! num ("gain", 0, false, r.gainDb)
             || ! num ("fadeIn", 0, false, r.fadeIn) || ! num ("fadeOut", 0, false, r.fadeOut))
             return "clip " + std::to_string (k + 1) + ": pos, src and len are required numbers (gain, fadeIn, fadeOut optional numbers)";
+        if (j.contains ("srcTrack") && ! j["srcTrack"].is_null())
+        {
+            if (! j["srcTrack"].is_number_integer()) return "clip " + std::to_string (k + 1) + ": srcTrack must be a track index";
+            r.srcTrack = j["srcTrack"].get<int>();
+            if (r.srcTrack < 0) return "clip " + std::to_string (k + 1) + ": srcTrack must be a track index";
+        }
         out.push_back (r);
     }
     return {};

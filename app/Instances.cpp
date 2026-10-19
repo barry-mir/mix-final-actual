@@ -153,4 +153,32 @@ bool spawnDetached (const std::string& exe, const std::vector<std::string>& args
     return rc == 0;
 #endif
 }
+std::optional<Instance> startOrAttach (const std::string& exe, const std::string& folder, const std::vector<std::string>& extraArgs,
+                                       double waitSec, std::string& error)
+{
+    const auto f = normaliseFolder (folder);
+    if (! juce::File (juce::String (f)).isDirectory())
+    {
+        error = "not a folder: " + f;
+        return std::nullopt;
+    }
+    if (auto i = instanceFor (f)) return i;
+    std::vector<std::string> a { "serve", f };
+    a.insert (a.end(), extraArgs.begin(), extraArgs.end());
+    const auto log = im::appDataDir().getChildFile ("logs");
+    log.createDirectory();
+    const auto logFile = log.getChildFile ("serve.log").getFullPathName().toStdString();
+    if (! spawnDetached (exe, a, logFile))
+    {
+        error = "could not start the console (" + exe + ")";
+        return std::nullopt;
+    }
+    for (int k = 0; k < (int) (waitSec * 10); ++k)
+    {
+        juce::Thread::sleep (100);
+        if (auto i = instanceFor (f)) return i;
+    }
+    error = "the console did not start; see " + logFile;
+    return std::nullopt;
+}
 } // namespace mfa

@@ -62,6 +62,7 @@ void MixEngine::prepare (double sampleRate, int maxBlock)
     anaL.assign (mb, 0.0f);
     anaR.assign (mb, 0.0f);
     anaW.assign (mb, 0.0f);
+    momentary.prepare (fs);
     deliverySm.reset (fs, 1.0);
     deliverySm.setCurrentAndTargetValue (dbToGain (deliveryGainDb.load()));
     resetSmoother (anaLimOn, params.boolValue (masterParam (LimOn)) ? 1.0f : 0.0f);
@@ -274,6 +275,11 @@ void MixEngine::process (const float* const* inL, const float* const* inR, float
         m.compGr.store (strip.compGainReductionDb(), std::memory_order_relaxed);
         m.gateGr.store (strip.gateGainReductionDb(), std::memory_order_relaxed);
 
+        if (scopeTrack.load (std::memory_order_relaxed) == t)
+        {
+            scopePre.push (inL[ts], inR[ts], n);
+            scopePost.push (tOutL.data(), tOutR.data(), n);
+        }
         if (taps)
         {
             pushInterleaved (taps->pre[ts], inL[ts], inR[ts], n);
@@ -303,7 +309,7 @@ void MixEngine::process (const float* const* inL, const float* const* inR, float
         float* bl = groupL[(size_t) g].data();
         float* br = groupR[(size_t) g].data();
         const bool idle = ! onP.isSmoothing() && onP.getCurrentValue() <= 0.0f;
-        float grMax = 0;
+        float grMax = 0, pk = 0;
         double inE = 0, outE = 0;
         for (int i = 0; i < n; ++i)
         {
@@ -320,10 +326,13 @@ void MixEngine::process (const float* const* inL, const float* const* inR, float
             }
             clip.process (l, rr);
             outE += (double) l * l + (double) rr * rr;
+            pk = std::max (pk, std::max (std::fabs (l), std::fabs (rr)));
             sumL[(size_t) i] += l;
             sumR[(size_t) i] += rr;
         }
         masterMeters.groupGr[(size_t) g].store (idle ? 0.0f : grMax, std::memory_order_relaxed);
+        masterMeters.groupPeak[(size_t) g].store (pk, std::memory_order_relaxed);
+        masterMeters.groupRms[(size_t) g].store ((float) std::sqrt (0.5 * outE / std::max (1, n)), std::memory_order_relaxed);
         const double a = std::exp (-(double) n / (3.0 * fs));
         groupInE[(size_t) g] = a * groupInE[(size_t) g] + (1.0 - a) * inE / std::max (1, n);
         groupOutE[(size_t) g] = a * groupOutE[(size_t) g] + (1.0 - a) * outE / std::max (1, n);
@@ -347,10 +356,16 @@ void MixEngine::process (const float* const* inL, const float* const* inR, float
     reverb.setParams (rp);
     reverb.process (sendSumL.data(), sendSumR.data(), wetL.data(), wetR.data(), n);
     fillRamp (tmp.data(), dbToGain (mpv (RevReturn)), dbToGain (mv (RevReturn)), n);
-    for (int i = 0; i < n; ++i)
     {
-        sumL[(size_t) i] += wetL[(size_t) i] * tmp[(size_t) i];
-        sumR[(size_t) i] += wetR[(size_t) i] * tmp[(size_t) i];
+        float pk = 0;
+        for (int i = 0; i < n; ++i)
+        {
+            const float l = wetL[(size_t) i] * tmp[(size_t) i], r = wetR[(size_t) i] * tmp[(size_t) i];
+            pk = std::max (pk, std::max (std::fabs (l), std::fabs (r)));
+            sumL[(size_t) i] += l;
+            sumR[(size_t) i] += r;
+        }
+        masterMeters.reverbPeak.store (pk, std::memory_order_relaxed);
     }
 
     // ---- Echo (100% wet) ----------------------------------------------------
@@ -364,14 +379,20 @@ void MixEngine::process (const float* const* inL, const float* const* inR, float
         echo.setParams (ep);
         echo.process (echoSumL.data(), echoSumR.data(), wetL.data(), wetR.data(), n);
         fillRamp (tmp.data(), dbToGain (mpv (EchoReturn)), dbToGain (mv (EchoReturn)), n);
+        float pk = 0;
         for (int i = 0; i < n; ++i)
         {
-            sumL[(size_t) i] += wetL[(size_t) i] * tmp[(size_t) i];
-            sumR[(size_t) i] += wetR[(size_t) i] * tmp[(size_t) i];
+            const float l = wetL[(size_t) i] * tmp[(size_t) i], r = wetR[(size_t) i] * tmp[(size_t) i];
+            pk = std::max (pk, std::max (std::fabs (l), std::fabs (r)));
+            sumL[(size_t) i] += l;
+            sumR[(size_t) i] += r;
         }
+        masterMeters.echoPeak.store (pk, std::memory_order_relaxed);
     }
 
     if (taps) pushInterleaved (taps->preMaster, sumL.data(), sumR.data(), n); // mix before glue/limiter -> analysis
+    const bool scopeMaster = scopeTrack.load (std::memory_order_relaxed) == -1;
+    if (scopeMaster) scopePre.push (sumL.data(), sumR.data(), n);
 
     // ---- Bus compressor (glue), equal-power on/off crossfade --------------
     {
@@ -465,7 +486,8 @@ void MixEngine::process (const float* const* inL, const float* const* inR, float
         procPow = powCoef * procPow + (1.0f - powCoef) * 0.5 * (sumL[(size_t) i] * sumL[(size_t) i] + sumR[(size_t) i] * sumR[(size_t) i]);
         dryPow = powCoef * dryPow + (1.0f - powCoef) * 0.5 * (xl * xl + xr * xr);
         if (! abActive) continue;
-        const float target = match ? (float) juce::jlimit (0.25, 4.0, std::sqrt ((procPow + 1e-12) / (dryPow + 1e-12))) : 1.0f;
+        // Up to +-20 dB: with playback at a delivery loudness the mix can sit far above the raw sum.
+        const float target = match ? (float) juce::jlimit (0.1, 10.0, std::sqrt ((procPow + 1e-12) / (dryPow + 1e-12))) : 1.0f;
         matchGain = matchCoef * matchGain + (1.0f - matchCoef) * target;
         const float w = bypassW.getNextValue();
         sumL[(size_t) i] = (1.0f - w) * sumL[(size_t) i] + w * matchGain * xl;
@@ -481,6 +503,9 @@ void MixEngine::process (const float* const* inL, const float* const* inR, float
         pr = std::max (pr, std::fabs (outR[i]));
         ms += 0.5f * (outL[i] * outL[i] + outR[i] * outR[i]);
     }
+    if (scopeMaster) scopePost.push (outL, outR, n);
+    momentary.process (outL, outR, n);
+    masterMeters.lufsM.store (momentary.lufs(), std::memory_order_relaxed);
     masterMeters.peakL.store (pl, std::memory_order_relaxed);
     masterMeters.peakR.store (pr, std::memory_order_relaxed);
     masterMeters.rms.store (std::sqrt (ms / (float) n), std::memory_order_relaxed);

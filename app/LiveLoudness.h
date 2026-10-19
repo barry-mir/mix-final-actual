@@ -7,6 +7,7 @@
 #include <nlohmann/json.hpp>
 #include <atomic>
 #include <cstdint>
+#include <deque>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -33,10 +34,13 @@ public:
     void tick (im::InteractiveMixerProcessor& live); // ~4 Hz from the main loop
     // The live gain, if it was measured for exactly the current settings and this target (export reuses it).
     std::optional<double> currentGain (im::InteractiveMixerProcessor& live, double targetLufs) const;
-    nlohmann::json status (im::InteractiveMixerProcessor& live) const; // {target, gain_db, state, measured_lufs}
+    nlohmann::json status (im::InteractiveMixerProcessor& live) const; // {target, gain_db, state, measured_lufs, held}
+    // While the page compares versions (A/B of a turn), keep the gain as it is: no re-measuring, no cached jumps.
+    void setHold (bool h);
     void stop();
 
-    // A fingerprint of everything that changes the sound: parameters, clip edits, group routing (message thread).
+    // A fingerprint of everything that changes the sound: parameters, clip edits (their content), group routing
+    // (message thread).
     static uint64_t settingsKey (im::InteractiveMixerProcessor& live);
 
 private:
@@ -53,5 +57,13 @@ private:
     uint64_t runKey = 0;
     double runTarget = 0, runGain = 0, runLufs = 0;
     bool runOk = false;
+    bool hold = false;
+    // The last measurements by settings: going back to a state measured before (undo, A/B) applies its gain at once.
+    struct Cached
+    {
+        uint64_t key;
+        double target, gain, lufs;
+    };
+    std::deque<Cached> cache;
 };
 } // namespace mfa

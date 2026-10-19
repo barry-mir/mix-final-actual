@@ -6,6 +6,7 @@
 #include "standalone/MultitrackPlayer.h"
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <deque>
+#include <optional>
 #include <functional>
 
 namespace im
@@ -55,17 +56,23 @@ public:
     // ---- AgentHost ----------------------------------------------------------
     TrackMask presentMask() const override { return present.load(); }
     float paramValue (int index) const override;
-    float groupBusGrDb (int g) const override { return g >= 0 && g < kNumGroupBuses ? engine.masterMeters.groupGr[(size_t) g].load() : 0.0f; }
-    float groupBusGainDb (int g) const override { return g >= 0 && g < kNumGroupBuses ? engine.masterMeters.groupGainDb[(size_t) g].load() : 0.0f; }
+    float groupBusGrDb (int g) const override;
+    float groupBusGainDb (int g) const override;
     // Route each track to the instrument-group bus its name implies (message thread; cheap, also run from the timer).
     void updateTrackGroups();
-    std::shared_ptr<const Snapshot> snapshot() const override { return analyzer.latest(); }
+    std::shared_ptr<const Snapshot> snapshot() const override;
     void applyAgentChanges (int tick, const std::vector<ParamTarget>& targets, double rampSec) override;
-    // Live: blocks until `needSec` of audio has played since the last change from anyone (parameters, groups, clip
-    // edits), starting playback if it is stopped. Offline engines (no background services) return at once.
-    void waitForFreshAudio (double needSec, const std::function<bool()>& stop) override;
-    double freshAudioSec() const { return (double) freshSamples.load() / sampleRateNow; }
-    std::atomic<double> listenHave { 0.0 }, listenNeed { 0.0 }; // progress of the wait above (status)
+    // Live engines: the app's offline listener renders the analysis range with the current settings and the agent
+    // measures that render (nothing plays). Without a listener (offline engines) the analyzer's latest snapshot is used.
+    void listen (const std::function<bool()>& stop) override;
+    struct Listened
+    {
+        std::shared_ptr<const Snapshot> snap;
+        std::array<float, kNumGroupBuses> busGr {}, busGain {};
+    };
+    // Set by the app before the agent runs (message thread). Worker thread; false = stopped or failed.
+    std::function<bool (const std::function<bool()>& stop, Listened& out)> offlineListener;
+    std::atomic<double> listenHave { 0.0 }, listenNeed { 0.0 }, listenA { 0.0 }, listenB { 0.0 }; // the render's progress (status)
 
     // ---- clips: JSON views of the player's edits (message thread) ----------
     nlohmann::json editsJson() const;             // {"version", "tracks": [[{pos, src, len, gain, fadeIn, fadeOut}...]...]}
@@ -121,7 +128,8 @@ private:
     std::vector<juce::RangedAudioParameter*> paramPtrs = std::vector<juce::RangedAudioParameter*> ((size_t) numParams());
     double paramSig = -1.0; // weighted sum of all raw parameter values, to detect changes on the audio thread
     int seenEditsVer = -1, seenGroupSig = -1;  // audio thread: clip edits and group routing seen last block
-    std::atomic<int64_t> freshSamples { 0 };   // samples played since the last change (audio thread writes)
+    mutable std::mutex listenedMutex;
+    std::optional<Listened> listened;          // the last offline render's measurements (live engines)
     std::unordered_map<juce::AudioProcessorParameter*, int> paramIndexOf;
 
     // LLM animation bookkeeping (message thread)

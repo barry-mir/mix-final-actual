@@ -47,8 +47,17 @@ uint64_t LiveLoudness::settingsKey (InteractiveMixerProcessor& live)
         const float v = live.rawValue (i);
         mix (&v, sizeof v);
     }
-    const int ev = live.player.editsVersion();
-    mix (&ev, sizeof ev);
+    int t = 0;
+    for (auto& rs : live.player.edits())
+    {
+        for (auto& r : rs)
+        {
+            const double v[] = { r.pos, r.src, r.len, r.gainDb, r.fadeIn, r.fadeOut, (double) (r.srcTrack >= 0 ? r.srcTrack : t) };
+            mix (v, sizeof v);
+        }
+        const int sep = -1 - t++;
+        mix (&sep, sizeof sep);
+    }
     for (int t = 0; t < live.player.numLoadedTracks(); ++t)
     {
         const int g = live.engine.trackGroup[(size_t) t].load();
@@ -91,6 +100,12 @@ void LiveLoudness::setTarget (std::optional<double> lufs, InteractiveMixerProces
     if (live) apply (*live);
 }
 
+void LiveLoudness::setHold (bool h)
+{
+    std::lock_guard<std::mutex> lk (m);
+    hold = h;
+}
+
 std::optional<double> LiveLoudness::target() const
 {
     std::lock_guard<std::mutex> lk (m);
@@ -116,17 +131,34 @@ void LiveLoudness::tick (InteractiveMixerProcessor& live)
         lk.lock();
         if (runOk && ! cancel && tgt && runTarget == *tgt)
         {
-            gainDb = measuredGain = runGain;
-            measuredKey = runKey;
-            measuredTarget = runTarget;
-            measuredLufs = runLufs;
-            apply (live);
+            cache.erase (std::remove_if (cache.begin(), cache.end(), [&] (const Cached& c) { return c.key == runKey && c.target == runTarget; }), cache.end());
+            cache.push_back ({ runKey, runTarget, runGain, runLufs });
+            while (cache.size() > 8) cache.pop_front();
+            if (! hold)
+            {
+                gainDb = measuredGain = runGain;
+                measuredKey = runKey;
+                measuredTarget = runTarget;
+                measuredLufs = runLufs;
+                apply (live);
+            }
         }
         cancel = false;
     }
-    if (running || ! tgt) return;
+    if (running || ! tgt || hold) return;
     const bool stale = ! measuredKey || *measuredKey != key || measuredTarget != *tgt;
-    if (! stale || now - lastKeyChangeMs < 1500.0) return;
+    if (! stale) return;
+    for (auto& c : cache) // measured before: its gain at once
+        if (c.key == key && c.target == *tgt)
+        {
+            gainDb = measuredGain = c.gain;
+            measuredKey = c.key;
+            measuredTarget = c.target;
+            measuredLufs = c.lufs;
+            apply (live);
+            return;
+        }
+    if (now - lastKeyChangeMs < 1500.0) return;
 
     // Start a measurement on an offline copy (built here, on the message thread).
     double rate = 48000.0;
@@ -172,10 +204,10 @@ nlohmann::json LiveLoudness::status (InteractiveMixerProcessor& live) const
 {
     const auto key = settingsKey (live);
     std::lock_guard<std::mutex> lk (m);
-    if (! tgt) return { { "target", nullptr }, { "gain_db", 0.0 }, { "state", "off" }, { "measured_lufs", nullptr } };
+    if (! tgt) return { { "target", nullptr }, { "gain_db", 0.0 }, { "state", "off" }, { "measured_lufs", nullptr }, { "held", hold } };
     const bool ready = ! running && measuredKey && *measuredKey == key && measuredTarget == *tgt;
     auto num = [&] (double v) { return measuredKey && std::isfinite (v) ? nlohmann::json (v) : nlohmann::json (nullptr); };
-    return { { "target", *tgt }, { "gain_db", gainDb }, { "state", ready ? "ready" : "measuring" },
-             { "measured_lufs", num (measuredLufs) } };
+    return { { "target", *tgt }, { "gain_db", gainDb }, { "state", hold ? "held" : ready ? "ready" : "measuring" },
+             { "measured_lufs", num (measuredLufs) }, { "held", hold } };
 }
 } // namespace mfa

@@ -5,7 +5,10 @@
 #include "agent/Tools.h"
 #include "core/Params.h"
 #include "PluginProcessor.h"
+#include "Recent.h"
 #include "Render.h"
+#include "analysis/Spectrum.h"
+#include "analysis/Tempo.h"
 #include "standalone/MultitrackPlayer.h"
 #include <juce_core/juce_core.h>
 #include <iostream>
@@ -117,13 +120,14 @@ void noteTests()
     check (! b.note (t ? t->id : 1, "late").empty(), "notes: a note after the answer is refused");
 }
 
-// A mono float WAV whose sample i is f(i), in a fresh temp folder.
-juce::File writeTestWav (const juce::String& folderName, int frames, double rate, const std::function<float (int)>& f)
+// A mono float WAV whose sample i is f(i), in a fresh temp folder (or added to it: fresh = false).
+juce::File writeTestWav (const juce::String& folderName, int frames, double rate, const std::function<float (int)>& f,
+                         const juce::String& fileName = "Lead Vocal.wav", bool fresh = true)
 {
     auto dir = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile (folderName);
-    dir.deleteRecursively();
+    if (fresh) dir.deleteRecursively();
     dir.createDirectory();
-    auto file = dir.getChildFile ("Lead Vocal.wav");
+    auto file = dir.getChildFile (fileName);
     juce::AudioBuffer<float> b (1, frames);
     for (int i = 0; i < frames; ++i) b.setSample (0, i, f (i));
     auto os = file.createOutputStream();
@@ -138,17 +142,21 @@ void editTests()
     using Player = im::MultitrackPlayer;
     using R = Player::Region;
     { // validation and overlaps
-        Player::Regions r { R { 0, 0, 2, 0, 0, 0 }, R { 1, 0, 0.5, 0, 0, 0 } };
-        const auto e = Player::normaliseRegions (r, 3.0);
-        check (e.empty() && r.size() == 3 && std::abs (r[0].len - 1.0) < 1e-9 && std::abs (r[1].pos - 1.0) < 1e-9 && std::abs (r[2].pos - 1.5) < 1e-9
-                   && std::abs (r[2].src - 1.5) < 1e-9 && std::abs (r[2].len - 0.5) < 1e-9,
-               "edits: a later clip cuts its span out of an earlier one");
+        const std::vector<double> lens { 3.0, 1.0 };
+        Player::Regions r { R { 1, 0, 2, 0, 0, 0 }, R { 0, 0, 1.5, 0, 0, 0 } };
+        const auto e = Player::normaliseRegions (r, 0, lens);
+        check (e.empty() && r.size() == 2 && r[0].pos == 0 && r[1].pos == 1 && r[0].srcTrack == 0 && r[1].srcTrack == 0,
+               "edits: overlapping clips are kept (they sum), sorted, and play their own track by default");
         Player::Regions bad1 { R { 0, 0, 0.005, 0, 0, 0 } }, bad2 { R { 0, 2.5, 1, 0, 0, 0 } }, bad3 { R { 0, 0, 1, 30, 0, 0 } }, bad4 { R { -1, 0, 1, 0, 0, 0 } };
-        check (! Player::normaliseRegions (bad1, 3).empty() && ! Player::normaliseRegions (bad2, 3).empty() && ! Player::normaliseRegions (bad3, 3).empty()
-                   && ! Player::normaliseRegions (bad4, 3).empty(),
+        check (! Player::normaliseRegions (bad1, 0, lens).empty() && ! Player::normaliseRegions (bad2, 0, lens).empty()
+                   && ! Player::normaliseRegions (bad3, 0, lens).empty() && ! Player::normaliseRegions (bad4, 0, lens).empty(),
                "edits: too short, past the file, gain out of range and negative positions are refused");
         Player::Regions f { R { 0, 0, 1, 0, 0.8, 0.9 } };
-        check (Player::normaliseRegions (f, 3).empty() && f[0].fadeIn <= 0.5 && f[0].fadeOut <= 0.5, "edits: fades are clamped to half the clip");
+        check (Player::normaliseRegions (f, 0, lens).empty() && f[0].fadeIn <= 0.5 && f[0].fadeOut <= 0.5, "edits: fades are clamped to half the clip");
+        Player::Regions o1 { R { 0, 0, 2, 0, 0, 0, 1 } }, o2 { R { 0, 0, 0.5, 0, 0, 0, 5 } }, o3 { R { 0, 0.5, 0.5, 0, 0, 0, 1 } };
+        check (! Player::normaliseRegions (o1, 0, lens).empty() && ! Player::normaliseRegions (o2, 0, lens).empty()
+                   && Player::normaliseRegions (o3, 0, lens).empty() && o3[0].srcTrack == 1,
+               "edits: a clip from another track must fit that track's file, and the track must exist");
         Player::Regions out;
         check (! im::InteractiveMixerProcessor::regionsFromJson (nlohmann::json::parse (R"([{"src":0,"len":1}])"), out).empty()
                    && ! im::InteractiveMixerProcessor::regionsFromJson (nlohmann::json::parse (R"([{"pos":"a","src":0,"len":1}])"), out).empty()
@@ -193,6 +201,93 @@ void editTests()
         check (p.editsAreIdentity(), "edits: clearing them goes back to the whole files");
         dir.deleteRecursively();
     }
+    { // a crossfade between two overlapping clips, the second one from another track's file
+        const double fs = 48000.0;
+        const int frames = (int) (3 * fs);
+        auto dir = writeTestWav ("mfa-test-xfade", frames, fs, [] (int) { return 0.25f; }, "Bass.wav");
+        writeTestWav ("mfa-test-xfade", frames, fs, [] (int) { return 0.5f; }, "Lead Vocal.wav", false);
+        Player p;
+        check (p.loadFolder (dir, fs).isEmpty() && p.numLoadedTracks() == 2, "crossfade: two-track session loads");
+        const float sess = (float) std::pow (10.0, p.inputGainDb() / 20.0);
+        // track 0 (Bass, 0.25): its own clip 0..2 s fading out over 1..2 s, then the vocal's file (0.5) from 1 s fading in
+        R a { 0, 0, 2, 0, 0, 1 }, b { 1, 0, 2, 0, 1, 0, 1 };
+        check (p.setTrackRegions (0, { a, b }).empty(), "crossfade: overlapping clips are accepted");
+        p.seek (0.0);
+        p.setLooping (false);
+        p.setPlaying (true);
+        const int bs = 512;
+        std::vector<float> out0, out1;
+        std::vector<float> L0 (bs), R0 (bs), L1 (bs), R1 (bs);
+        float* pl[2] = { L0.data(), L1.data() };
+        float* pr[2] = { R0.data(), R1.data() };
+        for (int done = 0; done < (int) (2.9 * fs); done += bs)
+        {
+            p.fill (pl, pr, bs);
+            out0.insert (out0.end(), L0.begin(), L0.end());
+            out1.insert (out1.end(), L1.begin(), L1.end());
+        }
+        auto at = [&] (double sec) { return out0[(size_t) (sec * fs)]; };
+        const float h = std::sin (1.5707963f * 0.5f);
+        check (std::abs (at (0.5) - 0.25f * sess) < 1e-4f, "crossfade: before the overlap, only the first clip");
+        check (std::abs (at (1.5) - (0.25f + 0.5f) * h * sess) < 2e-3f, "crossfade: mid-overlap, both clips at equal power (sin 45 deg each)");
+        check (std::abs (at (2.5) - 0.5f * sess) < 1e-4f, "crossfade: after it, the other track's audio plays on this track");
+        check (std::abs (out1[(size_t) (1.5 * fs)] - 0.5f * sess) < 1e-4f, "crossfade: the other track itself is unchanged");
+        dir.deleteRecursively();
+    }
+}
+
+void tempoTests()
+{
+    const double fs = 48000.0;
+    for (double bpm : { 100.0, 128.0 })
+    {
+        const int n = (int) (40 * fs);
+        std::vector<float> x ((size_t) n, 0.0f);
+        juce::Random rnd (7);
+        const double first = 0.3, beat = 60.0 / bpm;
+        for (int k = 0; first + k * beat < 39.5; ++k)
+        {
+            const int s0 = (int) ((first + k * beat) * fs);
+            const float amp = k % 4 == 0 ? 0.9f : 0.4f; // a louder downbeat
+            for (int i = 0; i < (int) (0.03 * fs); ++i) x[(size_t) (s0 + i)] += amp * (rnd.nextFloat() * 2 - 1) * std::exp (-i / (0.006f * (float) fs));
+        }
+        const auto e = im::estimateTempo (x.data(), n, fs, 4);
+        const double bar = 4 * 60.0 / e.bpm;
+        double off = std::fmod (e.offsetSec - first + 10 * bar, bar);
+        off = std::min (off, bar - off);
+        check (e.ok && std::abs (e.bpm - bpm) < 1.0, ("tempo: a click track at " + std::to_string ((int) bpm) + " BPM reads " + std::to_string (e.bpm)).c_str());
+        check (off < 0.03, ("tempo: bar 1 on the loud click (off by " + std::to_string (off) + " s)").c_str());
+    }
+    std::vector<float> silence ((size_t) (10 * fs), 0.0f);
+    check (! im::estimateTempo (silence.data(), (int) silence.size(), fs).ok, "tempo: silence gives no estimate");
+}
+
+void spectrumTests()
+{
+    const double fs = 48000.0;
+    std::vector<float> x (4096);
+    for (int i = 0; i < 4096; ++i) x[(size_t) i] = 0.5f * std::sin (2.0f * 3.14159265f * 1000.0f * (float) i / (float) fs);
+    std::vector<float> db;
+    im::spectrumDb (x.data(), 4096, fs, db);
+    const auto& hz = im::spectrumBandHz();
+    const auto k = (size_t) (std::max_element (db.begin(), db.end()) - db.begin());
+    check (db.size() == hz.size() && std::abs (std::log2 (hz[k] / 1000.0)) < 1.0 / 12.0 + 1e-6,
+           ("spectrum: a 1 kHz sine peaks in the 1 kHz band (" + std::to_string (hz[k]) + " Hz)").c_str());
+    check (std::abs (db[k] + 6.0f) < 1.5f, ("spectrum: a half-scale sine reads about -6 dB (" + std::to_string (db[k]) + ")").c_str());
+    check (db[(size_t) 10] < db[k] - 40.0f, "spectrum: far from the sine the bands are low");
+}
+
+void recentTests()
+{
+    auto f = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("mfa-test-recent.json");
+    f.deleteFile();
+    check (mfa::loadRecent (f).empty(), "recent: none at first");
+    for (int k = 0; k < 25; ++k) mfa::touchRecent ("/music/song" + std::to_string (k), "Song " + std::to_string (k), f);
+    mfa::touchRecent ("/music/song3", "Renamed", f);
+    const auto r = mfa::loadRecent (f);
+    check (r.size() == 20 && r[0].folder == "/music/song3" && r[0].name == "Renamed" && r[1].folder == "/music/song24",
+           "recent: newest first, a reopened project moves to the top with its new name, 20 kept");
+    f.deleteFile();
 }
 
 void loudnessTests()
@@ -226,6 +321,9 @@ int main()
     noteTests();
     editTests();
     loudnessTests();
+    tempoTests();
+    spectrumTests();
+    recentTests();
     std::cout << (failures ? "FAILED: " : "all passed") << (failures ? std::to_string (failures) : std::string()) << "\n";
     return failures ? 1 : 0;
 }

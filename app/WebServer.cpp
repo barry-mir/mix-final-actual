@@ -2,7 +2,12 @@
 #include "AppState.h"
 #include "BinaryData.h"
 #include "PluginProcessor.h"
+#include "Instances.h"
+#include "Listener.h"
+#include "Recent.h"
 #include "SaveDialog.h"
+#include "SongTempo.h"
+#include "analysis/Spectrum.h"
 #include "agent/MixPriors.h"
 #include <httplib.h>
 #include <nlohmann/json.hpp>
@@ -38,6 +43,9 @@ struct WebServer::Impl
     AppState& app;
     std::string token;
     httplib::Server http;
+    std::mutex specMutex; // the spectrum view's ballistics
+    std::vector<float> specPre, specPost;
+    double specMs = 0;
 
     Impl (AppState& a, std::string t) : app (a), token (std::move (t)) {}
 
@@ -54,7 +62,7 @@ struct WebServer::Impl
         return v;
     }
 
-    static json sessionJson (const InteractiveMixerProcessor& p)
+    json sessionJson (const InteractiveMixerProcessor& p) const
     {
         json tracks = json::array();
         const auto names = p.store.trackNames();
@@ -76,8 +84,10 @@ struct WebServer::Impl
             if (! s.choices.empty()) j["choices"] = s.choices;
             params.push_back (j);
         }
+        std::lock_guard<std::mutex> lk (app.infoMutex);
         return { { "tracks", tracks }, { "params", params }, { "folder", p.player.loadedFolder().getFullPathName().toStdString() },
-                 { "rate", p.player.loadedSampleRate() }, { "peaks_block", p.player.peaksBlock() }, { "peaks_ready", p.player.peaksReady() } };
+                 { "rate", p.player.loadedSampleRate() }, { "peaks_block", p.player.peaksBlock() }, { "peaks_ready", p.player.peaksReady() },
+                 { "name", app.name }, { "tempo", app.tempo.toJson() } };
     }
 
     static json valuesJson (const InteractiveMixerProcessor& p)
@@ -95,8 +105,10 @@ struct WebServer::Impl
         if (ts.tick < 0) return nullptr;
         std::string stage = im::Agent::stageName (ts.stage);
         if (ts.stage == im::Agent::Stage::Waiting && im::Bridge::shared().pendingFetched()) stage = "reading";
+        const bool listening = ts.stage == im::Agent::Stage::Listening;
         return { { "tick", ts.tick }, { "stage", stage }, { "since_s", ts.sinceSec }, { "changes", ts.changes },
-                 { "listen_s", p.listenHave.load() }, { "listen_need_s", ts.stage == im::Agent::Stage::Listening ? p.agent.listenSeconds() : 0.0 } };
+                 { "listen_s", listening ? p.listenHave.load() : 0.0 }, { "listen_need_s", listening ? p.listenNeed.load() : 0.0 },
+                 { "range", { p.listenA.load(), p.listenB.load() } } };
     }
 
     json statusJson (InteractiveMixerProcessor& p) const
@@ -110,7 +122,15 @@ struct WebServer::Impl
                                 { "gr", std::max (tm.compGr.load(), tm.gateGr.load()) } });
         }
         const auto& m = p.engine.masterMeters;
+        json buses = json::array();
+        for (int g = 0; g < im::kNumGroupBuses; ++g)
+            buses.push_back ({ { "peak", m.groupPeak[(size_t) g].load() }, { "rms", m.groupRms[(size_t) g].load() }, { "gr", m.groupGr[(size_t) g].load() } });
+        const auto range = analysisRange (p, app.analysisWhole.load());
         return { { "playing", p.player.isPlaying() }, { "looping", p.player.isLooping() },
+                 { "buses", buses }, { "fx", { { "reverb", { { "peak", m.reverbPeak.load() } } }, { "echo", { { "peak", m.echoPeak.load() } } } } },
+                 { "master_lufs_m", m.lufsM.load() }, { "compare_raw", p.engine.isBypassed() },
+                 { "analysis_range", { range.first, range.second } }, { "analysis_whole", app.analysisWhole.load() },
+                 { "auto_agent", app.autoAgent.status() },
                  { "pos", p.player.positionSec() }, { "len", p.player.lengthSec() },
                  { "loop_region", { p.player.loopStartSec(), p.player.loopEndSec() } },
                  { "excerpt", { p.player.excerptStartSec(), p.player.excerptEndSec() } }, { "input_gain_db", p.player.inputGainDb() },
@@ -216,14 +236,18 @@ struct WebServer::Impl
 
         // Stop the agent's work: the turn waiting for (or with) the coding agent ends with nothing changed, and turns
         // still queued (the rest of a remix) are dropped.
-        http.Post ("/api/stop_turns", live ([] (InteractiveMixerProcessor& p, const httplib::Request&, httplib::Response& res) {
+        http.Post ("/api/stop_turns", live ([this] (InteractiveMixerProcessor& p, const httplib::Request&, httplib::Response& res) {
             p.agent.cancelQueued();
             im::Bridge::shared().abortPending();
+            app.autoAgent.kill(); // an agent the console started for the turn
             reply (res, { { "ok", true } });
         }));
-        http.Get ("/api/session", live ([] (InteractiveMixerProcessor& p, const httplib::Request&, httplib::Response& res) { reply (res, sessionJson (p)); }));
+        http.Get ("/api/session", live ([this] (InteractiveMixerProcessor& p, const httplib::Request&, httplib::Response& res) { reply (res, sessionJson (p)); }));
         http.Get ("/api/values", live ([] (InteractiveMixerProcessor& p, const httplib::Request&, httplib::Response& res) { reply (res, valuesJson (p)); }));
-        http.Get ("/api/status", live ([this] (InteractiveMixerProcessor& p, const httplib::Request&, httplib::Response& res) { reply (res, statusJson (p)); }));
+        http.Get ("/api/status", live ([this] (InteractiveMixerProcessor& p, const httplib::Request&, httplib::Response& res) {
+            app.lastPagePollMs = juce::Time::getMillisecondCounterHiRes(); // the page is open (it polls this)
+            reply (res, statusJson (p));
+        }));
         http.Get ("/api/chat", live ([] (InteractiveMixerProcessor& p, const httplib::Request&, httplib::Response& res) { reply (res, chatJson (p)); }));
 
         // {"i": index, "v": display value}; applied on the message thread with the engine's 20 ms manual ramp.
@@ -247,12 +271,12 @@ struct WebServer::Impl
                 p.player.setLoopRegion (j["region"][0].get<double>(), j["region"][1].get<double>());
             reply (res, statusJson (p));
         }));
-        // A prompt from the page: one turn, answered by the coding agent. {"text": "..."}
+        // A prompt from the page: one turn, answered by the coding agent. {"text": "..."} (nothing plays: the console
+        // renders the analysis range offline for the turn)
         http.Post ("/api/prompt", live ([] (InteractiveMixerProcessor& p, const httplib::Request& req, httplib::Response& res) {
             auto j = parseBody (req);
             if (j.is_discarded() || ! j.contains ("text") || ! j["text"].is_string()) return reply (res, { { "error", "need text" } }, 400);
             const auto text = j["text"].get<std::string>();
-            p.player.setPlaying (true); // the turn measures what plays
             juce::MessageManager::callAsync ([&p, text] { p.agent.userMessage (text); });
             reply (res, { { "ok", true } });
         }));
@@ -263,7 +287,6 @@ struct WebServer::Impl
             const int n = std::clamp (j.is_discarded() ? 5 : j.value ("turns", 5), 1, 10);
             std::string goal = ! j.is_discarded() && j.contains ("goal") && j["goal"].is_string() ? j["goal"].get<std::string>() : std::string();
             goal = juce::String (goal).trim().substring (0, 2000).toStdString();
-            p.player.setPlaying (true);
             juce::MessageManager::callAsync ([&p, n, goal] {
                 im::ChatEntry e;
                 e.role = "user";
@@ -283,7 +306,7 @@ struct WebServer::Impl
             o.stems = j.value ("stems", false);
             o.format = j.value ("format", std::string ("wav")) == "flac" ? "flac" : "wav";
             const auto pathStr = j.contains ("path") && j["path"].is_string() ? j["path"].get<std::string>() : std::string();
-            o.file = pathStr.empty() ? Exporter::defaultFile (p.player.loadedFolder()) : juce::File (juce::String (pathStr));
+            o.file = pathStr.empty() ? Exporter::defaultFile (p.player.loadedFolder(), app.projectName()) : juce::File (juce::String (pathStr));
             if (! juce::File::isAbsolutePath (o.file.getFullPathName()) || o.file.isDirectory())
                 return reply (res, { { "error", "path must be a full file path" } }, 400);
             std::optional<double> l = app.loudness.target();
@@ -298,14 +321,15 @@ struct WebServer::Impl
             reply (res, { { "ok", true }, { "file", o.file.withFileExtension (o.format == "flac" ? ".flac" : ".wav").getFullPathName().toStdString() },
                           { "reused_playback_gain", o.knownGainDb.has_value() } });
         }));
-        http.Get ("/api/export_defaults", live ([] (InteractiveMixerProcessor& p, const httplib::Request&, httplib::Response& res) {
-            reply (res, { { "path", Exporter::defaultFile (p.player.loadedFolder()).getFullPathName().toStdString() } });
+        http.Get ("/api/export_defaults", live ([this] (InteractiveMixerProcessor& p, const httplib::Request&, httplib::Response& res) {
+            reply (res, { { "path", Exporter::defaultFile (p.player.loadedFolder(), app.projectName()).getFullPathName().toStdString() } });
         }));
         // The OS's own save dialog (blocks this request while it is open). {"path": suggested} -> {path}|{cancelled}|{unavailable}
-        http.Post ("/api/choose_save", live ([] (InteractiveMixerProcessor& p, const httplib::Request& req, httplib::Response& res) {
+        http.Post ("/api/choose_save", live ([this] (InteractiveMixerProcessor& p, const httplib::Request& req, httplib::Response& res) {
             auto j = parseBody (req);
             std::string path = ! j.is_discarded() && j.contains ("path") && j["path"].is_string() ? j["path"].get<std::string>() : std::string();
-            if (path.empty() || ! juce::File::isAbsolutePath (juce::String (path))) path = Exporter::defaultFile (p.player.loadedFolder()).getFullPathName().toStdString();
+            if (path.empty() || ! juce::File::isAbsolutePath (juce::String (path)))
+                path = Exporter::defaultFile (p.player.loadedFolder(), app.projectName()).getFullPathName().toStdString();
             const auto c = chooseSaveFile (path);
             if (c.kind == SaveChoice::Kind::Chosen) return reply (res, { { "path", c.path } });
             reply (res, c.kind == SaveChoice::Kind::Cancelled ? json { { "cancelled", true } } : json { { "unavailable", true } });
@@ -319,18 +343,170 @@ struct WebServer::Impl
             revealFile (f.getFullPathName().toStdString());
             reply (res, { { "ok", true } });
         });
-        // Playback (and default export) loudness. {"target": -14 | null (as mixed)}
+        // Playback (and default export) loudness. {"target": -14 | null (as mixed), "hold": bool} (either or both).
+        // hold: keep the gain as it is (no re-measuring) while the page compares versions of the mix.
         http.Post ("/api/loudness", live ([this] (InteractiveMixerProcessor& p, const httplib::Request& req, httplib::Response& res) {
             auto j = parseBody (req);
-            if (j.is_discarded() || ! j.contains ("target")) return reply (res, { { "error", "need target (number or null)" } }, 400);
-            std::optional<double> t;
-            if (j["target"].is_number()) t = std::clamp (j["target"].get<double>(), -40.0, -5.0);
-            else if (! j["target"].is_null()) return reply (res, { { "error", "target must be a number or null" } }, 400);
-            juce::MessageManager::callAsync ([this, &p, t] { app.loudness.setTarget (t, &p); });
-            reply (res, { { "ok", true }, { "target", t ? json (*t) : json (nullptr) } });
+            if (j.is_discarded() || (! j.contains ("target") && ! j.contains ("hold")))
+                return reply (res, { { "error", "need target (number or null) and/or hold (bool)" } }, 400);
+            if (j.contains ("hold"))
+            {
+                if (! j["hold"].is_boolean()) return reply (res, { { "error", "hold must be true or false" } }, 400);
+                app.loudness.setHold (j["hold"].get<bool>());
+            }
+            json out = { { "ok", true }, { "held", j.value ("hold", false) } };
+            if (j.contains ("target"))
+            {
+                std::optional<double> t;
+                if (j["target"].is_number()) t = std::clamp (j["target"].get<double>(), -40.0, -5.0);
+                else if (! j["target"].is_null()) return reply (res, { { "error", "target must be a number or null" } }, 400);
+                juce::MessageManager::callAsync ([this, &p, t] { app.loudness.setTarget (t, &p); });
+                out["target"] = t ? json (*t) : json (nullptr);
+            }
+            reply (res, out);
         }));
+        // A/B against the raw tracks: {"raw": true} plays the unprocessed sum of the tracks, level-matched to the mix
+        // (20 ms crossfade); the agent's measurements and the loudness gain are not affected.
+        http.Post ("/api/compare", live ([] (InteractiveMixerProcessor& p, const httplib::Request& req, httplib::Response& res) {
+            auto j = parseBody (req);
+            if (j.is_discarded() || ! j.contains ("raw") || ! j["raw"].is_boolean()) return reply (res, { { "error", "need raw (bool)" } }, 400);
+            p.engine.setBypassLevelMatch (true);
+            p.engine.setBypass (j["raw"].get<bool>());
+            reply (res, { { "ok", true }, { "raw", p.engine.isBypassed() } });
+        }));
+        // What the agent analyzes before each turn: {"whole": true} = the whole song, false = the cycle region (or the
+        // excerpt when the cycle is shorter than 2 s).
+        http.Post ("/api/analysis_range", live ([this] (InteractiveMixerProcessor& p, const httplib::Request& req, httplib::Response& res) {
+            auto j = parseBody (req);
+            if (j.is_discarded() || ! j.contains ("whole") || ! j["whole"].is_boolean()) return reply (res, { { "error", "need whole (bool)" } }, 400);
+            app.analysisWhole = j["whole"].get<bool>();
+            const auto r = analysisRange (p, app.analysisWhole.load());
+            reply (res, { { "ok", true }, { "analysis_whole", app.analysisWhole.load() }, { "analysis_range", { r.first, r.second } } });
+        }));
+        // Tempo grid. GET -> {bpm, beats_per_bar, offset_s, detected, confidence, state}; POST any of bpm (20..400),
+        // beats_per_bar (1..16), offset_s (>= 0), or {"redetect": true}.
+        http.Get ("/api/tempo", [this] (const httplib::Request&, httplib::Response& res) {
+            std::lock_guard<std::mutex> lk (app.infoMutex);
+            reply (res, app.tempo.toJson());
+        });
+        http.Post ("/api/tempo", live ([this] (InteractiveMixerProcessor& p, const httplib::Request& req, httplib::Response& res) {
+            auto j = parseBody (req);
+            if (j.is_discarded() || ! j.is_object()) return reply (res, { { "error", "bad json" } }, 400);
+            if (j.value ("redetect", false))
+            {
+                {
+                    std::lock_guard<std::mutex> lk (app.infoMutex);
+                    if (app.tempo.state == "detecting") return reply (res, app.tempo.toJson());
+                }
+                startTempoDetection (app, p);
+                std::lock_guard<std::mutex> lk (app.infoMutex);
+                return reply (res, app.tempo.toJson());
+            }
+            auto num = [&] (const char* k, double lo, double hi, double& v) -> std::string {
+                if (! j.contains (k)) return {};
+                if (! j[k].is_number()) return std::string (k) + " must be a number";
+                const double x = j[k].get<double>();
+                if (! std::isfinite (x) || x < lo || x > hi) return std::string (k) + " out of range";
+                v = x;
+                return {};
+            };
+            std::lock_guard<std::mutex> lk (app.infoMutex);
+            double bpm = app.tempo.bpm, bpb = app.tempo.beatsPerBar, off = app.tempo.offsetSec;
+            for (auto e : { num ("bpm", 20, 400, bpm), num ("beats_per_bar", 1, 16, bpb), num ("offset_s", 0, 36000, off) })
+                if (! e.empty()) return reply (res, { { "error", e } }, 400);
+            app.tempo.bpm = bpm;
+            app.tempo.beatsPerBar = (int) std::lround (bpb);
+            app.tempo.offsetSec = off;
+            app.tempo.detected = false;
+            app.tempo.state = "ready";
+            reply (res, app.tempo.toJson());
+        }));
+        // The spectrum view: {"track": t} or -1 (master), or null (none).
+        http.Post ("/api/scope", live ([this] (InteractiveMixerProcessor& p, const httplib::Request& req, httplib::Response& res) {
+            auto j = parseBody (req);
+            if (j.is_discarded() || ! j.contains ("track")) return reply (res, { { "error", "need track (index, -1 master, or null)" } }, 400);
+            int t = -2;
+            if (j["track"].is_number_integer()) t = j["track"].get<int>();
+            else if (! j["track"].is_null()) return reply (res, { { "error", "track must be an index, -1 or null" } }, 400);
+            if (t < -2 || t >= p.player.numLoadedTracks()) return reply (res, { { "error", "bad track" } }, 400);
+            p.engine.scopeTrack = t;
+            {
+                std::lock_guard<std::mutex> lk (specMutex);
+                specPre.clear();
+                specPost.clear();
+            }
+            reply (res, { { "ok", true }, { "track", t == -2 ? json (nullptr) : json (t) } });
+        }));
+        // {track, hz: [band centres], pre: [dB], post: [dB]} for the scoped track (input, output) or master (before the
+        // master chain, output). Analyzer-like ballistics: rises at once, falls with a ~300 ms time constant.
+        http.Get ("/api/spectrum", live ([this] (InteractiveMixerProcessor& p, const httplib::Request&, httplib::Response& res) {
+            const int t = p.engine.scopeTrack.load();
+            const auto& hz = im::spectrumBandHz();
+            std::vector<float> pre, post;
+            if (t >= -1 && p.player.isPlaying())
+            {
+                std::vector<float> x (4096);
+                p.engine.scopePre.latest (x.data(), 4096);
+                im::spectrumDb (x.data(), 4096, p.engine.sampleRate(), pre);
+                p.engine.scopePost.latest (x.data(), 4096);
+                im::spectrumDb (x.data(), 4096, p.engine.sampleRate(), post);
+            }
+            else
+                pre = post = std::vector<float> (hz.size(), -120.0f);
+            std::lock_guard<std::mutex> lk (specMutex);
+            const double now = juce::Time::getMillisecondCounterHiRes();
+            const float fall = (float) std::exp (-std::min (1000.0, now - specMs) / 300.0);
+            specMs = now;
+            auto smooth = [&] (std::vector<float>& state, const std::vector<float>& v) {
+                if (state.size() != v.size()) state = v;
+                for (size_t k = 0; k < v.size(); ++k) state[k] = v[k] >= state[k] ? v[k] : v[k] + (state[k] - v[k]) * fall;
+            };
+            smooth (specPre, pre);
+            smooth (specPost, post);
+            auto round1 = [] (const std::vector<float>& v) {
+                json a = json::array();
+                for (float x : v) a.push_back (std::round (x * 10.0f) / 10.0f);
+                return a;
+            };
+            reply (res, { { "track", t == -2 ? json (nullptr) : json (t) }, { "hz", hz }, { "pre", round1 (specPre) }, { "post", round1 (specPost) } });
+        }));
+        // The project's name: {"name": "..."} (the page title; export file names; the recent list).
+        http.Post ("/api/project", [this] (const httplib::Request& req, httplib::Response& res) {
+            auto j = parseBody (req);
+            if (j.is_discarded() || ! j.contains ("name") || ! j["name"].is_string()) return reply (res, { { "error", "need name" } }, 400);
+            const auto name = juce::String (j["name"].get<std::string>()).trim().substring (0, 120).toStdString();
+            if (name.empty()) return reply (res, { { "error", "a project name cannot be empty" } }, 400);
+            {
+                std::lock_guard<std::mutex> lk (app.infoMutex);
+                app.name = name;
+            }
+            touchRecent (normaliseFolder (app.folder), name);
+            reply (res, { { "ok", true }, { "name", name } });
+        });
+        // Projects opened lately (newest first): [{folder, name, last_opened, url (when it is running, else null), current}]
+        http.Get ("/api/recent", [this] (const httplib::Request&, httplib::Response& res) {
+            json out = json::array();
+            const auto me = normaliseFolder (app.folder);
+            for (auto& r : loadRecent())
+            {
+                auto inst = instanceFor (r.folder);
+                out.push_back ({ { "folder", r.folder }, { "name", r.name.empty() ? juce::File (juce::String (r.folder)).getFileName().toStdString() : r.name },
+                                 { "last_opened", r.lastOpened }, { "url", inst ? json (inst->url) : json (nullptr) }, { "current", r.folder == me },
+                                 { "exists", juce::File (juce::String (r.folder)).isDirectory() } });
+            }
+            reply (res, out);
+        });
+        // Open another project: {"folder": path} -> {url} (its running session, else a new one started for it).
+        http.Post ("/api/open", [this] (const httplib::Request& req, httplib::Response& res) {
+            auto j = parseBody (req);
+            if (j.is_discarded() || ! j.contains ("folder") || ! j["folder"].is_string()) return reply (res, { { "error", "need folder" } }, 400);
+            std::string err;
+            auto inst = startOrAttach (app.exe, j["folder"].get<std::string>(), { "--no-open" }, 30.0, err);
+            if (! inst) return reply (res, { { "error", err } }, 400);
+            reply (res, { { "url", inst->url }, { "folder", inst->folder } });
+        });
         // Clip edits. GET -> {version, tracks: [[region...]...]}; POST {"track": t, "regions": [...]} replaces one
-        // track's clips (sorted, overlaps cut, later clips win) and returns what is stored.
+        // track's clips (sorted; overlapping clips sum; srcTrack = whose file a clip plays) and returns what is stored.
         http.Get ("/api/edits", live ([] (InteractiveMixerProcessor& p, const httplib::Request&, httplib::Response& res) { reply (res, p.editsJson()); }));
         http.Post ("/api/edits", live ([] (InteractiveMixerProcessor& p, const httplib::Request& req, httplib::Response& res) {
             auto j = parseBody (req);
@@ -405,6 +581,14 @@ struct WebServer::Impl
             json j = stateJson();
             j["turn"] = turn ? json { { "id", turn->id }, { "trigger", turn->trigger }, { "user_msg", turn->userMsg }, { "text", turn->text } } : json();
             reply (res, j);
+        });
+        // {"client": "claude-code", "path": PATH}: which coding agent talks to this console (to start it again later)
+        http.Post ("/api/agent/hello", [this] (const httplib::Request& req, httplib::Response& res) {
+            auto j = parseBody (req);
+            if (j.is_discarded() || ! j.is_object()) return reply (res, { { "error", "bad json" } }, 400);
+            std::lock_guard<std::mutex> lk (app.infoMutex);
+            app.agentInfo = { { "client", j.value ("client", std::string()) }, { "path", j.value ("path", std::string()) } };
+            reply (res, { { "ok", true } });
         });
         // {"turn": id, "text": "..."}: a note while the agent works on the turn (shown in the page)
         http.Post ("/api/agent/note", [] (const httplib::Request& req, httplib::Response& res) {
