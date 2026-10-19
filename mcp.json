@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "mix-final-actual": {
+      "type": "stdio",
+      "command": "./bin/mix-final-actual",
+      "args": [
+        "mcp"
+      ],
+      "cwd": "${PLUGIN_ROOT}"
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "name": "mix-final-actual",
+  "version": "0.3.1",
+  "description": "Mix a folder of audio tracks on a real mixing console: your coding agent makes the mix from the console's measurements, then you keep tweaking it in a mixer page in your browser and hear every change at once.",
+  "author": { "name": "barry-mir" },
+  "homepage": "https://github.com/barry-mir/mix-final-actual",
+  "repository": "https://github.com/barry-mir/mix-final-actual",
+  "license": "AGPL-3.0-only",
+  "keywords": ["audio", "mixing", "music", "multitrack", "daw"],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "mix_final_ACTUAL.wav",
+        "shortDescription": "Your agent mixes your multitrack; you tweak it live in the browser.",
+        "longDescription": "Give your agent a folder of audio tracks named by instrument. It mixes them on a real DSP console (EQ, compression, gate, de-esser, reverb, echo, glue compressor, limiter) by reading the console's measurements turn by turn, then a mixer page opens in your browser where you can change anything, hear it at once, and ask the agent for more changes.",
+        "developerName": "barry-mir",
+        "category": "Productivity",
+        "capabilities": ["Interactive", "Write"],
+        "websiteURL": "https://github.com/barry-mir/mix-final-actual",
+        "defaultPrompt": ["Mix the tracks in this folder"]
+      }
+    }
+  }
+}
