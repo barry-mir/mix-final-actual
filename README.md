@@ -1,5 +1,7 @@
 # mix_final_ACTUAL.wav
 
+<p align="center"><img src="docs/The%20final%20mix.png" width="480" alt="Comic: a tired engineer at 4:47 AM, a folder of crossed-out mix_final files ending in mix_final_ACTUAL.wav. Narrator: it was not the final mix."></p>
+
 A mixing console in your browser, mixed by your coding agent. Give it a folder of tracks with proper names
 ("Lead Vocal.wav", "Kick.wav", ...); your agent (Claude Code or Codex) makes the mix by reading the console's
 measurements turn by turn, then you keep adjusting it and hear every change at once.
