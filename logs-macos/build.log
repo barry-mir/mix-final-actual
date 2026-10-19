@@ -1,0 +1,871 @@
+[  1%] Generating juce_binarydata_mfa_web/JuceLibraryCode/BinaryData1.cpp, juce_binarydata_mfa_web/JuceLibraryCode/BinaryData2.cpp, juce_binarydata_mfa_web/JuceLibraryCode/BinaryData3.cpp, juce_binarydata_mfa_web/JuceLibraryCode/BinaryData.h
+[  1%] Building CXX object CMakeFiles/mfa-tests.dir/src/core/Params.cpp.o
+[  2%] Building CXX object CMakeFiles/mfa-tests.dir/src/core/StateStore.cpp.o
+[  3%] Building CXX object CMakeFiles/mfa-tests.dir/src/dsp/Filters.cpp.o
+[  4%] Building CXX object CMakeFiles/mfa-tests.dir/src/dsp/ChannelStrip.cpp.o
+[  5%] Building CXX object CMakeFiles/mfa-tests.dir/src/dsp/Doubler.cpp.o
+[  6%] Building CXX object CMakeFiles/mfa-tests.dir/src/dsp/Echo.cpp.o
+[  7%] Building CXX object CMakeFiles/mfa-tests.dir/src/dsp/FdnReverb.cpp.o
+[  8%] Building CXX object CMakeFiles/mfa-tests.dir/src/dsp/Limiter.cpp.o
+[  9%] Building CXX object CMakeFiles/mfa-tests.dir/src/dsp/MixEngine.cpp.o
+[ 10%] Building CXX object CMakeFiles/mfa-tests.dir/src/analysis/Features.cpp.o
+[ 11%] Building CXX object CMakeFiles/mfa-tests.dir/src/analysis/Loudness.cpp.o
+[ 11%] Building CXX object CMakeFiles/mfa-tests.dir/src/analysis/Analyzer.cpp.o
+[ 12%] Building CXX object CMakeFiles/mfa-tests.dir/src/analysis/Spectrum.cpp.o
+[ 13%] Building CXX object CMakeFiles/mfa-tests.dir/src/analysis/Tempo.cpp.o
+[ 15%] Building CXX object CMakeFiles/mfa-tests.dir/src/agent/Tools.cpp.o
+[ 14%] Building CXX object CMakeFiles/mfa-tests.dir/src/agent/PromptBuilder.cpp.o
+[ 16%] Building CXX object CMakeFiles/mfa-tests.dir/src/agent/Bridge.cpp.o
+[ 17%] Building CXX object CMakeFiles/mfa-tests.dir/src/agent/AgentLog.cpp.o
+[ 18%] Building CXX object CMakeFiles/mfa-tests.dir/src/agent/Agent.cpp.o
+[ 19%] Building CXX object CMakeFiles/mfa-tests.dir/src/standalone/MultitrackPlayer.cpp.o
+[ 20%] Building CXX object CMakeFiles/mfa-tests.dir/src/PluginProcessor.cpp.o
+[ 21%] Building CXX object CMakeFiles/mfa-tests.dir/app/Render.cpp.o
+[ 21%] Building CXX object CMakeFiles/mfa-tests.dir/app/Recent.cpp.o
+[ 22%] Building CXX object CMakeFiles/mfa-tests.dir/tests/tests.cpp.o
+[ 23%] Building OBJCXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_audio_utils/juce_audio_utils.mm.o
+[ 24%] Building OBJCXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_audio_processors/juce_audio_processors.mm.o
+[ 25%] Building OBJCXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_gui_extra/juce_gui_extra.mm.o
+[ 26%] Building CXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_gui_basics/juce_gui_basics_2.cpp.o
+[ 27%] Building CXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_gui_basics/juce_gui_basics_3.cpp.o
+[ 28%] Building CXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_gui_basics/juce_gui_basics_4.cpp.o
+[ 29%] Building CXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_gui_basics/juce_gui_basics_5.cpp.o
+[ 30%] Building OBJCXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_gui_basics/juce_gui_basics.mm.o
+[ 31%] Building CXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_graphics/juce_graphics_Harfbuzz.cpp.o
+[ 31%] Building C object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_graphics/juce_graphics_Sheenbidi.c.o
+[ 32%] Building OBJCXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_graphics/juce_graphics.mm.o
+[ 33%] Building OBJCXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_events/juce_events.mm.o
+[ 34%] Building CXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_core/juce_core_CompilationTime.cpp.o
+[ 35%] Building CXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_audio_processors_headless/juce_audio_processors_headless_ara.cpp.o
+[ 36%] Building OBJCXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_data_structures/juce_data_structures.mm.o
+[ 37%] Building OBJCXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_core/juce_core.mm.o
+[ 38%] Building CXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_audio_processors_headless/juce_audio_processors_headless_lv2_libs.cpp.o
+[ 38%] Building OBJCXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_audio_devices/juce_audio_devices.mm.o
+[ 39%] Building OBJCXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_dsp/juce_dsp.mm.o
+[ 40%] Building OBJCXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_audio_processors_headless/juce_audio_processors_headless.mm.o
+[ 41%] Building OBJCXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_audio_basics/juce_audio_basics.mm.o
+[ 42%] Building OBJCXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_audio_formats/juce_audio_formats.mm.o
+[ 43%] Building CXX object CMakeFiles/mfa_web.dir/juce_binarydata_mfa_web/JuceLibraryCode/BinaryData1.cpp.o
+[ 44%] Building CXX object CMakeFiles/mfa_web.dir/juce_binarydata_mfa_web/JuceLibraryCode/BinaryData2.cpp.o
+[ 45%] Building CXX object CMakeFiles/mfa_web.dir/juce_binarydata_mfa_web/JuceLibraryCode/BinaryData3.cpp.o
+[ 46%] Linking CXX static library libmfa_web.a
+[ 46%] Built target mfa_web
+[ 48%] Building CXX object CMakeFiles/mix-final-actual.dir/src/analysis/Features.cpp.o
+[ 49%] Building CXX object CMakeFiles/mix-final-actual.dir/src/analysis/Spectrum.cpp.o
+[ 50%] Building CXX object CMakeFiles/mix-final-actual.dir/src/agent/AgentLog.cpp.o
+[ 51%] Building CXX object CMakeFiles/mix-final-actual.dir/src/PluginProcessor.cpp.o
+[ 52%] Building CXX object CMakeFiles/mix-final-actual.dir/src/dsp/Filters.cpp.o
+[ 52%] Building CXX object CMakeFiles/mix-final-actual.dir/app/Mcp.cpp.o
+[ 54%] Building CXX object CMakeFiles/mix-final-actual.dir/app/Export.cpp.o
+[ 55%] Building CXX object CMakeFiles/mix-final-actual.dir/src/dsp/Doubler.cpp.o
+[ 56%] Building CXX object CMakeFiles/mix-final-actual.dir/src/core/Params.cpp.o
+[ 57%] Building CXX object CMakeFiles/mix-final-actual.dir/src/core/StateStore.cpp.o
+[ 57%] Building CXX object CMakeFiles/mix-final-actual.dir/src/dsp/ChannelStrip.cpp.o
+[ 58%] Building CXX object CMakeFiles/mix-final-actual.dir/app/WebServer.cpp.o
+[ 59%] Building CXX object CMakeFiles/mix-final-actual.dir/src/analysis/Loudness.cpp.o
+[ 60%] Building CXX object CMakeFiles/mix-final-actual.dir/src/agent/Bridge.cpp.o
+[ 61%] Building CXX object CMakeFiles/mix-final-actual.dir/src/agent/PromptBuilder.cpp.o
+[ 61%] Building CXX object CMakeFiles/mix-final-actual.dir/src/agent/Tools.cpp.o
+[ 63%] Building CXX object CMakeFiles/mix-final-actual.dir/app/main.cpp.o
+[ 63%] Building CXX object CMakeFiles/mix-final-actual.dir/src/dsp/Echo.cpp.o
+[ 64%] Building CXX object CMakeFiles/mix-final-actual.dir/app/SaveDialog.cpp.o
+[ 66%] Building CXX object CMakeFiles/mix-final-actual.dir/app/LiveLoudness.cpp.o
+[ 67%] Building CXX object CMakeFiles/mix-final-actual.dir/app/Recent.cpp.o
+[ 67%] Building CXX object CMakeFiles/mix-final-actual.dir/src/dsp/FdnReverb.cpp.o
+[ 68%] Building CXX object CMakeFiles/mix-final-actual.dir/src/analysis/Analyzer.cpp.o
+[ 69%] Building CXX object CMakeFiles/mix-final-actual.dir/src/dsp/MixEngine.cpp.o
+[ 70%] Building CXX object CMakeFiles/mix-final-actual.dir/src/standalone/MultitrackPlayer.cpp.o
+[ 71%] Building CXX object CMakeFiles/mix-final-actual.dir/src/analysis/Tempo.cpp.o
+[ 72%] Building CXX object CMakeFiles/mix-final-actual.dir/src/dsp/Limiter.cpp.o
+[ 73%] Building CXX object CMakeFiles/mix-final-actual.dir/app/Instances.cpp.o
+[ 74%] Building CXX object CMakeFiles/mix-final-actual.dir/app/FirstMix.cpp.o
+[ 75%] Building CXX object CMakeFiles/mix-final-actual.dir/src/agent/Agent.cpp.o
+[ 74%] Building CXX object CMakeFiles/mix-final-actual.dir/app/Project.cpp.o
+[ 53%] Building CXX object CMakeFiles/mix-final-actual.dir/app/Render.cpp.o
+[ 76%] Building CXX object CMakeFiles/mix-final-actual.dir/app/Listener.cpp.o
+[ 77%] Building CXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_audio_processors_headless/juce_audio_processors_headless_lv2_libs.cpp.o
+[ 78%] Building OBJCXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_audio_processors_headless/juce_audio_processors_headless.mm.o
+[ 79%] Building OBJCXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_dsp/juce_dsp.mm.o
+[ 80%] Building CXX object CMakeFiles/mix-final-actual.dir/app/AutoAgent.cpp.o
+[ 81%] Building OBJCXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_audio_utils/juce_audio_utils.mm.o
+[ 81%] Building OBJCXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_audio_processors/juce_audio_processors.mm.o
+[ 83%] Building OBJCXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_graphics/juce_graphics.mm.o
+[ 84%] Building C object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_graphics/juce_graphics_Sheenbidi.c.o
+[ 85%] Building OBJCXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_gui_extra/juce_gui_extra.mm.o
+[ 86%] Building OBJCXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_events/juce_events.mm.o
+[ 87%] Building OBJCXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_core/juce_core.mm.o
+[ 88%] Building CXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_gui_basics/juce_gui_basics_4.cpp.o
+[ 89%] Building CXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_core/juce_core_CompilationTime.cpp.o
+[ 90%] Building CXX object CMakeFiles/mix-final-actual.dir/app/SongTempo.cpp.o
+[ 90%] Building CXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_gui_basics/juce_gui_basics_3.cpp.o
+[ 92%] Building CXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_audio_processors_headless/juce_audio_processors_headless_ara.cpp.o
+[ 92%] Building OBJCXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_data_structures/juce_data_structures.mm.o
+[ 94%] Building CXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_gui_basics/juce_gui_basics_5.cpp.o
+[ 94%] Building OBJCXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_gui_basics/juce_gui_basics.mm.o
+[ 95%] Building OBJCXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_audio_devices/juce_audio_devices.mm.o
+[ 96%] Building CXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_graphics/juce_graphics_Harfbuzz.cpp.o
+[ 96%] Building OBJCXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_audio_formats/juce_audio_formats.mm.o
+[ 97%] Building OBJCXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_audio_basics/juce_audio_basics.mm.o
+[ 98%] Building CXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_gui_basics/juce_gui_basics_2.cpp.o
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_gui_basics/juce_gui_basics.mm:35:
+/Users/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_gui_basics/juce_gui_basics.cpp:61:2: warning: This version of JUCE does not use the splash screen, the flag JUCE_DISPLAY_SPLASH_SCREEN is ignored [-W#pragma-messages]
+ JUCE_COMPILER_WARNING ("This version of JUCE does not use the splash screen, the flag JUCE_DISPLAY_SPLASH_SCREEN is ignored")
+ ^
+/Users/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_core/system/juce_PlatformDefs.h:292:38: note: expanded from macro 'JUCE_COMPILER_WARNING'
+ #define JUCE_COMPILER_WARNING(msg)  _Pragma (JUCE_STRINGIFY (message (msg)))
+                                     ^
+<scratch space>:261:2: note: expanded from here
+ message ("This version of JUCE does not use the splash screen, the flag JUCE_DISPLAY_SPLASH_SCREEN is ignored")
+ ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.cpp:74:49: warning: 'createWriterFor' is deprecated: Use the function taking an AudioFormatWriterOptions instead. [-Wdeprecated-declarations]
+        if (os) w.reset (juce::WavAudioFormat().createWriterFor (os.get(), rate, (unsigned int) ch, 32, {}, 0));
+                                                ^
+/Users/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_audio_formats/format/juce_AudioFormat.h:178:7: note: 'createWriterFor' has been explicitly marked deprecated here
+    [[deprecated ("Use the function taking an AudioFormatWriterOptions instead.")]]
+      ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/core/Params.cpp:275:13: warning: enumeration values 'Linear', 'Decibel', and 'Discrete' not explicitly handled in switch [-Wswitch-enum]
+    switch (s.domain)
+            ^~~~~~~~
+/Users/runner/work/mix-final-actual/mix-final-actual/src/core/Params.cpp:275:13: note: add missing switch cases
+    switch (s.domain)
+            ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/core/Params.cpp:284:13: warning: enumeration values 'Linear', 'Decibel', and 'Discrete' not explicitly handled in switch [-Wswitch-enum]
+    switch (s.domain)
+            ^~~~~~~~
+/Users/runner/work/mix-final-actual/mix-final-actual/src/core/Params.cpp:284:13: note: add missing switch cases
+    switch (s.domain)
+            ^
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.cpp:1:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12:
+/Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+            if (r == lastRaw[i]) continue;
+                ~ ^  ~~~~~~~~~~
+/Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.cpp:20:16: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+    if (target == s.getTargetValue()) return;
+        ~~~~~~ ^  ~~~~~~~~~~~~~~~~~~
+/Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.cpp:135:11: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+    if (a == b)
+        ~ ^  ~
+/Users/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.cpp:312:103: warning: declaration shadows a field of 'im::MultitrackPlayer' [-Wshadow]
+std::vector<float> MultitrackPlayer::mixdown (const std::vector<int>& tracks, double startSec, double lenSec) const
+                                                                                                      ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.h:156:58: note: previous declaration is here
+    std::atomic<double> seekTo { -1.0 }, posSec { 0.0 }, lenSec { 0.0 }, loadedRate { 0.0 };
+                                                         ^
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_gui_basics/juce_gui_basics.mm:35:
+/Users/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_gui_basics/juce_gui_basics.cpp:61:2: warning: This version of JUCE does not use the splash screen, the flag JUCE_DISPLAY_SPLASH_SCREEN is ignored [-W#pragma-messages]
+ JUCE_COMPILER_WARNING ("This version of JUCE does not use the splash screen, the flag JUCE_DISPLAY_SPLASH_SCREEN is ignored")
+ ^
+/Users/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_core/system/juce_PlatformDefs.h:292:38: note: expanded from macro 'JUCE_COMPILER_WARNING'
+ #define JUCE_COMPILER_WARNING(msg)  _Pragma (JUCE_STRINGIFY (message (msg)))
+                                     ^
+<scratch space>:261:2: note: expanded from here
+ message ("This version of JUCE does not use the splash screen, the flag JUCE_DISPLAY_SPLASH_SCREEN is ignored")
+ ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/core/StateStore.cpp:9:13: warning: enumeration value 'Off' not explicitly handled in switch [-Wswitch-enum]
+    switch (m)
+            ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/core/StateStore.cpp:9:13: note: add missing switch cases
+    switch (m)
+            ^
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/app/Render.cpp:2:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12:
+/Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+            if (r == lastRaw[i]) continue;
+                ~ ^  ~~~~~~~~~~
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.cpp:1:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12:
+/Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+            if (r == lastRaw[i]) continue;
+                ~ ^  ~~~~~~~~~~
+/Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.cpp:20:16: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+    if (target == s.getTargetValue()) return;
+        ~~~~~~ ^  ~~~~~~~~~~~~~~~~~~
+/Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.cpp:135:11: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+    if (a == b)
+        ~ ^  ~
+/Users/runner/work/mix-final-actual/mix-final-actual/src/core/Params.cpp:275:13: warning: enumeration values 'Linear', 'Decibel', and 'Discrete' not explicitly handled in switch [-Wswitch-enum]
+    switch (s.domain)
+            ^~~~~~~~
+/Users/runner/work/mix-final-actual/mix-final-actual/src/core/Params.cpp:275:13: note: add missing switch cases
+    switch (s.domain)
+            ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/core/Params.cpp:284:13: warning: enumeration values 'Linear', 'Decibel', and 'Discrete' not explicitly handled in switch [-Wswitch-enum]
+    switch (s.domain)
+            ^~~~~~~~
+/Users/runner/work/mix-final-actual/mix-final-actual/src/core/Params.cpp:284:13: note: add missing switch cases
+    switch (s.domain)
+            ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/PromptBuilder.cpp:43:20: warning: no previous prototype for function 'systemPromptV2' [-Wmissing-prototypes]
+const std::string& systemPromptV2()
+                   ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/PromptBuilder.cpp:43:7: note: declare 'static' if the function is not intended to be used outside of this translation unit
+const std::string& systemPromptV2()
+      ^
+      static 
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/PromptBuilder.cpp:72:20: warning: no previous prototype for function 'systemPromptV3' [-Wmissing-prototypes]
+const std::string& systemPromptV3()
+                   ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/PromptBuilder.cpp:72:7: note: declare 'static' if the function is not intended to be used outside of this translation unit
+const std::string& systemPromptV3()
+      ^
+      static 
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/PromptBuilder.cpp:112:20: warning: no previous prototype for function 'systemPromptV4' [-Wmissing-prototypes]
+const std::string& systemPromptV4()
+                   ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/PromptBuilder.cpp:112:7: note: declare 'static' if the function is not intended to be used outside of this translation unit
+const std::string& systemPromptV4()
+      ^
+      static 
+/Users/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.cpp:74:49: warning: 'createWriterFor' is deprecated: Use the function taking an AudioFormatWriterOptions instead. [-Wdeprecated-declarations]
+        if (os) w.reset (juce::WavAudioFormat().createWriterFor (os.get(), rate, (unsigned int) ch, 32, {}, 0));
+                                                ^
+/Users/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_audio_formats/format/juce_AudioFormat.h:178:7: note: 'createWriterFor' has been explicitly marked deprecated here
+    [[deprecated ("Use the function taking an AudioFormatWriterOptions instead.")]]
+      ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/PromptBuilder.cpp:159:20: warning: no previous prototype for function 'systemPromptV5' [-Wmissing-prototypes]
+const std::string& systemPromptV5()
+                   ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/PromptBuilder.cpp:159:7: note: declare 'static' if the function is not intended to be used outside of this translation unit
+const std::string& systemPromptV5()
+      ^
+      static 
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/Agent.cpp:24:13: warning: enumeration value 'Offline' not explicitly handled in switch [-Wswitch-enum]
+    switch (s)
+            ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/Agent.cpp:24:13: note: add missing switch cases
+    switch (s)
+            ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/Agent.cpp:84:29: warning: missing field 'label' initializer [-Wmissing-field-initializers]
+    trigger ({ "user", text });
+                            ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/Agent.cpp:101:13: warning: enumeration value 'None' not explicitly handled in switch [-Wswitch-enum]
+    switch (s)
+            ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/Agent.cpp:101:13: note: add missing switch cases
+    switch (s)
+            ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/Agent.cpp:160:38: warning: missing field 'label' initializer [-Wmissing-field-initializers]
+            t = Trigger { "auto", {} };
+                                     ^
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.cpp:1:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12:
+/Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+            if (r == lastRaw[i]) continue;
+                ~ ^  ~~~~~~~~~~
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/tests/tests.cpp:7:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12:
+/Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+            if (r == lastRaw[i]) continue;
+                ~ ^  ~~~~~~~~~~
+/Users/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.cpp:312:103: warning: declaration shadows a field of 'im::MultitrackPlayer' [-Wshadow]
+std::vector<float> MultitrackPlayer::mixdown (const std::vector<int>& tracks, double startSec, double lenSec) const
+                                                                                                      ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.h:156:58: note: previous declaration is here
+    std::atomic<double> seekTo { -1.0 }, posSec { 0.0 }, lenSec { 0.0 }, loadedRate { 0.0 };
+                                                         ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/core/StateStore.cpp:9:13: warning: enumeration value 'Off' not explicitly handled in switch [-Wswitch-enum]
+    switch (m)
+            ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/core/StateStore.cpp:9:13: note: add missing switch cases
+    switch (m)
+            ^
+3 warnings generated.
+/Users/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.cpp:128:13: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+    if (sig != paramSig || ev != seenEditsVer || gsig != seenGroupSig)
+        ~~~ ^  ~~~~~~~~
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/PromptBuilder.cpp:43:20: warning: no previous prototype for function 'systemPromptV2' [-Wmissing-prototypes]
+const std::string& systemPromptV2()
+                   ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/PromptBuilder.cpp:43:7: note: declare 'static' if the function is not intended to be used outside of this translation unit
+const std::string& systemPromptV2()
+      ^
+      static 
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/PromptBuilder.cpp:72:20: warning: no previous prototype for function 'systemPromptV3' [-Wmissing-prototypes]
+const std::string& systemPromptV3()
+                   ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/PromptBuilder.cpp:72:7: note: declare 'static' if the function is not intended to be used outside of this translation unit
+const std::string& systemPromptV3()
+      ^
+      static 
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/PromptBuilder.cpp:112:20: warning: no previous prototype for function 'systemPromptV4' [-Wmissing-prototypes]
+const std::string& systemPromptV4()
+                   ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/PromptBuilder.cpp:112:7: note: declare 'static' if the function is not intended to be used outside of this translation unit
+const std::string& systemPromptV4()
+      ^
+      static 
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/PromptBuilder.cpp:159:20: warning: no previous prototype for function 'systemPromptV5' [-Wmissing-prototypes]
+const std::string& systemPromptV5()
+                   ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/PromptBuilder.cpp:159:7: note: declare 'static' if the function is not intended to be used outside of this translation unit
+const std::string& systemPromptV5()
+      ^
+      static 
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/Agent.cpp:24:13: warning: enumeration value 'Offline' not explicitly handled in switch [-Wswitch-enum]
+    switch (s)
+            ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/Agent.cpp:24:13: note: add missing switch cases
+    switch (s)
+            ^
+/Users/runner/work/mix-final-actual/mix-final-actual/tests/tests.cpp:134:72: warning: 'createWriterFor' is deprecated: Use the function taking an AudioFormatWriterOptions instead. [-Wdeprecated-declarations]
+    std::unique_ptr<juce::AudioFormatWriter> w (juce::WavAudioFormat().createWriterFor (os.get(), rate, 1, 32, {}, 0));
+                                                                       ^
+/Users/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_audio_formats/format/juce_AudioFormat.h:178:7: note: 'createWriterFor' has been explicitly marked deprecated here
+    [[deprecated ("Use the function taking an AudioFormatWriterOptions instead.")]]
+      ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/Agent.cpp:84:29: warning: missing field 'label' initializer [-Wmissing-field-initializers]
+    trigger ({ "user", text });
+                            ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/Agent.cpp:101:13: warning: enumeration value 'None' not explicitly handled in switch [-Wswitch-enum]
+    switch (s)
+            ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/Agent.cpp:101:13: note: add missing switch cases
+    switch (s)
+            ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/Agent.cpp:160:38: warning: missing field 'label' initializer [-Wmissing-field-initializers]
+            t = Trigger { "auto", {} };
+                                     ^
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/app/FirstMix.cpp:2:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12:
+/Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+            if (r == lastRaw[i]) continue;
+                ~ ^  ~~~~~~~~~~
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/Tools.cpp:290:47: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+    if (v.is_number()) return v.get<double>() != 0 ? 1.0f : 0.0f;
+                              ~~~~~~~~~~~~~~~ ^  ~
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.cpp:1:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12:
+/Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+            if (r == lastRaw[i]) continue;
+                ~ ^  ~~~~~~~~~~
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/app/Listener.cpp:1:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/app/Listener.h:6:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12:
+/Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+            if (r == lastRaw[i]) continue;
+                ~ ^  ~~~~~~~~~~
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/app/Export.cpp:2:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12:
+/Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+            if (r == lastRaw[i]) continue;
+                ~ ^  ~~~~~~~~~~
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/app/Project.cpp:2:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12:
+/Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+            if (r == lastRaw[i]) continue;
+                ~ ^  ~~~~~~~~~~
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/app/Render.cpp:2:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12:
+/Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+            if (r == lastRaw[i]) continue;
+                ~ ^  ~~~~~~~~~~
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/app/LiveLoudness.cpp:2:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12:
+/Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+            if (r == lastRaw[i]) continue;
+                ~ ^  ~~~~~~~~~~
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/app/AutoAgent.cpp:2:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12:
+/Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+            if (r == lastRaw[i]) continue;
+                ~ ^  ~~~~~~~~~~
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/app/SongTempo.cpp:3:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12:
+/Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+            if (r == lastRaw[i]) continue;
+                ~ ^  ~~~~~~~~~~
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.cpp:1:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12:
+/Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+            if (r == lastRaw[i]) continue;
+                ~ ^  ~~~~~~~~~~
+3 warnings generated.
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/app/WebServer.cpp:4:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12:
+/Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+            if (r == lastRaw[i]) continue;
+                ~ ^  ~~~~~~~~~~
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/app/main.cpp:16:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/app/Listener.h:6:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12:
+/Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+            if (r == lastRaw[i]) continue;
+                ~ ^  ~~~~~~~~~~
+/Users/runner/work/mix-final-actual/mix-final-actual/tests/tests.cpp:148:55: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+        check (e.empty() && r.size() == 2 && r[0].pos == 0 && r[1].pos == 1 && r[0].srcTrack == 0 && r[1].srcTrack == 0,
+                                             ~~~~~~~~ ^  ~
+/Users/runner/work/mix-final-actual/mix-final-actual/tests/tests.cpp:148:72: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+        check (e.empty() && r.size() == 2 && r[0].pos == 0 && r[1].pos == 1 && r[0].srcTrack == 0 && r[1].srcTrack == 0,
+                                                              ~~~~~~~~ ^  ~
+/Users/runner/work/mix-final-actual/mix-final-actual/tests/tests.cpp:164:56: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+                   && out.size() == 1 && out[0].gainDb == -3,
+                                         ~~~~~~~~~~~~~ ^  ~~
+/Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.cpp:20:16: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+    if (target == s.getTargetValue()) return;
+        ~~~~~~ ^  ~~~~~~~~~~~~~~~~~~
+/Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.cpp:135:11: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+    if (a == b)
+        ~ ^  ~
+2 warnings generated.
+/Users/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.cpp:372:39: warning: missing field 'label' initializer [-Wmissing-field-initializers]
+        agent.trigger ({ "stage", msg });
+                                      ^
+/Users/runner/work/mix-final-actual/mix-final-actual/app/Export.cpp:21:54: warning: 'createWriterFor' is deprecated: Use the function taking an AudioFormatWriterOptions instead. [-Wdeprecated-declarations]
+    std::unique_ptr<juce::AudioFormatWriter> w (fmt->createWriterFor (os.get(), sr, 2, 24, {}, format == "flac" ? 5 : 0));
+                                                     ^
+/Users/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_audio_formats/format/juce_AudioFormat.h:178:7: note: 'createWriterFor' has been explicitly marked deprecated here
+    [[deprecated ("Use the function taking an AudioFormatWriterOptions instead.")]]
+      ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.cpp:128:13: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+    if (sig != paramSig || ev != seenEditsVer || gsig != seenGroupSig)
+        ~~~ ^  ~~~~~~~~
+/Users/runner/work/mix-final-actual/mix-final-actual/app/LiveLoudness.cpp:61:14: warning: declaration shadows a local variable [-Wshadow]
+    for (int t = 0; t < live.player.numLoadedTracks(); ++t)
+             ^
+/Users/runner/work/mix-final-actual/mix-final-actual/app/LiveLoudness.cpp:50:9: note: previous declaration is here
+    int t = 0;
+        ^
+/Users/runner/work/mix-final-actual/mix-final-actual/app/LiveLoudness.cpp:99:37: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+    if (running && (! lufs || *lufs != runTarget)) cancel = true;
+                              ~~~~~ ^  ~~~~~~~~~
+/Users/runner/work/mix-final-actual/mix-final-actual/app/LiveLoudness.cpp:132:51: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+        if (runOk && ! cancel && tgt && runTarget == *tgt)
+                                        ~~~~~~~~~ ^  ~~~~
+/Users/runner/work/mix-final-actual/mix-final-actual/app/LiveLoudness.cpp:134:129: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+            cache.erase (std::remove_if (cache.begin(), cache.end(), [&] (const Cached& c) { return c.key == runKey && c.target == runTarget; }), cache.end());
+                                                                                                                       ~~~~~~~~ ^  ~~~~~~~~~
+/Users/runner/work/mix-final-actual/mix-final-actual/app/LiveLoudness.cpp:149:79: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+    const bool stale = ! measuredKey || *measuredKey != key || measuredTarget != *tgt;
+                                                               ~~~~~~~~~~~~~~ ^  ~~~~
+/Users/runner/work/mix-final-actual/mix-final-actual/app/LiveLoudness.cpp:152:38: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+        if (c.key == key && c.target == *tgt)
+                            ~~~~~~~~ ^  ~~~~
+/Users/runner/work/mix-final-actual/mix-final-actual/app/LiveLoudness.cpp:199:75: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+    if (running || ! measuredKey || *measuredKey != key || measuredTarget != targetLufs) return std::nullopt;
+                                                           ~~~~~~~~~~~~~~ ^  ~~~~~~~~~~
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.cpp:1:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12:
+/Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+            if (r == lastRaw[i]) continue;
+                ~ ^  ~~~~~~~~~~
+/Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.cpp:20:16: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+    if (target == s.getTargetValue()) return;
+        ~~~~~~ ^  ~~~~~~~~~~~~~~~~~~
+/Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.cpp:135:11: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+    if (a == b)
+        ~ ^  ~
+/Users/runner/work/mix-final-actual/mix-final-actual/app/LiveLoudness.cpp:208:90: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+    const bool ready = ! running && measuredKey && *measuredKey == key && measuredTarget == *tgt;
+                                                                          ~~~~~~~~~~~~~~ ^  ~~~~
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/Tools.cpp:290:47: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+    if (v.is_number()) return v.get<double>() != 0 ? 1.0f : 0.0f;
+                              ~~~~~~~~~~~~~~~ ^  ~
+/Users/runner/work/mix-final-actual/mix-final-actual/src/core/Params.cpp:275:13: warning: enumeration values 'Linear', 'Decibel', and 'Discrete' not explicitly handled in switch [-Wswitch-enum]
+    switch (s.domain)
+            ^~~~~~~~
+/Users/runner/work/mix-final-actual/mix-final-actual/src/core/Params.cpp:275:13: note: add missing switch cases
+    switch (s.domain)
+            ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/core/Params.cpp:284:13: warning: enumeration values 'Linear', 'Decibel', and 'Discrete' not explicitly handled in switch [-Wswitch-enum]
+    switch (s.domain)
+            ^~~~~~~~
+/Users/runner/work/mix-final-actual/mix-final-actual/src/core/Params.cpp:284:13: note: add missing switch cases
+    switch (s.domain)
+            ^
+2 warnings generated.
+/Users/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.cpp:372:39: warning: missing field 'label' initializer [-Wmissing-field-initializers]
+        agent.trigger ({ "stage", msg });
+                                      ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/core/Params.cpp:275:13: warning: enumeration values 'Linear', 'Decibel', and 'Discrete' not explicitly handled in switch [-Wswitch-enum]
+    switch (s.domain)
+            ^~~~~~~~
+/Users/runner/work/mix-final-actual/mix-final-actual/src/core/Params.cpp:275:13: note: add missing switch cases
+    switch (s.domain)
+            ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/core/Params.cpp:284:13: warning: enumeration values 'Linear', 'Decibel', and 'Discrete' not explicitly handled in switch [-Wswitch-enum]
+    switch (s.domain)
+            ^~~~~~~~
+/Users/runner/work/mix-final-actual/mix-final-actual/src/core/Params.cpp:284:13: note: add missing switch cases
+    switch (s.domain)
+            ^
+2 warnings generated.
+3 warnings generated.
+3 warnings generated.
+/Users/runner/work/mix-final-actual/mix-final-actual/app/main.cpp:143:143: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+        if (auto* dev = devices.getCurrentAudioDevice(); dev != nullptr && dev->getAvailableSampleRates().contains (want) && setup.sampleRate != want)
+                                                                                                                             ~~~~~~~~~~~~~~~~ ^  ~~~~
+2 warnings generated.
+/Users/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.cpp:74:49: warning: 'createWriterFor' is deprecated: Use the function taking an AudioFormatWriterOptions instead. [-Wdeprecated-declarations]
+        if (os) w.reset (juce::WavAudioFormat().createWriterFor (os.get(), rate, (unsigned int) ch, 32, {}, 0));
+                                                ^
+/Users/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_audio_formats/format/juce_AudioFormat.h:178:7: note: 'createWriterFor' has been explicitly marked deprecated here
+    [[deprecated ("Use the function taking an AudioFormatWriterOptions instead.")]]
+      ^
+2 warnings generated.
+/Users/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.cpp:312:103: warning: declaration shadows a field of 'im::MultitrackPlayer' [-Wshadow]
+std::vector<float> MultitrackPlayer::mixdown (const std::vector<int>& tracks, double startSec, double lenSec) const
+                                                                                                      ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.h:156:58: note: previous declaration is here
+    std::atomic<double> seekTo { -1.0 }, posSec { 0.0 }, lenSec { 0.0 }, loadedRate { 0.0 };
+                                                         ^
+2 warnings generated.
+1 warning generated.
+/Users/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.cpp:74:49: warning: 'createWriterFor' is deprecated: Use the function taking an AudioFormatWriterOptions instead. [-Wdeprecated-declarations]
+        if (os) w.reset (juce::WavAudioFormat().createWriterFor (os.get(), rate, (unsigned int) ch, 32, {}, 0));
+                                                ^
+/Users/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_audio_formats/format/juce_AudioFormat.h:178:7: note: 'createWriterFor' has been explicitly marked deprecated here
+    [[deprecated ("Use the function taking an AudioFormatWriterOptions instead.")]]
+      ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.cpp:312:103: warning: declaration shadows a field of 'im::MultitrackPlayer' [-Wshadow]
+std::vector<float> MultitrackPlayer::mixdown (const std::vector<int>& tracks, double startSec, double lenSec) const
+                                                                                                      ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.h:156:58: note: previous declaration is here
+    std::atomic<double> seekTo { -1.0 }, posSec { 0.0 }, lenSec { 0.0 }, loadedRate { 0.0 };
+                                                         ^
+1 warning generated.
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/app/Render.cpp:2:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12:
+/Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+            if (r == lastRaw[i]) continue;
+                ~ ^  ~~~~~~~~~~
+1 warning generated.
+1 warning generated.
+1 warning generated.
+4 warnings generated.
+4 warnings generated.
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/app/FirstMix.cpp:2:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12:
+/Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+            if (r == lastRaw[i]) continue;
+                ~ ^  ~~~~~~~~~~
+1 warning generated.
+9 warnings generated.
+3 warnings generated.
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/app/Render.cpp:2:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12:
+/Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+            if (r == lastRaw[i]) continue;
+                ~ ^  ~~~~~~~~~~
+1 warning generated.
+5 warnings generated.
+2 warnings generated.
+1 warning generated.
+1 warning generated.
+2 warnings generated.
+4 warnings generated.
+4 warnings generated.
+1 warning generated.
+/Users/runner/work/mix-final-actual/mix-final-actual/src/core/StateStore.cpp:9:13: warning: enumeration value 'Off' not explicitly handled in switch [-Wswitch-enum]
+    switch (m)
+            ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/core/StateStore.cpp:9:13: note: add missing switch cases
+    switch (m)
+            ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/PromptBuilder.cpp:43:20: warning: no previous prototype for function 'systemPromptV2' [-Wmissing-prototypes]
+const std::string& systemPromptV2()
+                   ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/PromptBuilder.cpp:43:7: note: declare 'static' if the function is not intended to be used outside of this translation unit
+const std::string& systemPromptV2()
+      ^
+      static 
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/PromptBuilder.cpp:72:20: warning: no previous prototype for function 'systemPromptV3' [-Wmissing-prototypes]
+const std::string& systemPromptV3()
+                   ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/PromptBuilder.cpp:72:7: note: declare 'static' if the function is not intended to be used outside of this translation unit
+const std::string& systemPromptV3()
+      ^
+      static 
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/PromptBuilder.cpp:112:20: warning: no previous prototype for function 'systemPromptV4' [-Wmissing-prototypes]
+const std::string& systemPromptV4()
+                   ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/PromptBuilder.cpp:112:7: note: declare 'static' if the function is not intended to be used outside of this translation unit
+const std::string& systemPromptV4()
+      ^
+      static 
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/PromptBuilder.cpp:159:20: warning: no previous prototype for function 'systemPromptV5' [-Wmissing-prototypes]
+const std::string& systemPromptV5()
+                   ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/PromptBuilder.cpp:159:7: note: declare 'static' if the function is not intended to be used outside of this translation unit
+const std::string& systemPromptV5()
+      ^
+      static 
+2 warnings generated.
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/Agent.cpp:24:13: warning: enumeration value 'Offline' not explicitly handled in switch [-Wswitch-enum]
+    switch (s)
+            ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/Agent.cpp:24:13: note: add missing switch cases
+    switch (s)
+            ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/Agent.cpp:84:29: warning: missing field 'label' initializer [-Wmissing-field-initializers]
+    trigger ({ "user", text });
+                            ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/Agent.cpp:101:13: warning: enumeration value 'None' not explicitly handled in switch [-Wswitch-enum]
+    switch (s)
+            ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/Agent.cpp:101:13: note: add missing switch cases
+    switch (s)
+            ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/Agent.cpp:160:38: warning: missing field 'label' initializer [-Wmissing-field-initializers]
+            t = Trigger { "auto", {} };
+                                     ^
+3 warnings generated.
+2 warnings generated.
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/app/Listener.cpp:1:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/app/Listener.h:6:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12:
+/Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+            if (r == lastRaw[i]) continue;
+                ~ ^  ~~~~~~~~~~
+1 warning generated.
+1 warning generated.
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/app/LiveLoudness.cpp:2:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12:
+/Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+            if (r == lastRaw[i]) continue;
+                ~ ^  ~~~~~~~~~~
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/app/SongTempo.cpp:3:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12:
+/Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+            if (r == lastRaw[i]) continue;
+                ~ ^  ~~~~~~~~~~
+1 warning generated.
+/Users/runner/work/mix-final-actual/mix-final-actual/app/LiveLoudness.cpp:61:14: warning: declaration shadows a local variable [-Wshadow]
+    for (int t = 0; t < live.player.numLoadedTracks(); ++t)
+             ^
+/Users/runner/work/mix-final-actual/mix-final-actual/app/LiveLoudness.cpp:50:9: note: previous declaration is here
+    int t = 0;
+        ^
+/Users/runner/work/mix-final-actual/mix-final-actual/app/LiveLoudness.cpp:99:37: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+    if (running && (! lufs || *lufs != runTarget)) cancel = true;
+                              ~~~~~ ^  ~~~~~~~~~
+/Users/runner/work/mix-final-actual/mix-final-actual/app/LiveLoudness.cpp:132:51: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+        if (runOk && ! cancel && tgt && runTarget == *tgt)
+                                        ~~~~~~~~~ ^  ~~~~
+/Users/runner/work/mix-final-actual/mix-final-actual/app/LiveLoudness.cpp:134:129: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+            cache.erase (std::remove_if (cache.begin(), cache.end(), [&] (const Cached& c) { return c.key == runKey && c.target == runTarget; }), cache.end());
+                                                                                                                       ~~~~~~~~ ^  ~~~~~~~~~
+/Users/runner/work/mix-final-actual/mix-final-actual/app/LiveLoudness.cpp:149:79: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+    const bool stale = ! measuredKey || *measuredKey != key || measuredTarget != *tgt;
+                                                               ~~~~~~~~~~~~~~ ^  ~~~~
+/Users/runner/work/mix-final-actual/mix-final-actual/app/LiveLoudness.cpp:152:38: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+        if (c.key == key && c.target == *tgt)
+                            ~~~~~~~~ ^  ~~~~
+/Users/runner/work/mix-final-actual/mix-final-actual/app/LiveLoudness.cpp:199:75: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+    if (running || ! measuredKey || *measuredKey != key || measuredTarget != targetLufs) return std::nullopt;
+                                                           ~~~~~~~~~~~~~~ ^  ~~~~~~~~~~
+/Users/runner/work/mix-final-actual/mix-final-actual/app/LiveLoudness.cpp:208:90: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+    const bool ready = ! running && measuredKey && *measuredKey == key && measuredTarget == *tgt;
+                                                                          ~~~~~~~~~~~~~~ ^  ~~~~
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.cpp:1:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12:
+/Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+            if (r == lastRaw[i]) continue;
+                ~ ^  ~~~~~~~~~~
+/Users/runner/work/mix-final-actual/mix-final-actual/src/core/StateStore.cpp:9:13: warning: enumeration value 'Off' not explicitly handled in switch [-Wswitch-enum]
+    switch (m)
+            ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/core/StateStore.cpp:9:13: note: add missing switch cases
+    switch (m)
+            ^
+1 warning generated.
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/app/Export.cpp:2:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12:
+/Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+            if (r == lastRaw[i]) continue;
+                ~ ^  ~~~~~~~~~~
+/Users/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.cpp:128:13: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+    if (sig != paramSig || ev != seenEditsVer || gsig != seenGroupSig)
+        ~~~ ^  ~~~~~~~~
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/tests/tests.cpp:7:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12:
+/Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+            if (r == lastRaw[i]) continue;
+                ~ ^  ~~~~~~~~~~
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/app/Project.cpp:2:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12:
+/Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+            if (r == lastRaw[i]) continue;
+                ~ ^  ~~~~~~~~~~
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/app/AutoAgent.cpp:2:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12:
+/Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+            if (r == lastRaw[i]) continue;
+                ~ ^  ~~~~~~~~~~
+/Users/runner/work/mix-final-actual/mix-final-actual/app/Export.cpp:21:54: warning: 'createWriterFor' is deprecated: Use the function taking an AudioFormatWriterOptions instead. [-Wdeprecated-declarations]
+    std::unique_ptr<juce::AudioFormatWriter> w (fmt->createWriterFor (os.get(), sr, 2, 24, {}, format == "flac" ? 5 : 0));
+                                                     ^
+/Users/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_audio_formats/format/juce_AudioFormat.h:178:7: note: 'createWriterFor' has been explicitly marked deprecated here
+    [[deprecated ("Use the function taking an AudioFormatWriterOptions instead.")]]
+      ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/PromptBuilder.cpp:43:20: warning: no previous prototype for function 'systemPromptV2' [-Wmissing-prototypes]
+const std::string& systemPromptV2()
+                   ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/PromptBuilder.cpp:43:7: note: declare 'static' if the function is not intended to be used outside of this translation unit
+const std::string& systemPromptV2()
+      ^
+      static 
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/PromptBuilder.cpp:72:20: warning: no previous prototype for function 'systemPromptV3' [-Wmissing-prototypes]
+const std::string& systemPromptV3()
+                   ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/PromptBuilder.cpp:72:7: note: declare 'static' if the function is not intended to be used outside of this translation unit
+const std::string& systemPromptV3()
+      ^
+      static 
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/PromptBuilder.cpp:112:20: warning: no previous prototype for function 'systemPromptV4' [-Wmissing-prototypes]
+const std::string& systemPromptV4()
+                   ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/PromptBuilder.cpp:112:7: note: declare 'static' if the function is not intended to be used outside of this translation unit
+const std::string& systemPromptV4()
+      ^
+      static 
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/PromptBuilder.cpp:159:20: warning: no previous prototype for function 'systemPromptV5' [-Wmissing-prototypes]
+const std::string& systemPromptV5()
+                   ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/PromptBuilder.cpp:159:7: note: declare 'static' if the function is not intended to be used outside of this translation unit
+const std::string& systemPromptV5()
+      ^
+      static 
+/Users/runner/work/mix-final-actual/mix-final-actual/tests/tests.cpp:134:72: warning: 'createWriterFor' is deprecated: Use the function taking an AudioFormatWriterOptions instead. [-Wdeprecated-declarations]
+    std::unique_ptr<juce::AudioFormatWriter> w (juce::WavAudioFormat().createWriterFor (os.get(), rate, 1, 32, {}, 0));
+                                                                       ^
+/Users/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_audio_formats/format/juce_AudioFormat.h:178:7: note: 'createWriterFor' has been explicitly marked deprecated here
+    [[deprecated ("Use the function taking an AudioFormatWriterOptions instead.")]]
+      ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/Agent.cpp:24:13: warning: enumeration value 'Offline' not explicitly handled in switch [-Wswitch-enum]
+    switch (s)
+            ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/Agent.cpp:24:13: note: add missing switch cases
+    switch (s)
+            ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.cpp:372:39: warning: missing field 'label' initializer [-Wmissing-field-initializers]
+        agent.trigger ({ "stage", msg });
+                                      ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/Agent.cpp:84:29: warning: missing field 'label' initializer [-Wmissing-field-initializers]
+    trigger ({ "user", text });
+                            ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/Agent.cpp:101:13: warning: enumeration value 'None' not explicitly handled in switch [-Wswitch-enum]
+    switch (s)
+            ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/Agent.cpp:101:13: note: add missing switch cases
+    switch (s)
+            ^
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/Agent.cpp:160:38: warning: missing field 'label' initializer [-Wmissing-field-initializers]
+            t = Trigger { "auto", {} };
+                                     ^
+/Users/runner/work/mix-final-actual/mix-final-actual/tests/tests.cpp:148:55: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+        check (e.empty() && r.size() == 2 && r[0].pos == 0 && r[1].pos == 1 && r[0].srcTrack == 0 && r[1].srcTrack == 0,
+                                             ~~~~~~~~ ^  ~
+/Users/runner/work/mix-final-actual/mix-final-actual/tests/tests.cpp:148:72: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+        check (e.empty() && r.size() == 2 && r[0].pos == 0 && r[1].pos == 1 && r[0].srcTrack == 0 && r[1].srcTrack == 0,
+                                                              ~~~~~~~~ ^  ~
+/Users/runner/work/mix-final-actual/mix-final-actual/tests/tests.cpp:164:56: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+                   && out.size() == 1 && out[0].gainDb == -3,
+                                         ~~~~~~~~~~~~~ ^  ~~
+1 warning generated.
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.cpp:1:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12:
+/Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+            if (r == lastRaw[i]) continue;
+                ~ ^  ~~~~~~~~~~
+1 warning generated.
+1 warning generated.
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/Tools.cpp:290:47: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+    if (v.is_number()) return v.get<double>() != 0 ? 1.0f : 0.0f;
+                              ~~~~~~~~~~~~~~~ ^  ~
+1 warning generated.
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/app/main.cpp:16:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/app/Listener.h:6:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12:
+/Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+            if (r == lastRaw[i]) continue;
+                ~ ^  ~~~~~~~~~~
+/Users/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.cpp:128:13: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+    if (sig != paramSig || ev != seenEditsVer || gsig != seenGroupSig)
+        ~~~ ^  ~~~~~~~~
+4 warnings generated.
+4 warnings generated.
+/Users/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.cpp:372:39: warning: missing field 'label' initializer [-Wmissing-field-initializers]
+        agent.trigger ({ "stage", msg });
+                                      ^
+1 warning generated.
+/Users/runner/work/mix-final-actual/mix-final-actual/src/agent/Tools.cpp:290:47: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+    if (v.is_number()) return v.get<double>() != 0 ? 1.0f : 0.0f;
+                              ~~~~~~~~~~~~~~~ ^  ~
+9 warnings generated.
+/Users/runner/work/mix-final-actual/mix-final-actual/app/main.cpp:143:143: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+        if (auto* dev = devices.getCurrentAudioDevice(); dev != nullptr && dev->getAvailableSampleRates().contains (want) && setup.sampleRate != want)
+                                                                                                                             ~~~~~~~~~~~~~~~~ ^  ~~~~
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_gui_basics/juce_gui_basics.mm:35:
+/Users/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_gui_basics/juce_gui_basics.cpp:61:2: warning: This version of JUCE does not use the splash screen, the flag JUCE_DISPLAY_SPLASH_SCREEN is ignored [-W#pragma-messages]
+ JUCE_COMPILER_WARNING ("This version of JUCE does not use the splash screen, the flag JUCE_DISPLAY_SPLASH_SCREEN is ignored")
+ ^
+/Users/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_core/system/juce_PlatformDefs.h:292:38: note: expanded from macro 'JUCE_COMPILER_WARNING'
+ #define JUCE_COMPILER_WARNING(msg)  _Pragma (JUCE_STRINGIFY (message (msg)))
+                                     ^
+<scratch space>:231:2: note: expanded from here
+ message ("This version of JUCE does not use the splash screen, the flag JUCE_DISPLAY_SPLASH_SCREEN is ignored")
+ ^
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_gui_basics/juce_gui_basics.mm:35:
+/Users/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_gui_basics/juce_gui_basics.cpp:61:2: warning: This version of JUCE does not use the splash screen, the flag JUCE_DISPLAY_SPLASH_SCREEN is ignored [-W#pragma-messages]
+ JUCE_COMPILER_WARNING ("This version of JUCE does not use the splash screen, the flag JUCE_DISPLAY_SPLASH_SCREEN is ignored")
+ ^
+/Users/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_core/system/juce_PlatformDefs.h:292:38: note: expanded from macro 'JUCE_COMPILER_WARNING'
+ #define JUCE_COMPILER_WARNING(msg)  _Pragma (JUCE_STRINGIFY (message (msg)))
+                                     ^
+<scratch space>:231:2: note: expanded from here
+ message ("This version of JUCE does not use the splash screen, the flag JUCE_DISPLAY_SPLASH_SCREEN is ignored")
+ ^
+2 warnings generated.
+1 warning generated.
+1 warning generated.
+3 warnings generated.
+1 warning generated.
+5 warnings generated.
+4 warnings generated.
+4 warnings generated.
+2 warnings generated.
+3 warnings generated.
+1 warning generated.
+1 warning generated.
+1 warning generated.
+1 warning generated.
+1 warning generated.
+[ 99%] Linking CXX executable mfa-tests_artefacts/Release/mfa-tests
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/app/WebServer.cpp:4:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5:
+In file included from /Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12:
+/Users/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+            if (r == lastRaw[i]) continue;
+                ~ ^  ~~~~~~~~~~
+1 warning generated.
+[100%] Linking CXX executable mix-final-actual_artefacts/Release/mix-final-actual
+[100%] Built target mfa-tests
+[100%] Built target mix-final-actual

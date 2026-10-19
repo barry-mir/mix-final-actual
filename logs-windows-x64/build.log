@@ -1,0 +1,814 @@
+MSBuild version 17.14.60+43b635718 for .NET Framework
+
+  Checking File Globs
+  1>Checking Build System
+  Generating mix-final-actual_artefacts/JuceLibraryCode/mix-final-actual_resources.rc
+  Generating mfa-tests_artefacts/JuceLibraryCode/mfa-tests_resources.rc
+  Building Custom Rule D:/a/mix-final-actual/mix-final-actual/CMakeLists.txt
+  Building Custom Rule D:/a/mix-final-actual/mix-final-actual/CMakeLists.txt
+  mix-final-actual_rc_lib.vcxproj -> D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual_rc_lib.dir\Release\mix-final-actual_rc_lib.lib
+  mfa-tests_rc_lib.vcxproj -> D:\a\mix-final-actual\mix-final-actual\build\mfa-tests_rc_lib.dir\Release\mfa-tests_rc_lib.lib
+  Generating juce_binarydata_mfa_web/JuceLibraryCode/BinaryData1.cpp, juce_binarydata_mfa_web/JuceLibraryCode/BinaryData2.cpp, juce_binarydata_mfa_web/JuceLibraryCode/BinaryData3.cpp, juce_binarydata_mfa_web/JuceLibraryCode/BinaryData.h
+  Building Custom Rule D:/a/mix-final-actual/mix-final-actual/CMakeLists.txt
+  Building Custom Rule D:/a/mix-final-actual/mix-final-actual/CMakeLists.txt
+  BinaryData1.cpp
+  Params.cpp
+  StateStore.cpp
+  Filters.cpp
+  ChannelStrip.cpp
+  BinaryData2.cpp
+  BinaryData3.cpp
+  Generating Code...
+D:\a\mix-final-actual\mix-final-actual\src\dsp\Dynamics.h(50,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+  (compiling source file '../src/dsp/ChannelStrip.cpp')
+  
+  mfa_web.vcxproj -> D:\a\mix-final-actual\mix-final-actual\build\Release\mfa_web.lib
+  Doubler.cpp
+  Building Custom Rule D:/a/mix-final-actual/mix-final-actual/CMakeLists.txt
+  Echo.cpp
+  FdnReverb.cpp
+  Params.cpp
+  Limiter.cpp
+  StateStore.cpp
+  Filters.cpp
+  ChannelStrip.cpp
+  MixEngine.cpp
+  Features.cpp
+D:\a\mix-final-actual\mix-final-actual\src\dsp\Dynamics.h(50,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../src/dsp/ChannelStrip.cpp')
+  
+  Doubler.cpp
+  Echo.cpp
+  FdnReverb.cpp
+  Limiter.cpp
+  MixEngine.cpp
+  Features.cpp
+  Loudness.cpp
+  Analyzer.cpp
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+  (compiling source file '../src/dsp/MixEngine.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(22,21):
+          see reference to class template instantiation 'im::SpscRing<float>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+  (compiling source file '../src/dsp/MixEngine.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+  (compiling source file '../src/dsp/MixEngine.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(35,24):
+          see reference to class template instantiation 'im::SpscRing<im::GrRecord>' being compiled
+  
+  Loudness.cpp
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+  (compiling source file '../src/dsp/MixEngine.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\dsp\Dynamics.h(50,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+  (compiling source file '../src/dsp/MixEngine.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<im::LlmChange>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+  (compiling source file '../src/dsp/MixEngine.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\dsp\ParamEngine.h(194,25):
+          see reference to class template instantiation 'im::SpscRing<im::LlmChange>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<im::LlmChange>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+  Analyzer.cpp
+  (compiling source file '../src/dsp/MixEngine.cpp')
+  
+  Spectrum.cpp
+  Tempo.cpp
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../src/dsp/MixEngine.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(22,21):
+          see reference to class template instantiation 'im::SpscRing<float>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../src/dsp/MixEngine.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../src/dsp/MixEngine.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(35,24):
+          see reference to class template instantiation 'im::SpscRing<im::GrRecord>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../src/dsp/MixEngine.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\dsp\Dynamics.h(50,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../src/dsp/MixEngine.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<im::LlmChange>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../src/dsp/MixEngine.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\dsp\ParamEngine.h(194,25):
+          see reference to class template instantiation 'im::SpscRing<im::LlmChange>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<im::LlmChange>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../src/dsp/MixEngine.cpp')
+  
+  Spectrum.cpp
+  Tools.cpp
+  Tempo.cpp
+  PromptBuilder.cpp
+  Tools.cpp
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+  (compiling source file '../src/analysis/Analyzer.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(22,21):
+          see reference to class template instantiation 'im::SpscRing<float>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+  (compiling source file '../src/analysis/Analyzer.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+  (compiling source file '../src/analysis/Analyzer.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(35,24):
+          see reference to class template instantiation 'im::SpscRing<im::GrRecord>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+  (compiling source file '../src/analysis/Analyzer.cpp')
+  
+  Bridge.cpp
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../src/analysis/Analyzer.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(22,21):
+          see reference to class template instantiation 'im::SpscRing<float>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../src/analysis/Analyzer.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../src/analysis/Analyzer.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(35,24):
+          see reference to class template instantiation 'im::SpscRing<im::GrRecord>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../src/analysis/Analyzer.cpp')
+  
+  Agent.cpp
+  PromptBuilder.cpp
+  Bridge.cpp
+  Agent.cpp
+D:\a\mix-final-actual\mix-final-actual\src\agent\Tools.cpp(33,54): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+  (compiling source file '../src/agent/PromptBuilder.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(22,21):
+          see reference to class template instantiation 'im::SpscRing<float>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+  (compiling source file '../src/agent/PromptBuilder.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+D:\a\mix-final-actual\mix-final-actual\src\agent\Tools.cpp(33,54): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../src/agent/PromptBuilder.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(35,24):
+          see reference to class template instantiation 'im::SpscRing<im::GrRecord>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+  (compiling source file '../src/agent/PromptBuilder.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\agent\PromptBuilder.cpp(439,34): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+D:\a\mix-final-actual\mix-final-actual\src\agent\PromptBuilder.cpp(447,58): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+  AgentLog.cpp
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+  (compiling source file '../src/agent/Agent.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(22,21):
+          see reference to class template instantiation 'im::SpscRing<float>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../src/agent/PromptBuilder.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(22,21):
+          see reference to class template instantiation 'im::SpscRing<float>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../src/agent/PromptBuilder.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../src/agent/PromptBuilder.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(35,24):
+          see reference to class template instantiation 'im::SpscRing<im::GrRecord>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../src/agent/PromptBuilder.cpp')
+  
+  (compiling source file '../src/agent/Agent.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\agent\PromptBuilder.cpp(439,34): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+D:\a\mix-final-actual\mix-final-actual\src\agent\PromptBuilder.cpp(447,58): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+  (compiling source file '../src/agent/Agent.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(35,24):
+          see reference to class template instantiation 'im::SpscRing<im::GrRecord>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+  (compiling source file '../src/agent/Agent.cpp')
+  
+  MultitrackPlayer.cpp
+  PluginProcessor.cpp
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../src/agent/Agent.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(22,21):
+          see reference to class template instantiation 'im::SpscRing<float>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../src/agent/Agent.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../src/agent/Agent.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(35,24):
+          see reference to class template instantiation 'im::SpscRing<im::GrRecord>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../src/agent/Agent.cpp')
+  
+  AgentLog.cpp
+  MultitrackPlayer.cpp
+  Render.cpp
+  PluginProcessor.cpp
+  main.cpp
+D:\a\mix-final-actual\mix-final-actual\src\standalone\MultitrackPlayer.cpp(74,49): warning C4996: 'juce::AudioFormat::createWriterFor': Use the function taking an AudioFormatWriterOptions instead. [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+D:\a\mix-final-actual\mix-final-actual\src\standalone\MultitrackPlayer.cpp(312,103): warning C4458: declaration of 'lenSec' hides class member [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+      D:\a\mix-final-actual\mix-final-actual\src\standalone\MultitrackPlayer.h(156,58):
+      see declaration of 'im::MultitrackPlayer::lenSec'
+  
+D:\a\mix-final-actual\mix-final-actual\src\standalone\MultitrackPlayer.cpp(74,49): warning C4996: 'juce::AudioFormat::createWriterFor': Use the function taking an AudioFormatWriterOptions instead. [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+D:\a\mix-final-actual\mix-final-actual\src\standalone\MultitrackPlayer.cpp(312,103): warning C4458: declaration of 'lenSec' hides class member [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+      D:\a\mix-final-actual\mix-final-actual\src\standalone\MultitrackPlayer.h(156,58):
+      see declaration of 'im::MultitrackPlayer::lenSec'
+  
+  Recent.cpp
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+  (compiling source file '../src/PluginProcessor.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(22,21):
+          see reference to class template instantiation 'im::SpscRing<float>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+  (compiling source file '../src/PluginProcessor.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+  (compiling source file '../src/PluginProcessor.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(35,24):
+          see reference to class template instantiation 'im::SpscRing<im::GrRecord>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+  (compiling source file '../src/PluginProcessor.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\dsp\Dynamics.h(50,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+  (compiling source file '../src/PluginProcessor.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<im::LlmChange>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+  (compiling source file '../src/PluginProcessor.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\dsp\ParamEngine.h(194,25):
+          see reference to class template instantiation 'im::SpscRing<im::LlmChange>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<im::LlmChange>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+  (compiling source file '../src/PluginProcessor.cpp')
+  
+  tests.cpp
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+  (compiling source file '../app/Render.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(22,21):
+          see reference to class template instantiation 'im::SpscRing<float>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+  WebServer.cpp
+  (compiling source file '../app/Render.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../src/PluginProcessor.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(22,21):
+          see reference to class template instantiation 'im::SpscRing<float>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../src/PluginProcessor.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../src/PluginProcessor.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(35,24):
+          see reference to class template instantiation 'im::SpscRing<im::GrRecord>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../src/PluginProcessor.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\dsp\Dynamics.h(50,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../src/PluginProcessor.cpp')
+  
+  (compiling source file '../app/Render.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(35,24):
+          see reference to class template instantiation 'im::SpscRing<im::GrRecord>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<im::LlmChange>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../src/PluginProcessor.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\dsp\ParamEngine.h(194,25):
+          see reference to class template instantiation 'im::SpscRing<im::LlmChange>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<im::LlmChange>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../src/PluginProcessor.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+  (compiling source file '../app/Render.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\dsp\Dynamics.h(50,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+  (compiling source file '../app/Render.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<im::LlmChange>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+  (compiling source file '../app/Render.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\dsp\ParamEngine.h(194,25):
+          see reference to class template instantiation 'im::SpscRing<im::LlmChange>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<im::LlmChange>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+  FirstMix.cpp
+  (compiling source file '../app/Render.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/main.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(22,21):
+          see reference to class template instantiation 'im::SpscRing<float>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/main.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/main.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(35,24):
+          see reference to class template instantiation 'im::SpscRing<im::GrRecord>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/main.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\dsp\Dynamics.h(50,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/main.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<im::LlmChange>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/main.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\dsp\ParamEngine.h(194,25):
+          see reference to class template instantiation 'im::SpscRing<im::LlmChange>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<im::LlmChange>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/main.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\app\main.cpp(77,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+D:\a\mix-final-actual\mix-final-actual\app\main.cpp(262,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  juce_audio_utils.cpp
+  juce_audio_processors.cpp
+  juce_gui_extra.cpp
+  Instances.cpp
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+  (compiling source file '../tests/tests.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(22,21):
+          see reference to class template instantiation 'im::SpscRing<float>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+  (compiling source file '../tests/tests.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+  Mcp.cpp
+  (compiling source file '../tests/tests.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(35,24):
+          see reference to class template instantiation 'im::SpscRing<im::GrRecord>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+  (compiling source file '../tests/tests.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\dsp\Dynamics.h(50,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/WebServer.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(22,21):
+          see reference to class template instantiation 'im::SpscRing<float>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/WebServer.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/WebServer.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(35,24):
+          see reference to class template instantiation 'im::SpscRing<im::GrRecord>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/WebServer.cpp')
+  
+  (compiling source file '../tests/tests.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\dsp\Dynamics.h(50,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/WebServer.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<im::LlmChange>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/WebServer.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\dsp\ParamEngine.h(194,25):
+          see reference to class template instantiation 'im::SpscRing<im::LlmChange>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<im::LlmChange>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/WebServer.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<im::LlmChange>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+  (compiling source file '../tests/tests.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\dsp\ParamEngine.h(194,25):
+          see reference to class template instantiation 'im::SpscRing<im::LlmChange>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<im::LlmChange>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+  (compiling source file '../tests/tests.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\tests\tests.cpp(134,72): warning C4996: 'juce::AudioFormat::createWriterFor': Use the function taking an AudioFormatWriterOptions instead. [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/FirstMix.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(22,21):
+          see reference to class template instantiation 'im::SpscRing<float>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/FirstMix.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/FirstMix.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(35,24):
+          see reference to class template instantiation 'im::SpscRing<im::GrRecord>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/FirstMix.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\dsp\Dynamics.h(50,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/FirstMix.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<im::LlmChange>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/FirstMix.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\dsp\ParamEngine.h(194,25):
+          see reference to class template instantiation 'im::SpscRing<im::LlmChange>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<im::LlmChange>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/FirstMix.cpp')
+  
+  juce_gui_basics.cpp
+  juce_gui_basics_2.cpp
+  Export.cpp
+  Project.cpp
+  juce_gui_basics_3.cpp
+  juce_gui_basics_4.cpp
+D:\a\mix-final-actual\mix-final-actual\app\Mcp.cpp(111,29): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+D:\a\mix-final-actual\mix-final-actual\app\Mcp.cpp(312,37): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+D:\a\mix-final-actual\mix-final-actual\.deps\juce-src\modules\juce_gui_basics\juce_gui_basics.cpp(61): warning : This version of JUCE does not use the splash screen, the flag JUCE_DISPLAY_SPLASH_SCREEN is ignored [D:\a\mix-final-actual\mix-final-actual\build\mfa-tests.vcxproj]
+  Render.cpp
+  juce_gui_basics_5.cpp
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/Export.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(22,21):
+          see reference to class template instantiation 'im::SpscRing<float>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/Export.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/Export.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(35,24):
+          see reference to class template instantiation 'im::SpscRing<im::GrRecord>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/Export.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\dsp\Dynamics.h(50,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/Export.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<im::LlmChange>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/Export.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\dsp\ParamEngine.h(194,25):
+          see reference to class template instantiation 'im::SpscRing<im::LlmChange>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<im::LlmChange>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/Export.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/Project.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(22,21):
+          see reference to class template instantiation 'im::SpscRing<float>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/Project.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/Project.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(35,24):
+          see reference to class template instantiation 'im::SpscRing<im::GrRecord>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/Project.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\dsp\Dynamics.h(50,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/Project.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<im::LlmChange>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/Project.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\dsp\ParamEngine.h(194,25):
+          see reference to class template instantiation 'im::SpscRing<im::LlmChange>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<im::LlmChange>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/Project.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\app\Export.cpp(21,54): warning C4996: 'juce::AudioFormat::createWriterFor': Use the function taking an AudioFormatWriterOptions instead. [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  LiveLoudness.cpp
+  juce_graphics.cpp
+  juce_graphics_Harfbuzz.cpp
+  juce_events.cpp
+  SaveDialog.cpp
+  Recent.cpp
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/Render.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(22,21):
+          see reference to class template instantiation 'im::SpscRing<float>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/Render.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/Render.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(35,24):
+          see reference to class template instantiation 'im::SpscRing<im::GrRecord>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/Render.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\dsp\Dynamics.h(50,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/Render.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<im::LlmChange>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/Render.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\dsp\ParamEngine.h(194,25):
+          see reference to class template instantiation 'im::SpscRing<im::LlmChange>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<im::LlmChange>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/Render.cpp')
+  
+  juce_core.cpp
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/LiveLoudness.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(22,21):
+          see reference to class template instantiation 'im::SpscRing<float>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/LiveLoudness.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/LiveLoudness.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(35,24):
+          see reference to class template instantiation 'im::SpscRing<im::GrRecord>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/LiveLoudness.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\dsp\Dynamics.h(50,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/LiveLoudness.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<im::LlmChange>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/LiveLoudness.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\dsp\ParamEngine.h(194,25):
+          see reference to class template instantiation 'im::SpscRing<im::LlmChange>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<im::LlmChange>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/LiveLoudness.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\app\LiveLoudness.cpp(61,14): warning C4456: declaration of 't' hides previous local declaration [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+      D:\a\mix-final-actual\mix-final-actual\app\LiveLoudness.cpp(50,9):
+      see declaration of 't'
+  
+  AutoAgent.cpp
+  juce_core_CompilationTime.cpp
+  juce_data_structures.cpp
+  Listener.cpp
+  SongTempo.cpp
+  juce_audio_utils.cpp
+  juce_audio_processors_headless.cpp
+  juce_audio_processors_headless_ara.cpp
+  juce_audio_processors_headless_lv2_libs.cpp
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/AutoAgent.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(22,21):
+          see reference to class template instantiation 'im::SpscRing<float>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/AutoAgent.cpp')
+  
+  juce_audio_basics.cpp
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/AutoAgent.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(35,24):
+          see reference to class template instantiation 'im::SpscRing<im::GrRecord>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/AutoAgent.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\dsp\Dynamics.h(50,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/AutoAgent.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<im::LlmChange>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/AutoAgent.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\dsp\ParamEngine.h(194,25):
+          see reference to class template instantiation 'im::SpscRing<im::LlmChange>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<im::LlmChange>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/AutoAgent.cpp')
+  
+  juce_audio_formats.cpp
+D:\a\mix-final-actual\mix-final-actual\app\AutoAgent.cpp(55,57): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+D:\a\mix-final-actual\mix-final-actual\app\AutoAgent.cpp(98,32): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/Listener.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(22,21):
+          see reference to class template instantiation 'im::SpscRing<float>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/Listener.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/Listener.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(35,24):
+          see reference to class template instantiation 'im::SpscRing<im::GrRecord>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/Listener.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\app\AutoAgent.cpp(163,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+D:\a\mix-final-actual\mix-final-actual\src\dsp\Dynamics.h(50,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/Listener.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<im::LlmChange>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/Listener.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\dsp\ParamEngine.h(194,25):
+          see reference to class template instantiation 'im::SpscRing<im::LlmChange>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<im::LlmChange>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/Listener.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/SongTempo.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(22,21):
+          see reference to class template instantiation 'im::SpscRing<float>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<float>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/SongTempo.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/SongTempo.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\analysis\Taps.h(35,24):
+          see reference to class template instantiation 'im::SpscRing<im::GrRecord>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<im::GrRecord>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/SongTempo.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\dsp\Dynamics.h(50,30): warning C4996: 'getenv': This function or variable may be unsafe. Consider using _dupenv_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details. [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/SongTempo.cpp')
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1): warning C4324: 'im::SpscRing<im::LlmChange>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/SongTempo.cpp')
+      D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(70,1):
+      the template instantiation context (the oldest one first) is
+          D:\a\mix-final-actual\mix-final-actual\src\dsp\ParamEngine.h(194,25):
+          see reference to class template instantiation 'im::SpscRing<im::LlmChange>' being compiled
+  
+D:\a\mix-final-actual\mix-final-actual\src\core\Spsc.h(71,1): warning C4324: 'im::SpscRing<im::LlmChange>': structure was padded due to alignment specifier [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  (compiling source file '../app/SongTempo.cpp')
+  
+  juce_audio_devices.cpp
+  juce_audio_processors.cpp
+  juce_gui_extra.cpp
+  juce_dsp.cpp
+  juce_gui_basics.cpp
+  juce_gui_basics_2.cpp
+D:\a\mix-final-actual\mix-final-actual\.deps\juce-src\modules\juce_gui_basics\juce_gui_basics.cpp(61): warning : This version of JUCE does not use the splash screen, the flag JUCE_DISPLAY_SPLASH_SCREEN is ignored [D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual.vcxproj]
+  juce_gui_basics_3.cpp
+  juce_gui_basics_4.cpp
+  juce_gui_basics_5.cpp
+  juce_graphics_Sheenbidi.c
+  juce_graphics.cpp
+  juce_graphics_Harfbuzz.cpp
+  juce_events.cpp
+  juce_core.cpp
+  Generating code
+  juce_core_CompilationTime.cpp
+  juce_data_structures.cpp
+  juce_audio_processors_headless.cpp
+  juce_audio_processors_headless_ara.cpp
+  juce_audio_processors_headless_lv2_libs.cpp
+  juce_audio_basics.cpp
+  juce_audio_formats.cpp
+  juce_audio_devices.cpp
+  juce_dsp.cpp
+  juce_graphics_Sheenbidi.c
+  Generating code
+  Finished generating code
+  mfa-tests.vcxproj -> D:\a\mix-final-actual\mix-final-actual\build\mfa-tests_artefacts\Release\mfa-tests.exe
+  Finished generating code
+  mix-final-actual.vcxproj -> D:\a\mix-final-actual\mix-final-actual\build\mix-final-actual_artefacts\Release\mix-final-actual.exe
+  Building Custom Rule D:/a/mix-final-actual/mix-final-actual/CMakeLists.txt

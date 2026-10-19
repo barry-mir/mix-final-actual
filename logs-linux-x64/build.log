@@ -1,0 +1,480 @@
+[0/2] Re-checking globbed directories...
+[1/111] Generating juce_binarydata_mfa_web/JuceLibraryCode/BinaryData1.cpp, juce_binarydata_mfa_web/JuceLibraryCode/BinaryData2.cpp, juce_binarydata_mfa_web/JuceLibraryCode/BinaryData3.cpp, juce_binarydata_mfa_web/JuceLibraryCode/BinaryData.h
+[2/111] Building CXX object CMakeFiles/mfa_web.dir/juce_binarydata_mfa_web/JuceLibraryCode/BinaryData1.cpp.o
+[3/111] Building CXX object CMakeFiles/mfa_web.dir/juce_binarydata_mfa_web/JuceLibraryCode/BinaryData2.cpp.o
+[4/111] Building CXX object CMakeFiles/mfa_web.dir/juce_binarydata_mfa_web/JuceLibraryCode/BinaryData3.cpp.o
+[5/111] Building CXX object CMakeFiles/mfa-tests.dir/src/dsp/Filters.cpp.o
+[6/111] Building CXX object CMakeFiles/mfa-tests.dir/src/dsp/Doubler.cpp.o
+[7/111] Building CXX object CMakeFiles/mfa-tests.dir/src/dsp/ChannelStrip.cpp.o
+[8/111] Building CXX object CMakeFiles/mix-final-actual.dir/src/dsp/Filters.cpp.o
+[9/111] Building CXX object CMakeFiles/mix-final-actual.dir/src/dsp/ChannelStrip.cpp.o
+[10/111] Building CXX object CMakeFiles/mix-final-actual.dir/src/dsp/Doubler.cpp.o
+[11/111] Building CXX object CMakeFiles/mix-final-actual.dir/src/dsp/Echo.cpp.o
+[12/111] Linking CXX static library libmfa_web.a
+[13/111] Building CXX object CMakeFiles/mix-final-actual.dir/src/dsp/FdnReverb.cpp.o
+[14/111] Building CXX object CMakeFiles/mix-final-actual.dir/src/dsp/Limiter.cpp.o
+[15/111] Building CXX object CMakeFiles/mfa-tests.dir/src/core/Params.cpp.o
+/home/runner/work/mix-final-actual/mix-final-actual/src/core/Params.cpp: In function ‘float im::toRampDomain(const im::ParamSpec&, float)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/core/Params.cpp:275:12: warning: enumeration value ‘Linear’ not handled in switch [-Wswitch-enum]
+  275 |     switch (s.domain)
+      |            ^
+/home/runner/work/mix-final-actual/mix-final-actual/src/core/Params.cpp:275:12: warning: enumeration value ‘Decibel’ not handled in switch [-Wswitch-enum]
+/home/runner/work/mix-final-actual/mix-final-actual/src/core/Params.cpp:275:12: warning: enumeration value ‘Discrete’ not handled in switch [-Wswitch-enum]
+/home/runner/work/mix-final-actual/mix-final-actual/src/core/Params.cpp: In function ‘float im::fromRampDomain(const im::ParamSpec&, float)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/core/Params.cpp:284:12: warning: enumeration value ‘Linear’ not handled in switch [-Wswitch-enum]
+  284 |     switch (s.domain)
+      |            ^
+/home/runner/work/mix-final-actual/mix-final-actual/src/core/Params.cpp:284:12: warning: enumeration value ‘Decibel’ not handled in switch [-Wswitch-enum]
+/home/runner/work/mix-final-actual/mix-final-actual/src/core/Params.cpp:284:12: warning: enumeration value ‘Discrete’ not handled in switch [-Wswitch-enum]
+[16/111] Building CXX object CMakeFiles/mix-final-actual.dir/src/core/Params.cpp.o
+/home/runner/work/mix-final-actual/mix-final-actual/src/core/Params.cpp: In function ‘float im::toRampDomain(const im::ParamSpec&, float)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/core/Params.cpp:275:12: warning: enumeration value ‘Linear’ not handled in switch [-Wswitch-enum]
+  275 |     switch (s.domain)
+      |            ^
+/home/runner/work/mix-final-actual/mix-final-actual/src/core/Params.cpp:275:12: warning: enumeration value ‘Decibel’ not handled in switch [-Wswitch-enum]
+/home/runner/work/mix-final-actual/mix-final-actual/src/core/Params.cpp:275:12: warning: enumeration value ‘Discrete’ not handled in switch [-Wswitch-enum]
+/home/runner/work/mix-final-actual/mix-final-actual/src/core/Params.cpp: In function ‘float im::fromRampDomain(const im::ParamSpec&, float)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/core/Params.cpp:284:12: warning: enumeration value ‘Linear’ not handled in switch [-Wswitch-enum]
+  284 |     switch (s.domain)
+      |            ^
+/home/runner/work/mix-final-actual/mix-final-actual/src/core/Params.cpp:284:12: warning: enumeration value ‘Decibel’ not handled in switch [-Wswitch-enum]
+/home/runner/work/mix-final-actual/mix-final-actual/src/core/Params.cpp:284:12: warning: enumeration value ‘Discrete’ not handled in switch [-Wswitch-enum]
+[17/111] Building CXX object CMakeFiles/mix-final-actual.dir/src/analysis/Loudness.cpp.o
+[18/111] Building CXX object CMakeFiles/mix-final-actual.dir/src/analysis/Features.cpp.o
+/home/runner/work/mix-final-actual/mix-final-actual/src/analysis/Features.cpp: In member function ‘void im::FeatureExtractor::barkSpectrum(const float*, int, std::array<float, 24>&)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/analysis/Features.cpp:129:16: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+  129 |         if (mk == 0.0) continue;
+      |             ~~~^~~~~~
+[19/111] Building CXX object CMakeFiles/mfa-tests.dir/src/core/StateStore.cpp.o
+/home/runner/work/mix-final-actual/mix-final-actual/src/core/StateStore.cpp: In function ‘const char* im::modeName(im::AgentMode)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/core/StateStore.cpp:9:12: warning: enumeration value ‘Off’ not handled in switch [-Wswitch-enum]
+    9 |     switch (m)
+      |            ^
+[20/111] Building CXX object CMakeFiles/mix-final-actual.dir/src/core/StateStore.cpp.o
+/home/runner/work/mix-final-actual/mix-final-actual/src/core/StateStore.cpp: In function ‘const char* im::modeName(im::AgentMode)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/core/StateStore.cpp:9:12: warning: enumeration value ‘Off’ not handled in switch [-Wswitch-enum]
+    9 |     switch (m)
+      |            ^
+[21/111] Building CXX object CMakeFiles/mix-final-actual.dir/src/analysis/Spectrum.cpp.o
+[22/111] Building CXX object CMakeFiles/mix-final-actual.dir/src/dsp/MixEngine.cpp.o
+In file included from /home/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.cpp:1:
+/home/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h: In member function ‘void im::ParamEngine::beginBlock(int)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+   89 |             if (r == lastRaw[i]) continue;
+/home/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.cpp: In function ‘void im::{anonymous}::rampSmoother(juce::SmoothedValue<float>&, float, int)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.cpp:20:16: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+   20 |     if (target == s.getTargetValue()) return;
+      |         ~~~~~~~^~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.cpp: In member function ‘void im::MixEngine::fillRamp(float*, float, float, int)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.cpp:135:11: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+  135 |     if (a == b)
+      |         ~~^~~~
+[23/111] Building CXX object CMakeFiles/mix-final-actual.dir/src/analysis/Tempo.cpp.o
+[24/111] Building CXX object CMakeFiles/mix-final-actual.dir/src/analysis/Analyzer.cpp.o
+[25/111] Building CXX object CMakeFiles/mix-final-actual.dir/src/agent/Bridge.cpp.o
+[26/111] Building CXX object CMakeFiles/mix-final-actual.dir/src/agent/Agent.cpp.o
+/home/runner/work/mix-final-actual/mix-final-actual/src/agent/Agent.cpp: In static member function ‘static const char* im::Agent::stateName(im::Agent::State)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/agent/Agent.cpp:24:12: warning: enumeration value ‘Offline’ not handled in switch [-Wswitch-enum]
+   24 |     switch (s)
+      |            ^
+/home/runner/work/mix-final-actual/mix-final-actual/src/agent/Agent.cpp: In member function ‘void im::Agent::userMessage(const string&)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/agent/Agent.cpp:84:13: warning: missing initializer for member ‘im::Trigger::label’ [-Wmissing-field-initializers]
+   84 |     trigger ({ "user", text });
+      |     ~~~~~~~~^~~~~~~~~~~~~~~~~~
+/home/runner/work/mix-final-actual/mix-final-actual/src/agent/Agent.cpp: In static member function ‘static const char* im::Agent::stageName(im::Agent::Stage)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/agent/Agent.cpp:101:12: warning: enumeration value ‘None’ not handled in switch [-Wswitch-enum]
+  101 |     switch (s)
+      |            ^
+/home/runner/work/mix-final-actual/mix-final-actual/src/agent/Agent.cpp: In member function ‘virtual void im::Agent::run()’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/agent/Agent.cpp:160:38: warning: missing initializer for member ‘im::Trigger::label’ [-Wmissing-field-initializers]
+  160 |             t = Trigger { "auto", {} };
+      |                                      ^
+[27/111] Building CXX object CMakeFiles/mix-final-actual.dir/src/agent/Tools.cpp.o
+/home/runner/work/mix-final-actual/mix-final-actual/src/agent/Tools.cpp: In function ‘std::optional<float> im::{anonymous}::asBool(const json&)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/agent/Tools.cpp:290:47: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+  290 |     if (v.is_number()) return v.get<double>() != 0 ? 1.0f : 0.0f;
+      |                               ~~~~~~~~~~~~~~~~^~~~
+[28/111] Building CXX object CMakeFiles/mix-final-actual.dir/src/agent/PromptBuilder.cpp.o
+[29/111] Building CXX object CMakeFiles/mix-final-actual.dir/src/agent/AgentLog.cpp.o
+[30/111] Building CXX object CMakeFiles/mix-final-actual.dir/src/standalone/MultitrackPlayer.cpp.o
+/home/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.cpp: In function ‘juce::File im::{anonymous}::cachedCopy(const juce::File&, double, juce::AudioFormatManager&, juce::String&)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.cpp:74:65: warning: ‘juce::AudioFormatWriter* juce::AudioFormat::createWriterFor(juce::OutputStream*, double, unsigned int, int, const juce::StringPairArray&, int)’ is deprecated: Use the function taking an AudioFormatWriterOptions instead. [-Wdeprecated-declarations]
+   74 |         if (os) w.reset (juce::WavAudioFormat().createWriterFor (os.get(), rate, (unsigned int) ch, 32, {}, 0));
+      |                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from /home/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_audio_formats/juce_audio_formats.h:127,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.h:15,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.cpp:1:
+/home/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_audio_formats/format/juce_AudioFormat.h:179:24: note: declared here
+  179 |     AudioFormatWriter* createWriterFor (OutputStream* streamToWriteTo,
+      |                        ^~~~~~~~~~~~~~~
+/home/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.cpp: In member function ‘std::vector<float, std::allocator<float> > im::MultitrackPlayer::mixdown(const std::vector<int>&, double, double) const’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.cpp:312:103: warning: declaration of ‘lenSec’ shadows a member of ‘im::MultitrackPlayer’ [-Wshadow]
+  312 | std::vector<float> MultitrackPlayer::mixdown (const std::vector<int>& tracks, double startSec, double lenSec) const
+      |                                                                                                ~~~~~~~^~~~~~
+In file included from /home/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.cpp:1:
+/home/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.h:156:58: note: shadowed declaration is here
+  156 |     std::atomic<double> seekTo { -1.0 }, posSec { 0.0 }, lenSec { 0.0 }, loadedRate { 0.0 };
+      |                                                          ^~~~~~
+/home/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.cpp: In member function ‘void im::MultitrackPlayer::publishEdits(const im::MultitrackPlayer::Session*)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.cpp:399:42: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+  399 |                            && rt[0].gain == 1.0f && rt[0].srcTrack == (int) t;
+/home/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.cpp: In member function ‘void im::MultitrackPlayer::renderRegions(const im::MultitrackPlayer::Session&, const std::vector<im::MultitrackPlayer::RtRegion>&, int64_t, int, float*, float*)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.cpp:437:35: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+  437 |             if (! fades && r.gain == 1.0f)
+      |                            ~~~~~~~^~~~~~~
+/home/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.cpp: In member function ‘im::TrackMask im::MultitrackPlayer::fill(float* const*, float* const*, int)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.cpp:656:31: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+  656 |             if (current->gain != 1.0f)
+      |                 ~~~~~~~~~~~~~~^~~~~~~
+[31/111] Building CXX object CMakeFiles/mix-final-actual.dir/src/PluginProcessor.cpp.o
+In file included from /home/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.cpp:1:
+/home/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h: In member function ‘void im::ParamEngine::beginBlock(int)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+   89 |             if (r == lastRaw[i]) continue;
+/home/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.cpp: In member function ‘virtual void im::InteractiveMixerProcessor::processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.cpp:128:13: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+  128 |     if (sig != paramSig || ev != seenEditsVer || gsig != seenGroupSig)
+      |         ~~~~^~~~~~~~~~~
+/home/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.cpp: In member function ‘virtual void im::InteractiveMixerProcessor::timerCallback()’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.cpp:372:23: warning: missing initializer for member ‘im::Trigger::label’ [-Wmissing-field-initializers]
+  372 |         agent.trigger ({ "stage", msg });
+      |         ~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~
+[32/111] Building CXX object CMakeFiles/mix-final-actual.dir/app/Instances.cpp.o
+[33/111] Building CXX object CMakeFiles/mix-final-actual.dir/app/FirstMix.cpp.o
+In file included from /home/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/app/FirstMix.cpp:2:
+/home/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h: In member function ‘void im::ParamEngine::beginBlock(int)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+   89 |             if (r == lastRaw[i]) continue;
+[34/111] Building CXX object CMakeFiles/mix-final-actual.dir/app/main.cpp.o
+In file included from /home/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/app/Listener.h:6,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/app/main.cpp:16:
+/home/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h: In member function ‘void im::ParamEngine::beginBlock(int)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+   89 |             if (r == lastRaw[i]) continue;
+/home/runner/work/mix-final-actual/mix-final-actual/app/main.cpp: In function ‘int {anonymous}::serve(int, char**, int)’:
+/home/runner/work/mix-final-actual/mix-final-actual/app/main.cpp:143:143: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+  143 |         if (auto* dev = devices.getCurrentAudioDevice(); dev != nullptr && dev->getAvailableSampleRates().contains (want) && setup.sampleRate != want)
+      |                                                                                                                              ~~~~~~~~~~~~~~~~~^~~~~~~
+/home/runner/work/mix-final-actual/mix-final-actual/app/main.cpp:163:41: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+  163 |     if (reopen && extras.loudnessGainDb != 0.0) app.loudness.seedGain (extras.loudnessGainDb, *proc);
+      |                   ~~~~~~~~~~~~~~~~~~~~~~^~~~~~
+[35/111] Building CXX object CMakeFiles/mix-final-actual.dir/app/Export.cpp.o
+In file included from /home/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/app/Export.cpp:2:
+/home/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h: In member function ‘void im::ParamEngine::beginBlock(int)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+   89 |             if (r == lastRaw[i]) continue;
+/home/runner/work/mix-final-actual/mix-final-actual/app/Export.cpp: In function ‘bool mfa::{anonymous}::writeAudio(const juce::File&, const juce::AudioBuffer<float>&, double, const string&)’:
+/home/runner/work/mix-final-actual/mix-final-actual/app/Export.cpp:21:70: warning: ‘juce::AudioFormatWriter* juce::AudioFormat::createWriterFor(juce::OutputStream*, double, unsigned int, int, const juce::StringPairArray&, int)’ is deprecated: Use the function taking an AudioFormatWriterOptions instead. [-Wdeprecated-declarations]
+   21 |     std::unique_ptr<juce::AudioFormatWriter> w (fmt->createWriterFor (os.get(), sr, 2, 24, {}, format == "flac" ? 5 : 0));
+      |                                                 ~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from /home/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_audio_formats/juce_audio_formats.h:127,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.h:15,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:6,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/app/Export.cpp:2:
+/home/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_audio_formats/format/juce_AudioFormat.h:179:24: note: declared here
+  179 |     AudioFormatWriter* createWriterFor (OutputStream* streamToWriteTo,
+      |                        ^~~~~~~~~~~~~~~
+[36/111] Building CXX object CMakeFiles/mix-final-actual.dir/app/Render.cpp.o
+In file included from /home/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/app/Render.cpp:2:
+/home/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h: In member function ‘void im::ParamEngine::beginBlock(int)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+   89 |             if (r == lastRaw[i]) continue;
+[37/111] Building CXX object CMakeFiles/mix-final-actual.dir/app/Project.cpp.o
+In file included from /home/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/app/Project.cpp:2:
+/home/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h: In member function ‘void im::ParamEngine::beginBlock(int)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+   89 |             if (r == lastRaw[i]) continue;
+[38/111] Building CXX object CMakeFiles/mix-final-actual.dir/app/Mcp.cpp.o
+[39/111] Building CXX object CMakeFiles/mix-final-actual.dir/app/SaveDialog.cpp.o
+/home/runner/work/mix-final-actual/mix-final-actual/app/SaveDialog.cpp:19:14: warning: ‘juce::String mfa::{anonymous}::appleScriptString(const juce::String&)’ defined but not used [-Wunused-function]
+   19 | juce::String appleScriptString (const juce::String& s)
+      |              ^~~~~~~~~~~~~~~~~
+[40/111] Building CXX object CMakeFiles/mix-final-actual.dir/app/LiveLoudness.cpp.o
+In file included from /home/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/app/LiveLoudness.cpp:2:
+/home/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h: In member function ‘void im::ParamEngine::beginBlock(int)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+   89 |             if (r == lastRaw[i]) continue;
+/home/runner/work/mix-final-actual/mix-final-actual/app/LiveLoudness.cpp: In static member function ‘static uint64_t mfa::LiveLoudness::settingsKey(im::InteractiveMixerProcessor&)’:
+/home/runner/work/mix-final-actual/mix-final-actual/app/LiveLoudness.cpp:61:14: warning: declaration of ‘t’ shadows a previous local [-Wshadow]
+   61 |     for (int t = 0; t < live.player.numLoadedTracks(); ++t)
+      |              ^
+/home/runner/work/mix-final-actual/mix-final-actual/app/LiveLoudness.cpp:50:9: note: shadowed declaration is here
+   50 |     int t = 0;
+      |         ^
+/home/runner/work/mix-final-actual/mix-final-actual/app/LiveLoudness.cpp: In member function ‘void mfa::LiveLoudness::setTarget(std::optional<double>, im::InteractiveMixerProcessor*)’:
+/home/runner/work/mix-final-actual/mix-final-actual/app/LiveLoudness.cpp:99:37: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+   99 |     if (running && (! lufs || *lufs != runTarget)) cancel = true;
+      |                               ~~~~~~^~~~~~~~~~~~
+/home/runner/work/mix-final-actual/mix-final-actual/app/LiveLoudness.cpp: In member function ‘void mfa::LiveLoudness::tick(im::InteractiveMixerProcessor&)’:
+/home/runner/work/mix-final-actual/mix-final-actual/app/LiveLoudness.cpp:132:51: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+  132 |         if (runOk && ! cancel && tgt && runTarget == *tgt)
+      |                                         ~~~~~~~~~~^~~~~~~
+/home/runner/work/mix-final-actual/mix-final-actual/app/LiveLoudness.cpp: In lambda function:
+/home/runner/work/mix-final-actual/mix-final-actual/app/LiveLoudness.cpp:134:129: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+  134 |             cache.erase (std::remove_if (cache.begin(), cache.end(), [&] (const Cached& c) { return c.key == runKey && c.target == runTarget; }), cache.end());
+      |                                                                                                                        ~~~~~~~~~^~~~~~~~~~~~
+/home/runner/work/mix-final-actual/mix-final-actual/app/LiveLoudness.cpp: In member function ‘void mfa::LiveLoudness::tick(im::InteractiveMixerProcessor&)’:
+/home/runner/work/mix-final-actual/mix-final-actual/app/LiveLoudness.cpp:149:79: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+  149 |     const bool stale = ! measuredKey || *measuredKey != key || measuredTarget != *tgt;
+      |                                                                ~~~~~~~~~~~~~~~^~~~~~~
+/home/runner/work/mix-final-actual/mix-final-actual/app/LiveLoudness.cpp:152:38: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+  152 |         if (c.key == key && c.target == *tgt)
+      |                             ~~~~~~~~~^~~~~~~
+/home/runner/work/mix-final-actual/mix-final-actual/app/LiveLoudness.cpp: In member function ‘std::optional<double> mfa::LiveLoudness::currentGain(im::InteractiveMixerProcessor&, double) const’:
+/home/runner/work/mix-final-actual/mix-final-actual/app/LiveLoudness.cpp:199:75: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+  199 |     if (running || ! measuredKey || *measuredKey != key || measuredTarget != targetLufs) return std::nullopt;
+      |                                                            ~~~~~~~~~~~~~~~^~~~~~~~~~~~~
+/home/runner/work/mix-final-actual/mix-final-actual/app/LiveLoudness.cpp: In member function ‘nlohmann::json_abi_v3_12_0::json mfa::LiveLoudness::status(im::InteractiveMixerProcessor&) const’:
+/home/runner/work/mix-final-actual/mix-final-actual/app/LiveLoudness.cpp:208:90: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+  208 |     const bool ready = ! running && measuredKey && *measuredKey == key && measuredTarget == *tgt;
+      |                                                                           ~~~~~~~~~~~~~~~^~~~~~~
+[41/111] Building CXX object CMakeFiles/mix-final-actual.dir/app/Recent.cpp.o
+[42/111] Building CXX object CMakeFiles/mix-final-actual.dir/app/WebServer.cpp.o
+In file included from /home/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/app/WebServer.cpp:4:
+/home/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h: In member function ‘void im::ParamEngine::beginBlock(int)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+   89 |             if (r == lastRaw[i]) continue;
+[43/111] Building CXX object CMakeFiles/mix-final-actual.dir/app/Listener.cpp.o
+In file included from /home/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/app/Listener.h:6,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/app/Listener.cpp:1:
+/home/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h: In member function ‘void im::ParamEngine::beginBlock(int)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+   89 |             if (r == lastRaw[i]) continue;
+[44/111] Building CXX object CMakeFiles/mix-final-actual.dir/app/AutoAgent.cpp.o
+In file included from /home/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/app/AutoAgent.cpp:2:
+/home/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h: In member function ‘void im::ParamEngine::beginBlock(int)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+   89 |             if (r == lastRaw[i]) continue;
+[45/111] Building CXX object CMakeFiles/mix-final-actual.dir/app/SongTempo.cpp.o
+In file included from /home/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/app/SongTempo.cpp:3:
+/home/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h: In member function ‘void im::ParamEngine::beginBlock(int)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+   89 |             if (r == lastRaw[i]) continue;
+[46/111] Building CXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_audio_utils/juce_audio_utils.cpp.o
+[47/111] Building CXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_audio_processors/juce_audio_processors.cpp.o
+[48/111] Building CXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_gui_extra/juce_gui_extra.cpp.o
+[49/111] Building CXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_gui_basics/juce_gui_basics_2.cpp.o
+[50/111] Building CXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_gui_basics/juce_gui_basics_5.cpp.o
+[51/111] Building CXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_gui_basics/juce_gui_basics_4.cpp.o
+[52/111] Building C object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_graphics/juce_graphics_Sheenbidi.c.o
+[53/111] Building CXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_gui_basics/juce_gui_basics_3.cpp.o
+[54/111] Building CXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_core/juce_core_CompilationTime.cpp.o
+[55/111] Building CXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_gui_basics/juce_gui_basics.cpp.o
+In file included from /home/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_core/system/juce_StandardHeader.h:108,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_core/juce_core.h:215,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_graphics/juce_graphics.h:67,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_gui_basics/juce_gui_basics.h:68,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_gui_basics/juce_gui_basics.cpp:55:
+/home/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_core/system/juce_PlatformDefs.h:292:38: note: ‘#pragma message: This version of JUCE does not use the splash screen, the flag JUCE_DISPLAY_SPLASH_SCREEN is ignored’
+  292 |  #define JUCE_COMPILER_WARNING(msg)  _Pragma (JUCE_STRINGIFY (message (msg)))
+      |                                      ^~~~~~~
+/home/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_gui_basics/juce_gui_basics.cpp:61:2: note: in expansion of macro ‘JUCE_COMPILER_WARNING’
+   61 |  JUCE_COMPILER_WARNING ("This version of JUCE does not use the splash screen, the flag JUCE_DISPLAY_SPLASH_SCREEN is ignored")
+      |  ^~~~~~~~~~~~~~~~~~~~~
+[56/111] Building CXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_events/juce_events.cpp.o
+[57/111] Building CXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_audio_processors_headless/juce_audio_processors_headless_ara.cpp.o
+[58/111] Building CXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_audio_processors_headless/juce_audio_processors_headless_lv2_libs.cpp.o
+[59/111] Building CXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_data_structures/juce_data_structures.cpp.o
+[60/111] Building CXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_core/juce_core.cpp.o
+[61/111] Building CXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_audio_processors_headless/juce_audio_processors_headless.cpp.o
+[62/111] Building CXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_audio_basics/juce_audio_basics.cpp.o
+[63/111] Building CXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_graphics/juce_graphics.cpp.o
+[64/111] Building CXX object CMakeFiles/mfa-tests.dir/src/dsp/Echo.cpp.o
+[65/111] Building CXX object CMakeFiles/mfa-tests.dir/src/dsp/FdnReverb.cpp.o
+[66/111] Building CXX object CMakeFiles/mfa-tests.dir/src/dsp/Limiter.cpp.o
+[67/111] Building CXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_graphics/juce_graphics_Harfbuzz.cpp.o
+[68/111] Building CXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_audio_formats/juce_audio_formats.cpp.o
+[69/111] Building CXX object CMakeFiles/mfa-tests.dir/src/analysis/Loudness.cpp.o
+[70/111] Building CXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_dsp/juce_dsp.cpp.o
+[71/111] Building CXX object CMakeFiles/mfa-tests.dir/src/analysis/Features.cpp.o
+/home/runner/work/mix-final-actual/mix-final-actual/src/analysis/Features.cpp: In member function ‘void im::FeatureExtractor::barkSpectrum(const float*, int, std::array<float, 24>&)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/analysis/Features.cpp:129:16: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+  129 |         if (mk == 0.0) continue;
+      |             ~~~^~~~~~
+[72/111] Building CXX object CMakeFiles/mix-final-actual.dir/.deps/juce-src/modules/juce_audio_devices/juce_audio_devices.cpp.o
+[73/111] Building CXX object CMakeFiles/mfa-tests.dir/src/analysis/Spectrum.cpp.o
+[74/111] Building CXX object CMakeFiles/mfa-tests.dir/src/dsp/MixEngine.cpp.o
+In file included from /home/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.cpp:1:
+/home/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h: In member function ‘void im::ParamEngine::beginBlock(int)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+   89 |             if (r == lastRaw[i]) continue;
+/home/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.cpp: In function ‘void im::{anonymous}::rampSmoother(juce::SmoothedValue<float>&, float, int)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.cpp:20:16: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+   20 |     if (target == s.getTargetValue()) return;
+      |         ~~~~~~~^~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.cpp: In member function ‘void im::MixEngine::fillRamp(float*, float, float, int)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.cpp:135:11: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+  135 |     if (a == b)
+      |         ~~^~~~
+[75/111] Building CXX object CMakeFiles/mfa-tests.dir/src/analysis/Analyzer.cpp.o
+[76/111] Building CXX object CMakeFiles/mfa-tests.dir/src/analysis/Tempo.cpp.o
+[77/111] Building CXX object CMakeFiles/mfa-tests.dir/src/agent/Bridge.cpp.o
+[78/111] Building CXX object CMakeFiles/mfa-tests.dir/src/agent/AgentLog.cpp.o
+[79/111] Building CXX object CMakeFiles/mfa-tests.dir/src/agent/PromptBuilder.cpp.o
+[80/111] Building CXX object CMakeFiles/mfa-tests.dir/src/agent/Agent.cpp.o
+/home/runner/work/mix-final-actual/mix-final-actual/src/agent/Agent.cpp: In static member function ‘static const char* im::Agent::stateName(im::Agent::State)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/agent/Agent.cpp:24:12: warning: enumeration value ‘Offline’ not handled in switch [-Wswitch-enum]
+   24 |     switch (s)
+      |            ^
+/home/runner/work/mix-final-actual/mix-final-actual/src/agent/Agent.cpp: In member function ‘void im::Agent::userMessage(const string&)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/agent/Agent.cpp:84:13: warning: missing initializer for member ‘im::Trigger::label’ [-Wmissing-field-initializers]
+   84 |     trigger ({ "user", text });
+      |     ~~~~~~~~^~~~~~~~~~~~~~~~~~
+/home/runner/work/mix-final-actual/mix-final-actual/src/agent/Agent.cpp: In static member function ‘static const char* im::Agent::stageName(im::Agent::Stage)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/agent/Agent.cpp:101:12: warning: enumeration value ‘None’ not handled in switch [-Wswitch-enum]
+  101 |     switch (s)
+      |            ^
+/home/runner/work/mix-final-actual/mix-final-actual/src/agent/Agent.cpp: In member function ‘virtual void im::Agent::run()’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/agent/Agent.cpp:160:38: warning: missing initializer for member ‘im::Trigger::label’ [-Wmissing-field-initializers]
+  160 |             t = Trigger { "auto", {} };
+      |                                      ^
+[81/111] Building CXX object CMakeFiles/mfa-tests.dir/src/standalone/MultitrackPlayer.cpp.o
+/home/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.cpp: In function ‘juce::File im::{anonymous}::cachedCopy(const juce::File&, double, juce::AudioFormatManager&, juce::String&)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.cpp:74:65: warning: ‘juce::AudioFormatWriter* juce::AudioFormat::createWriterFor(juce::OutputStream*, double, unsigned int, int, const juce::StringPairArray&, int)’ is deprecated: Use the function taking an AudioFormatWriterOptions instead. [-Wdeprecated-declarations]
+   74 |         if (os) w.reset (juce::WavAudioFormat().createWriterFor (os.get(), rate, (unsigned int) ch, 32, {}, 0));
+      |                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from /home/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_audio_formats/juce_audio_formats.h:127,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.h:15,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.cpp:1:
+/home/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_audio_formats/format/juce_AudioFormat.h:179:24: note: declared here
+  179 |     AudioFormatWriter* createWriterFor (OutputStream* streamToWriteTo,
+      |                        ^~~~~~~~~~~~~~~
+/home/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.cpp: In member function ‘std::vector<float, std::allocator<float> > im::MultitrackPlayer::mixdown(const std::vector<int>&, double, double) const’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.cpp:312:103: warning: declaration of ‘lenSec’ shadows a member of ‘im::MultitrackPlayer’ [-Wshadow]
+  312 | std::vector<float> MultitrackPlayer::mixdown (const std::vector<int>& tracks, double startSec, double lenSec) const
+      |                                                                                                ~~~~~~~^~~~~~
+In file included from /home/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.cpp:1:
+/home/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.h:156:58: note: shadowed declaration is here
+  156 |     std::atomic<double> seekTo { -1.0 }, posSec { 0.0 }, lenSec { 0.0 }, loadedRate { 0.0 };
+      |                                                          ^~~~~~
+/home/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.cpp: In member function ‘void im::MultitrackPlayer::publishEdits(const im::MultitrackPlayer::Session*)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.cpp:399:42: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+  399 |                            && rt[0].gain == 1.0f && rt[0].srcTrack == (int) t;
+/home/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.cpp: In member function ‘void im::MultitrackPlayer::renderRegions(const im::MultitrackPlayer::Session&, const std::vector<im::MultitrackPlayer::RtRegion>&, int64_t, int, float*, float*)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.cpp:437:35: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+  437 |             if (! fades && r.gain == 1.0f)
+      |                            ~~~~~~~^~~~~~~
+/home/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.cpp: In member function ‘im::TrackMask im::MultitrackPlayer::fill(float* const*, float* const*, int)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.cpp:656:31: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+  656 |             if (current->gain != 1.0f)
+      |                 ~~~~~~~~~~~~~~^~~~~~~
+[82/111] Building CXX object CMakeFiles/mfa-tests.dir/src/agent/Tools.cpp.o
+/home/runner/work/mix-final-actual/mix-final-actual/src/agent/Tools.cpp: In function ‘std::optional<float> im::{anonymous}::asBool(const json&)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/agent/Tools.cpp:290:47: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+  290 |     if (v.is_number()) return v.get<double>() != 0 ? 1.0f : 0.0f;
+      |                               ~~~~~~~~~~~~~~~~^~~~
+[83/111] Building CXX object CMakeFiles/mfa-tests.dir/app/Recent.cpp.o
+[84/111] Building CXX object CMakeFiles/mfa-tests.dir/app/Render.cpp.o
+In file included from /home/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/app/Render.cpp:2:
+/home/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h: In member function ‘void im::ParamEngine::beginBlock(int)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+   89 |             if (r == lastRaw[i]) continue;
+[85/111] Building CXX object CMakeFiles/mfa-tests.dir/src/PluginProcessor.cpp.o
+In file included from /home/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.cpp:1:
+/home/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h: In member function ‘void im::ParamEngine::beginBlock(int)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+   89 |             if (r == lastRaw[i]) continue;
+/home/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.cpp: In member function ‘virtual void im::InteractiveMixerProcessor::processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.cpp:128:13: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+  128 |     if (sig != paramSig || ev != seenEditsVer || gsig != seenGroupSig)
+      |         ~~~~^~~~~~~~~~~
+/home/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.cpp: In member function ‘virtual void im::InteractiveMixerProcessor::timerCallback()’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.cpp:372:23: warning: missing initializer for member ‘im::Trigger::label’ [-Wmissing-field-initializers]
+  372 |         agent.trigger ({ "stage", msg });
+      |         ~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~
+[86/111] Building CXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_audio_utils/juce_audio_utils.cpp.o
+[87/111] Building CXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_audio_processors/juce_audio_processors.cpp.o
+[88/111] Building CXX object CMakeFiles/mfa-tests.dir/tests/tests.cpp.o
+In file included from /home/runner/work/mix-final-actual/mix-final-actual/src/dsp/MixEngine.h:12,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:5,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/tests/tests.cpp:7:
+/home/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h: In member function ‘void im::ParamEngine::beginBlock(int)’:
+/home/runner/work/mix-final-actual/mix-final-actual/src/dsp/ParamEngine.h:89:19: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+   89 |             if (r == lastRaw[i]) continue;
+/home/runner/work/mix-final-actual/mix-final-actual/tests/tests.cpp: In function ‘juce::File {anonymous}::writeTestWav(const juce::String&, int, double, const std::function<float(int)>&, const juce::String&, bool)’:
+/home/runner/work/mix-final-actual/mix-final-actual/tests/tests.cpp:134:88: warning: ‘juce::AudioFormatWriter* juce::AudioFormat::createWriterFor(juce::OutputStream*, double, unsigned int, int, const juce::StringPairArray&, int)’ is deprecated: Use the function taking an AudioFormatWriterOptions instead. [-Wdeprecated-declarations]
+  134 |     std::unique_ptr<juce::AudioFormatWriter> w (juce::WavAudioFormat().createWriterFor (os.get(), rate, 1, 32, {}, 0));
+      |                                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from /home/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_audio_formats/juce_audio_formats.h:127,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/src/standalone/MultitrackPlayer.h:15,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/src/PluginProcessor.h:6,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/tests/tests.cpp:7:
+/home/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_audio_formats/format/juce_AudioFormat.h:179:24: note: declared here
+  179 |     AudioFormatWriter* createWriterFor (OutputStream* streamToWriteTo,
+      |                        ^~~~~~~~~~~~~~~
+/home/runner/work/mix-final-actual/mix-final-actual/tests/tests.cpp: In function ‘void {anonymous}::editTests()’:
+/home/runner/work/mix-final-actual/mix-final-actual/tests/tests.cpp:148:55: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+  148 |         check (e.empty() && r.size() == 2 && r[0].pos == 0 && r[1].pos == 1 && r[0].srcTrack == 0 && r[1].srcTrack == 0,
+/home/runner/work/mix-final-actual/mix-final-actual/tests/tests.cpp:148:72: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+  148 |         check (e.empty() && r.size() == 2 && r[0].pos == 0 && r[1].pos == 1 && r[0].srcTrack == 0 && r[1].srcTrack == 0,
+/home/runner/work/mix-final-actual/mix-final-actual/tests/tests.cpp:164:56: warning: comparing floating-point with ‘==’ or ‘!=’ is unsafe [-Wfloat-equal]
+  164 |                    && out.size() == 1 && out[0].gainDb == -3,
+/home/runner/work/mix-final-actual/mix-final-actual/tests/tests.cpp:183:36: warning: declaration of ‘R’ shadows a previous local [-Wshadow]
+  183 |         std::vector<float> L (bs), R (bs);
+      |                                    ^
+/home/runner/work/mix-final-actual/mix-final-actual/tests/tests.cpp:143:11: note: shadowed declaration is here
+  143 |     using R = Player::Region;
+      |           ^
+[89/111] Building CXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_gui_extra/juce_gui_extra.cpp.o
+[90/111] Building CXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_gui_basics/juce_gui_basics_2.cpp.o
+[91/111] Building CXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_gui_basics/juce_gui_basics_4.cpp.o
+[92/111] Building C object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_graphics/juce_graphics_Sheenbidi.c.o
+[93/111] Building CXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_gui_basics/juce_gui_basics_5.cpp.o
+[94/111] Building CXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_gui_basics/juce_gui_basics.cpp.o
+In file included from /home/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_core/system/juce_StandardHeader.h:108,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_core/juce_core.h:215,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_graphics/juce_graphics.h:67,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_gui_basics/juce_gui_basics.h:68,
+                 from /home/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_gui_basics/juce_gui_basics.cpp:55:
+/home/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_core/system/juce_PlatformDefs.h:292:38: note: ‘#pragma message: This version of JUCE does not use the splash screen, the flag JUCE_DISPLAY_SPLASH_SCREEN is ignored’
+  292 |  #define JUCE_COMPILER_WARNING(msg)  _Pragma (JUCE_STRINGIFY (message (msg)))
+      |                                      ^~~~~~~
+/home/runner/work/mix-final-actual/mix-final-actual/.deps/juce-src/modules/juce_gui_basics/juce_gui_basics.cpp:61:2: note: in expansion of macro ‘JUCE_COMPILER_WARNING’
+   61 |  JUCE_COMPILER_WARNING ("This version of JUCE does not use the splash screen, the flag JUCE_DISPLAY_SPLASH_SCREEN is ignored")
+      |  ^~~~~~~~~~~~~~~~~~~~~
+[95/111] Building CXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_core/juce_core_CompilationTime.cpp.o
+[96/111] Building CXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_gui_basics/juce_gui_basics_3.cpp.o
+[97/111] Building CXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_data_structures/juce_data_structures.cpp.o
+[98/111] Building CXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_audio_processors_headless/juce_audio_processors_headless_ara.cpp.o
+[99/111] Building CXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_audio_processors_headless/juce_audio_processors_headless_lv2_libs.cpp.o
+[100/111] Building CXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_events/juce_events.cpp.o
+[101/111] Building CXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_core/juce_core.cpp.o
+[102/111] Building CXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_audio_basics/juce_audio_basics.cpp.o
+[103/111] Building CXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_audio_formats/juce_audio_formats.cpp.o
+[104/111] Building CXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_audio_processors_headless/juce_audio_processors_headless.cpp.o
+[105/111] Building CXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_graphics/juce_graphics.cpp.o
+[106/111] Building CXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_graphics/juce_graphics_Harfbuzz.cpp.o
+[107/111] Building CXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_dsp/juce_dsp.cpp.o
+[108/111] Building CXX object CMakeFiles/mfa-tests.dir/.deps/juce-src/modules/juce_audio_devices/juce_audio_devices.cpp.o
+[109/111] Linking CXX executable mfa-tests_artefacts/Release/mfa-tests
+lto-wrapper: warning: using serial compilation of 35 LTRANS jobs
+[110/111] Linking CXX executable mix-final-actual_artefacts/Release/mix-final-actual
+lto-wrapper: warning: using serial compilation of 53 LTRANS jobs

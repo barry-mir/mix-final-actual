@@ -1,0 +1,36 @@
+commit: 2e11a4d4794fcb4a459277e9d6624c21207abba2
+build: success
+dist: success
+run: https://github.com/barry-mir/mix-final-actual/actions/runs/39292215106
+
+== logs-linux-arm64/build.log (errors)
+
+== logs-linux-arm64/configure.log (errors)
+
+== logs-linux-arm64/smoke.log (errors)
+
+== logs-linux-arm64/tests.log (errors)
+
+== logs-linux-x64/build.log (errors)
+
+== logs-linux-x64/configure.log (errors)
+
+== logs-linux-x64/smoke.log (errors)
+
+== logs-linux-x64/tests.log (errors)
+
+== logs-macos/build.log (errors)
+
+== logs-macos/configure.log (errors)
+
+== logs-macos/smoke.log (errors)
+
+== logs-macos/tests.log (errors)
+
+== logs-windows-x64/build.log (errors)
+
+== logs-windows-x64/configure.log (errors)
+
+== logs-windows-x64/smoke.log (errors)
+
+== logs-windows-x64/tests.log (errors)

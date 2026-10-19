@@ -1,0 +1,34 @@
+-- The C compiler identification is GNU 11.4.0
+-- The CXX compiler identification is GNU 11.4.0
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Check for working C compiler: /usr/bin/cc - skipped
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Check for working CXX compiler: /usr/bin/c++ - skipped
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found PkgConfig: /usr/bin/pkg-config (found version "1.8.0")
+-- Checking for module 'alsa'
+--   Found alsa, version 1.2.6.1
+-- Checking for modules 'freetype2;fontconfig'
+--   Found freetype2, version 24.1.18
+--   Found fontconfig, version 2.13.1
+-- Checking for module 'gl'
+--   Found gl, version 1.2
+-- Checking for module 'libcurl'
+--   Package 'libcurl', required by 'virtual:world', not found
+-- Checking for modules 'webkit2gtk-4.0;gtk+-x11-3.0'
+--   Package 'webkit2gtk-4.0', required by 'virtual:world', not found
+--   Package 'gtk+-x11-3.0', required by 'virtual:world', not found
+-- Configuring juceaide
+-- Building juceaide
+-- Exporting juceaide
+-- Testing juceaide
+-- Finished setting up juceaide
+-- Using the multi-header code from /home/runner/work/mix-final-actual/mix-final-actual/.deps/nlohmann_json-src/include/
+-- Configuring done (50.3s)
+-- Generating done (0.0s)
+-- Build files have been written to: /home/runner/work/mix-final-actual/mix-final-actual/build
