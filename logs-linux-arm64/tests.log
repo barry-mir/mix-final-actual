@@ -1,0 +1,62 @@
+ok   params: the track count is set per session
+ok   params: the registry has every parameter
+ok   params: the last track's parameters exist
+ok   params: master parameters follow the tracks
+ok   params: the count cannot change once the registry exists
+ok   params: present tracks are 0..n-1
+ok   bridge: no turn before one is asked
+ok   bridge: the agent gets the waiting turn
+ok   bridge: the turn's text has the system part and the tools
+ok   bridge: an unanswered turn is offered again
+ok   bridge: a wrong turn id is refused
+ok   bridge: an unknown tool is refused
+ok   bridge: arguments must be an object
+ok   bridge: a valid answer is accepted
+ok   bridge: the asking side gets the answer
+ok   bridge: the answer parses as a chat completion with the tool call
+ok   bridge: abortPending releases the waiting turn
+ok   bridge: a turn times out without an agent
+ok   bridge: after cancel, asks return at once
+ok   groups: guessed from track names
+ok   groups: common instruments outside the basic names
+ok   groups: a group set by the user wins
+ok   groups: clearing it goes back to the name
+ok   notes: a fetched turn counts as being read
+ok   notes: a note on another turn is refused
+ok   notes: a note reaches the turn's owner, trimmed
+ok   notes: an empty note is refused
+ok   notes: nothing pending after the answer
+ok   notes: a note after the answer is refused
+ok   edits: overlapping clips are kept (they sum), sorted, and play their own track by default
+ok   edits: too short, past the file, gain out of range and negative positions are refused
+ok   edits: fades are clamped to half the clip
+ok   edits: a clip from another track must fit that track's file, and the track must exist
+ok   edits: JSON clips need numeric pos, src and len
+ok   edits: test session loads
+ok   edits: a valid clip is accepted
+ok   edits: the song is at least as long as the longest file
+ok   edits: silence outside the clip
+ok   edits: the clip plays the right part of the file at its gain
+ok   edits: equal-power fade-in (half way = sin 45 deg)
+ok   edits: fade-out reaches silence at the clip end
+ok   edits: clearing them goes back to the whole files
+ok   crossfade: two-track session loads
+ok   crossfade: overlapping clips are accepted
+ok   crossfade: before the overlap, only the first clip
+ok   crossfade: mid-overlap, both clips at equal power (sin 45 deg each)
+ok   crossfade: after it, the other track's audio plays on this track
+ok   crossfade: the other track itself is unchanged
+ok   loudness: test session loads
+ok   loudness: converges to the target (-13.999999 LUFS)
+ok   loudness: the same gain renders the same loudness (export = playback)
+ok   tempo: a click track at 100 BPM reads 100.000000
+ok   tempo: bar 1 on the loud click (off by 0.009333 s)
+ok   tempo: a click track at 128 BPM reads 128.000000
+ok   tempo: bar 1 on the loud click (off by 0.009333 s)
+ok   tempo: silence gives no estimate
+ok   spectrum: a 1 kHz sine peaks in the 1 kHz band (1015.936646 Hz)
+ok   spectrum: a half-scale sine reads about -6 dB (-6.649334)
+ok   spectrum: far from the sine the bands are low
+ok   recent: none at first
+ok   recent: newest first, a reopened project moves to the top with its new name, 20 kept
+all passed

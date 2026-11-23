@@ -1,0 +1,28 @@
+commit: e744077eacfbbcb9718d136580f170cb473be52e
+build: cancelled
+dist: skipped
+run: https://github.com/barry-mir/mix-final-actual/actions/runs/45271727482
+
+== logs-linux-arm64/build.log (errors)
+
+== logs-linux-arm64/configure.log (errors)
+
+== logs-linux-arm64/smoke.log (errors)
+
+== logs-linux-arm64/tests.log (errors)
+
+== logs-linux-x64/build.log (errors)
+
+== logs-linux-x64/configure.log (errors)
+
+== logs-linux-x64/smoke.log (errors)
+
+== logs-linux-x64/tests.log (errors)
+
+== logs-windows-x64/build.log (errors)
+
+== logs-windows-x64/configure.log (errors)
+
+== logs-windows-x64/smoke.log (errors)
+
+== logs-windows-x64/tests.log (errors)
