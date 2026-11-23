@@ -1,9 +1,13 @@
 // mix_final_ACTUAL.wav: a local mixing console in the browser, mixed by the user's coding agent.
 //
 //   mix-final-actual serve TRACKS_DIR [--port N] [--no-open] [--turns N] [--listen S] [--no-first-mix] [--new-mix]
+//                          [--bounce DIR [--bounce-turns K,...] [--bounce-stems] [--bounce-format wav|flac]]
 //       First mix (offline, N turns answered by the coding agent), then the live engine plays to the sound card and
 //       the page opens. Prints the page URL; writes the instance file the MCP front reads. A saved project in the folder
 //       is reopened instead of a new first mix (--new-mix ignores it).
+//       --bounce (batch use): after each listed turn (default: the last) the mix is rendered offline as mixed, as an
+//       export would (DIR/turnK.wav, with "turnK stems/" if --bounce-stems), and after the first mix the app exits
+//       (exit code 0, or 1 on an error) without opening the live engine, the sound card or the project file.
 //   mix-final-actual open [TRACKS_DIR]
 //       Opens a mix in the browser: its running session, else a new one started for it (a saved project reopens as it
 //       was). Without a folder: the project opened most recently.
@@ -11,6 +15,8 @@
 //       MCP server on stdin/stdout for Claude Code, Codex and other coding agents (see Mcp.cpp).
 //   mix-final-actual TRACKS_DIR ...   same as serve
 #include "AppState.h"
+#include "Export.h"
+#include "Render.h"
 #include "FirstMix.h"
 #include "Instances.h"
 #include "Listener.h"
@@ -25,6 +31,7 @@
 #include <csignal>
 #include <iostream>
 #include <random>
+#include <set>
 #include <thread>
 
 namespace
@@ -53,7 +60,10 @@ int serve (int argc, char** argv, int first)
     juce::File dir;
     int port = 0, turns = 5;
     double listen = 20.0;
-    bool open = true, firstMix = true, newMix = false;
+    bool open = true, firstMix = true, newMix = false, bounceStems = false;
+    juce::File bounceDir;
+    std::string bounceFormat = "wav";
+    std::set<int> bounceTurns;
     for (int i = first; i < argc; ++i)
     {
         const std::string a = argv[i];
@@ -63,9 +73,20 @@ int serve (int argc, char** argv, int first)
         else if (a == "--no-open") open = false;
         else if (a == "--no-first-mix") firstMix = false;
         else if (a == "--new-mix") newMix = true;
+        else if (a == "--bounce" && i + 1 < argc) bounceDir = juce::File::getCurrentWorkingDirectory().getChildFile (juce::String (argv[++i]));
+        else if (a == "--bounce-turns" && i + 1 < argc)
+        {
+            for (auto& t : juce::StringArray::fromTokens (juce::String (argv[++i]), ",", ""))
+                if (t.getIntValue() > 0) bounceTurns.insert (t.getIntValue());
+        }
+        else if (a == "--bounce-stems") bounceStems = true;
+        else if (a == "--bounce-format" && i + 1 < argc) bounceFormat = argv[++i];
         else dir = juce::File::getCurrentWorkingDirectory().getChildFile (juce::String (a));
     }
     if (! dir.isDirectory()) return usage();
+    const bool bounce = bounceDir != juce::File();
+    if (bounce && bounceTurns.empty()) bounceTurns.insert (turns);
+    if (bounce && (! bounceDir.createDirectory() || (bounceFormat != "wav" && bounceFormat != "flac"))) return usage();
     // One session per process: its track count sizes the parameter registry and every engine (no fixed limit).
     const int nFiles = im::MultitrackPlayer::trackFiles (dir).size();
     if (nFiles == 0)
@@ -111,21 +132,47 @@ int serve (int argc, char** argv, int first)
     if (firstMix && ! reopen)
     {
         std::cout << "first mix: " << turns << " turns; waiting for the coding agent (mix tools: next_turn / submit)" << std::endl;
-        if (auto err = mfa::runFirstMix (dir, turns, listen, app.first, state, quit, app.skipFirstMix); ! err.empty())
+        mfa::AfterTurn afterTurn;
+        if (bounce)
+            afterTurn = [&] (int k, im::InteractiveMixerProcessor& p) -> std::string {
+                if (! bounceTurns.count (k)) return {};
+                double sr = 0;
+                std::string e;
+                auto off = mfa::makeOfflineEngine (p, sr, e);
+                if (! off) return "bounce: " + e;
+                mfa::ExportOptions o;
+                o.file = bounceDir.getChildFile ("turn" + juce::String (k) + "." + bounceFormat);
+                o.format = bounceFormat;
+                o.stems = bounceStems;
+                double lufs = 0;
+                e = mfa::exportTo (*off, sr, o, lufs);
+                mfa::releaseOnMessageThread (off);
+                juce::MessageManager::getInstance()->runDispatchLoopUntil (1);
+                if (e.empty()) std::cout << "bounced turn " << k << ": " << o.file.getFullPathName() << std::endl;
+                return e.empty() ? e : "bounce: " + e;
+            };
+        if (auto err = mfa::runFirstMix (dir, turns, listen, app.first, state, quit, app.skipFirstMix, afterTurn); ! err.empty())
         {
             {
                 std::lock_guard<std::mutex> lk (app.errMutex);
                 app.error = err;
             }
             std::cerr << "first mix: " << err << "\n";
-            if (quit)
+            if (quit || bounce)
             {
+                web.stop();
                 mfa::removeInstance (inst);
                 return 1;
             }
         }
     }
     app.first.done = true;
+    if (bounce) // batch: the bounces are the output; no live engine, sound card or project file
+    {
+        web.stop();
+        mfa::removeInstance (inst);
+        return firstMix && ! reopen && state.getSize() > 0 ? 0 : 1;
+    }
 
     // 2. the live engine, with the first mix loaded
     auto proc = std::make_unique<im::InteractiveMixerProcessor>();

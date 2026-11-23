@@ -32,6 +32,51 @@ juce::String safeName (const std::string& s)
 juce::File settingsFile() { return im::appDataDir().getChildFile ("settings.json"); }
 } // namespace
 
+std::string exportTo (InteractiveMixerProcessor& p, double sr, const ExportOptions& opts, double& lufs,
+                      const std::function<void (double)>& progress)
+{
+    const auto names = p.store.trackNames();
+    const int nTracks = p.player.numLoadedTracks();
+    const auto& file = opts.file;
+    const auto dir = file.getParentDirectory();
+    auto report = [&] (double f) { if (progress) progress (f); return true; };
+    const bool master = std::isfinite (opts.loudnessLufs);
+    const int mixPasses = master && ! opts.knownGainDb ? 4 : 1;
+    const int passes = mixPasses + (opts.stems ? nTracks : 0);
+    juce::AudioBuffer<float> mix;
+    bool ok = true;
+    if (master)
+    {
+        auto r = masterTo (p, sr, opts.loudnessLufs, opts.knownGainDb.value_or (0.0), opts.knownGainDb.has_value(),
+                           [&] (double f) { return report (f * mixPasses / passes); });
+        mix = std::move (r.mix);
+    }
+    else
+        ok = renderSong (p, sr, mix, [&] (double f) { return report (f / passes); });
+    lufs = loudnessOf (mix, sr);
+    ok = ok && writeAudio (file, mix, sr, opts.format);
+    mix.setSize (0, 0);
+    p.engine.deliveryGainDb = 0.0f; // stems as mixed
+    p.engine.forceLimiter = false;
+    if (ok && opts.stems)
+    {
+        auto stemDir = dir.getChildFile (file.getFileNameWithoutExtension() + " stems");
+        stemDir.createDirectory();
+        p.setParamValue (im::masterParam (im::BcOn), 0.0f);
+        p.setParamValue (im::masterParam (im::LimOn), 0.0f);
+        for (int t = 0; t < nTracks && ok; ++t)
+        {
+            for (int u = 0; u < nTracks; ++u) p.setParamValue (im::trackParam (u, im::Solo), u == t ? 1.0f : 0.0f);
+            auto nm = juce::String (t + 1).paddedLeft ('0', 2) + " " + safeName (names[(size_t) t]) + juce::String (opts.format == "flac" ? ".flac" : ".wav");
+            juce::AudioBuffer<float> stem;
+            ok = renderSong (p, sr, stem, [&] (double f) { return report ((mixPasses + t + f) / passes); })
+                 && writeAudio (stemDir.getChildFile (nm), stem, sr, opts.format);
+        }
+    }
+    report (1.0);
+    return ok ? std::string() : "could not write to " + dir.getFullPathName().toStdString();
+}
+
 Exporter::~Exporter() { join(); }
 
 void Exporter::join()
@@ -98,8 +143,6 @@ bool Exporter::start (InteractiveMixerProcessor& live, ExportOptions opts)
         busy = false;
         return true;
     };
-    const auto names = live.store.trackNames();
-    const int nTracks = live.player.numLoadedTracks();
     double sr = 48000.0;
     std::string e;
     auto proc = makeOfflineEngine (live, sr, e);
@@ -115,50 +158,21 @@ bool Exporter::start (InteractiveMixerProcessor& live, ExportOptions opts)
     }
     rememberFolder (dir);
 
-    worker = std::thread ([this, proc, file, dir, names, nTracks, sr, opts] {
-        auto& p = *proc;
-        const bool master = std::isfinite (opts.loudnessLufs);
-        const int mixPasses = master && ! opts.knownGainDb ? 4 : 1;
-        const int passes = mixPasses + (opts.stems ? nTracks : 0);
-        juce::AudioBuffer<float> mix;
-        bool ok = true;
-        if (master)
-        {
-            auto r = masterTo (p, sr, opts.loudnessLufs, opts.knownGainDb.value_or (0.0), opts.knownGainDb.has_value(),
-                               [&] (double f) { prog = f * mixPasses / passes; return true; });
-            mix = std::move (r.mix);
-        }
-        else
-            ok = renderSong (p, sr, mix, [&] (double f) { prog = f / passes; return true; });
-        lufsOut = loudnessOf (mix, sr);
-        ok = ok && writeAudio (file, mix, sr, opts.format);
-        mix.setSize (0, 0);
-        p.engine.deliveryGainDb = 0.0f; // stems as mixed
-        p.engine.forceLimiter = false;
-        if (ok && opts.stems)
-        {
-            auto stemDir = dir.getChildFile (file.getFileNameWithoutExtension() + " stems");
-            stemDir.createDirectory();
-            p.setParamValue (im::masterParam (im::BcOn), 0.0f);
-            p.setParamValue (im::masterParam (im::LimOn), 0.0f);
-            for (int t = 0; t < nTracks && ok; ++t)
-            {
-                for (int u = 0; u < nTracks; ++u) p.setParamValue (im::trackParam (u, im::Solo), u == t ? 1.0f : 0.0f);
-                auto nm = juce::String (t + 1).paddedLeft ('0', 2) + " " + safeName (names[(size_t) t]) + juce::String (opts.format == "flac" ? ".flac" : ".wav");
-                juce::AudioBuffer<float> stem;
-                ok = renderSong (p, sr, stem, [&] (double f) { prog = (mixPasses + t + f) / passes; return true; })
-                     && writeAudio (stemDir.getChildFile (nm), stem, sr, opts.format);
-            }
-        }
+    opts.file = file;
+    worker = std::thread ([this, proc, dir, sr, opts] {
+        double lufs = 0.0;
+        const auto res = exportTo (*proc, sr, opts, lufs, [this] (double f) { prog = f; });
+        lufsOut = lufs;
+        const bool ok = res.empty();
         {
             std::lock_guard<std::mutex> lk (m);
             if (ok)
             {
                 outDir = dir.getFullPathName().toStdString();
-                outFile = file.getFullPathName().toStdString();
+                outFile = opts.file.getFullPathName().toStdString();
             }
             else
-                err = "could not write to " + dir.getFullPathName().toStdString();
+                err = res;
         }
         prog = 1.0;
         releaseOnMessageThread (proc);

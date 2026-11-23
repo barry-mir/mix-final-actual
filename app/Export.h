@@ -5,6 +5,7 @@
 // so playback goes on.
 #include <juce_core/juce_core.h>
 #include <atomic>
+#include <functional>
 #include <limits>
 #include <mutex>
 #include <optional>
@@ -26,6 +27,12 @@ struct ExportOptions
     double loudnessLufs = std::numeric_limits<double>::quiet_NaN(); // NaN = as mixed
     std::optional<double> knownGainDb;                            // the delivery gain for exactly these settings (live)
 };
+
+// Any thread that may run the engine (not the audio thread). Renders `p` (an offline engine, see makeOfflineEngine)
+// to opts.file, plus one stem per track if opts.stems; `p` is left with its master chain changed for the stems.
+// Returns "" or the error; lufs = the mix file's integrated loudness. progress(0..1) is informational.
+std::string exportTo (im::InteractiveMixerProcessor& p, double sr, const ExportOptions& opts, double& lufs,
+                      const std::function<void (double)>& progress = {});
 
 class Exporter
 {

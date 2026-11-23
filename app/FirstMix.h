@@ -8,6 +8,11 @@
 #include <functional>
 #include <string>
 
+namespace im
+{
+class InteractiveMixerProcessor;
+}
+
 namespace mfa
 {
 struct FirstMixProgress
@@ -17,7 +22,12 @@ struct FirstMixProgress
     std::atomic<bool> done { false };
 };
 
+// Called on the calling thread after turn k's moves have settled, with the first-mix engine (e.g. to bounce the mix
+// after that turn). Returns "" or an error, which stops the first mix.
+using AfterTurn = std::function<std::string (int k, im::InteractiveMixerProcessor&)>;
+
 // Returns "" and fills stateOut (InteractiveMixerProcessor state) on success, else the error.
 std::string runFirstMix (const juce::File& tracksDir, int turns, double listenSec, FirstMixProgress& progress,
-                         juce::MemoryBlock& stateOut, const std::atomic<bool>& quit, const std::atomic<bool>& skip);
+                         juce::MemoryBlock& stateOut, const std::atomic<bool>& quit, const std::atomic<bool>& skip,
+                         const AfterTurn& afterTurn = {});
 } // namespace mfa

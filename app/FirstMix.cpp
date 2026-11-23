@@ -6,7 +6,8 @@ namespace mfa
 using im::InteractiveMixerProcessor;
 
 std::string runFirstMix (const juce::File& tracksDir, int turns, double listenSec, FirstMixProgress& progress,
-                         juce::MemoryBlock& stateOut, const std::atomic<bool>& quit, const std::atomic<bool>& skip)
+                         juce::MemoryBlock& stateOut, const std::atomic<bool>& quit, const std::atomic<bool>& skip,
+                         const AfterTurn& afterTurn)
 {
     // No analysis or agent threads: this engine is driven block by block, and its turns run synchronously here.
     const bool before = im::gDisableBackgroundServices;
@@ -51,6 +52,8 @@ std::string runFirstMix (const juce::File& tracksDir, int turns, double listenSe
         p.agent.runTick ({ "auto", {}, "first_mix" });
         juce::MessageManager::getInstance()->runDispatchLoopUntil (20); // apply (message thread)
         runAudio (1.0);                                                  // let the ramp finish
+        if (afterTurn && ! quit && ! skip)
+            if (auto err = afterTurn (k, p); ! err.empty()) return err;
     }
     if (quit) return "stopped";
     if (skip && progress.turn.load() <= 1) return "skipped: mixing by hand"; // nothing worth keeping
