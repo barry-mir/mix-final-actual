@@ -7,6 +7,7 @@
 //   audio delay L = D_interp + W - 1.
 // Release is a one-pole on the held gain. Latency L is constant (also when
 // bypassed) and is reported to the host.
+#include <cstdint>
 #include <array>
 #include <vector>
 

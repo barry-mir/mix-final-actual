@@ -37,7 +37,15 @@ void Analyzer::start (double sampleRate, bool launchThread)
 
 void Analyzer::stop()
 {
-    if (isThreadRunning()) stopThread (2000);
+    // Wait for the thread to finish its step instead of force-killing it: with many tracks one compute() can take
+    // longer than any fixed timeout, and a killed thread left mid-compute used fx and the history buffers that
+    // start() then replaced (use-after-free in FeatureExtractor::barkSpectrum).
+    if (isThreadRunning())
+    {
+        signalThreadShouldExit();
+        notify();
+        waitForThreadToExit (-1);
+    }
     running = false;
 }
 
